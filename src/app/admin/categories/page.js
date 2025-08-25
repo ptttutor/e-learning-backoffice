@@ -76,79 +76,10 @@ export default function CategoriesPage() {
     try {
       const response = await fetch("/api/admin/categories");
       const data = await response.json();
-
       if (data.success) {
-        setCategories(data.data || []);
+        setCategories(data.data.categories || []);
       } else {
-        // Mock data for development
-        const mockCategories = [
-          {
-            id: 1,
-            name: "วิทยาศาสตร์",
-            slug: "science",
-            description: "หมวดหมู่วิชาวิทยาศาสตร์",
-            parentId: null,
-            sortOrder: 1,
-            isActive: true,
-            createdAt: "2024-01-10",
-            children: [
-              {
-                id: 2,
-                name: "ฟิสิกส์",
-                slug: "physics",
-                description: "วิชาฟิสิกส์",
-                parentId: 1,
-                sortOrder: 1,
-                isActive: true,
-                createdAt: "2024-01-10",
-              },
-              {
-                id: 3,
-                name: "เคมี",
-                slug: "chemistry",
-                description: "วิชาเคมี",
-                parentId: 1,
-                sortOrder: 2,
-                isActive: true,
-                createdAt: "2024-01-10",
-              },
-            ],
-          },
-          {
-            id: 4,
-            name: "คณิตศาสตร์",
-            slug: "mathematics",
-            description: "หมวดหมู่วิชาคณิตศาสตร์",
-            parentId: null,
-            sortOrder: 2,
-            isActive: true,
-            createdAt: "2024-01-08",
-            children: [
-              {
-                id: 5,
-                name: "พีชคณิต",
-                slug: "algebra",
-                description: "พีชคณิต",
-                parentId: 4,
-                sortOrder: 1,
-                isActive: true,
-                createdAt: "2024-01-08",
-              },
-            ],
-          },
-          {
-            id: 6,
-            name: "ภาษา",
-            slug: "language",
-            description: "หมวดหมู่วิชาภาษา",
-            parentId: null,
-            sortOrder: 3,
-            isActive: false,
-            createdAt: "2024-01-05",
-            children: [],
-          },
-        ];
-        setCategories(mockCategories);
+        message.error(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่");
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่");
@@ -196,51 +127,32 @@ export default function CategoriesPage() {
       };
 
       if (editingCategory) {
-        // Update category
-        const response = await fetch(
-          `/api/admin/categories/${editingCategory.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(categoryData),
-          }
-        );
-
-        if (response.ok) {
-          const updatedCategories = categories.map((category) =>
-            category.id === editingCategory.id
-              ? { ...category, ...categoryData }
-              : category
-          );
-          setCategories(updatedCategories);
-          message.success("อัปเดตหมวดหมู่เรียบร้อยแล้ว");
-        } else {
-          throw new Error("Failed to update category");
-        }
-      } else {
-        // Add new category
-        const response = await fetch("/api/admin/categories", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+        // Update category (PUT)
+        const response = await fetch(`/api/admin/categories/${editingCategory.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(categoryData),
         });
-
-        if (response.ok) {
-          const result = await response.json();
-          const newCategory = {
-            id: result.data?.id || Date.now(),
-            ...categoryData,
-            children: [],
-            createdAt: new Date().toISOString().split("T")[0],
-          };
-          setCategories([...categories, newCategory]);
-          message.success("เพิ่มหมวดหมู่ใหม่เรียบร้อยแล้ว");
+        const result = await response.json();
+        if (result.success) {
+          message.success("อัปเดตหมวดหมู่เรียบร้อยแล้ว");
+          fetchCategories();
         } else {
-          throw new Error("Failed to create category");
+          message.error(result.message || "เกิดข้อผิดพลาดในการอัปเดตหมวดหมู่");
+        }
+      } else {
+        // Add new category (POST)
+        const response = await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(categoryData),
+        });
+        const result = await response.json();
+        if (result.success) {
+          message.success("เพิ่มหมวดหมู่ใหม่เรียบร้อยแล้ว");
+          fetchCategories();
+        } else {
+          message.error(result.message || "เกิดข้อผิดพลาดในการเพิ่มหมวดหมู่");
         }
       }
 
@@ -258,15 +170,12 @@ export default function CategoriesPage() {
       const response = await fetch(`/api/admin/categories/${categoryId}`, {
         method: "DELETE",
       });
-
-      if (response.ok) {
-        const updatedCategories = categories.filter(
-          (category) => category.id !== categoryId
-        );
-        setCategories(updatedCategories);
+      const result = await response.json();
+      if (result.success) {
         message.success("ลบหมวดหมู่เรียบร้อยแล้ว");
+        fetchCategories();
       } else {
-        throw new Error("Failed to delete category");
+        message.error(result.message || "เกิดข้อผิดพลาดในการลบหมวดหมู่");
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการลบหมวดหมู่");
@@ -278,27 +187,18 @@ export default function CategoriesPage() {
     try {
       const response = await fetch(`/api/admin/categories/${categoryId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isActive: !currentStatus,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
-
-      if (response.ok) {
-        const updatedCategories = categories.map((category) =>
-          category.id === categoryId
-            ? { ...category, isActive: !currentStatus }
-            : category
-        );
-        setCategories(updatedCategories);
+      const result = await response.json();
+      if (result.success) {
         message.success("เปลี่ยนสถานะหมวดหมู่เรียบร้อยแล้ว");
+        fetchCategories();
       } else {
-        throw new Error("Failed to toggle status");
+        message.error(result.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะหมวดหมู่");
       }
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+      message.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะหมวดหมู่");
       console.error("Error toggling status:", error);
     }
   };
