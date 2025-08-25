@@ -1,103 +1,210 @@
-import Image from "next/image";
+'use client'
+
+import Link from 'next/link'
+import { 
+  Button, 
+  Card, 
+  Row, 
+  Col, 
+  Typography, 
+  Space,
+  Divider,
+  Tag
+} from 'antd'
+import {
+  BookOutlined,
+  DatabaseOutlined,
+  ExperimentOutlined,
+  RocketOutlined,
+  CheckCircleOutlined
+} from '@ant-design/icons'
+
+const { Title, Paragraph, Text } = Typography
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <Title level={1} style={{ fontSize: '3rem', marginBottom: 16 }}>
+            <BookOutlined style={{ color: '#1890ff' }} /> ฟิสิกส์พี่เต้ย
+          </Title>
+          <Title level={2} style={{ color: '#666', fontWeight: 'normal' }}>
+            Learning Management System
+          </Title>
+          <Paragraph style={{ fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
+            ระบบเรียนออนไลน์ฟิสิกส์และคณิตศาสตร์ที่ครบครันด้วย Next.js, Prisma และ PostgreSQL
+          </Paragraph>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Status Cards */}
+        <Row gutter={[24, 24]} style={{ marginBottom: 48 }}>
+          <Col xs={24} sm={12} md={6}>
+            <Card style={{ textAlign: 'center', height: '100%' }}>
+              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
+              <Title level={4}>Next.js 15</Title>
+              <Text type="secondary">React Framework</Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card style={{ textAlign: 'center', height: '100%' }}>
+              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
+              <Title level={4}>Prisma ORM</Title>
+              <Text type="secondary">Database Layer</Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card style={{ textAlign: 'center', height: '100%' }}>
+              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
+              <Title level={4}>PostgreSQL</Title>
+              <Text type="secondary">Prisma Cloud</Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card style={{ textAlign: 'center', height: '100%' }}>
+              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
+              <Title level={4}>Ant Design</Title>
+              <Text type="secondary">UI Components</Text>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Features */}
+        <Card style={{ marginBottom: 48 }}>
+          <Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
+            ฟีเจอร์ที่พร้อมใช้งาน
+          </Title>
+          <Row gutter={[24, 24]}>
+            <Col xs={24} md={12}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <div>
+                  <Tag color="blue">User Management</Tag>
+                  <Text>ระบบจัดการผู้ใช้ (Admin, Teacher, Student)</Text>
+                </div>
+                <div>
+                  <Tag color="green">Course System</Tag>
+                  <Text>ระบบคอร์สเรียนและบทเรียน</Text>
+                </div>
+                <div>
+                  <Tag color="orange">Payment System</Tag>
+                  <Text>ระบบชำระเงินและใบเสร็จ</Text>
+                </div>
+                <div>
+                  <Tag color="purple">Progress Tracking</Tag>
+                  <Text>ติดตามความก้าวหน้าการเรียน</Text>
+                </div>
+              </Space>
+            </Col>
+            <Col xs={24} md={12}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <div>
+                  <Tag color="red">Exam Repository</Tag>
+                  <Text>คลังข้อสอบ GAT-PAT, A-Level</Text>
+                </div>
+                <div>
+                  <Tag color="cyan">Review System</Tag>
+                  <Text>ระบบรีวิวและความคิดเห็น</Text>
+                </div>
+                <div>
+                  <Tag color="magenta">Notification</Tag>
+                  <Text>ระบบแจ้งเตือนและประกาศ</Text>
+                </div>
+                <div>
+                  <Tag color="volcano">Analytics</Tag>
+                  <Text>ระบบวิเคราะห์และรายงาน</Text>
+                </div>
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Action Buttons */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 48 }}>
+          <Col xs={24} sm={12} md={8}>
+            <Link href="/test-db">
+              <Button 
+                type="primary" 
+                icon={<DatabaseOutlined />} 
+                size="large" 
+                block
+              >
+                ทดสอบ Database
+              </Button>
+            </Link>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Link href="/test-antd">
+              <Button 
+                icon={<ExperimentOutlined />} 
+                size="large" 
+                block
+              >
+                ทดสอบ Ant Design
+              </Button>
+            </Link>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Button 
+              icon={<RocketOutlined />} 
+              size="large" 
+              block
+              disabled
+            >
+              เริ่มพัฒนาระบบ
+            </Button>
+          </Col>
+        </Row>
+
+        {/* Database Schema Info */}
+        <Card title="Database Schema" style={{ marginBottom: 24 }}>
+          <Paragraph>
+            ระบบได้ถูกออกแบบด้วย <Text strong>30+ Models</Text> ที่ครอบคลุมทุกฟีเจอร์ของระบบ E-Learning:
+          </Paragraph>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>User Management:</Text>
+              <br />
+              <Text type="secondary">Users, Social Login, Sessions</Text>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>Content Management:</Text>
+              <br />
+              <Text type="secondary">Categories, Subjects, Articles</Text>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>Course System:</Text>
+              <br />
+              <Text type="secondary">Courses, Chapters, Lessons</Text>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>Exam Repository:</Text>
+              <br />
+              <Text type="secondary">Exam Types, Sets, Questions</Text>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>Payment System:</Text>
+              <br />
+              <Text type="secondary">Orders, Receipts, Promotions</Text>
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Text strong>Analytics:</Text>
+              <br />
+              <Text type="secondary">Progress, Reviews, Logs</Text>
+            </Col>
+          </Row>
+        </Card>
+
+        <Divider />
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', color: '#666' }}>
+          <Text>
+            พร้อมเริ่มพัฒนาระบบ E-Learning ที่สมบูรณ์แบบ 🚀
+          </Text>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
