@@ -75,50 +75,26 @@ export default function CoursesPage() {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API call
-      const mockCourses = [
-        {
-          id: 1,
-          title: "ฟิสิกส์ ม.6 เทอม 1",
-          description: "เรียนฟิสิกส์ระดับชั้นมัธยมศึกษาปีที่ 6 เทอม 1",
-          subject: "physics",
-          level: "ม.6",
-          price: 1500,
-          status: "active",
-          students: 45,
-          lessons: 24,
-          duration: "3 เดือน",
-          createdAt: "2024-01-10",
-        },
-        {
-          id: 2,
-          title: "เคมี ม.5 เทอม 2",
-          description: "เรียนเคมีระดับชั้นมัธยมศึกษาปีที่ 5 เทอม 2",
-          subject: "chemistry",
-          level: "ม.5",
-          price: 1200,
-          status: "active",
-          students: 32,
-          lessons: 20,
-          duration: "3 เดือน",
-          createdAt: "2024-01-08",
-        },
-        {
-          id: 3,
-          title: "คณิตศาสตร์ ม.4",
-          description: "เรียนคณิตศาสตร์ระดับชั้นมัธยมศึกษาปีที่ 4",
-          subject: "mathematics",
-          level: "ม.4",
-          price: 1000,
-          status: "draft",
-          students: 0,
-          lessons: 18,
-          duration: "3 เดือน",
-          createdAt: "2024-01-05",
-        },
-      ];
-
-      setCourses(mockCourses);
+      const res = await fetch("/api/admin/courses");
+      const data = await res.json();
+      if (data.success) {
+        const mapped = data.data.courses.map((course) => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          subject: course.subject?.slug || course.subjectId || "",
+          level: course.level,
+          price: course.price,
+          status: course.isPublished ? "active" : "draft",
+          students: course._count?.enrollments || 0,
+          lessons: course.chapters?.reduce((sum, ch) => sum + (ch.lessons?.length || 0), 0) || 0,
+          duration: course.durationHours ? `${course.durationHours} ชั่วโมง` : "-",
+          createdAt: course.createdAt?.split("T")[0] || "",
+        }));
+        setCourses(mapped);
+      } else {
+        message.error(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูลคอร์ส");
+      }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลคอร์ส");
       console.error("Error fetching courses:", error);
@@ -158,22 +134,33 @@ export default function CoursesPage() {
   const handleSubmit = async (values) => {
     try {
       if (editingCourse) {
-        // Update course
-        const updatedCourses = courses.map((course) =>
-          course.id === editingCourse.id ? { ...course, ...values } : course
-        );
-        setCourses(updatedCourses);
-        message.success("อัปเดตคอร์สเรียบร้อยแล้ว");
+        // Update course (PUT)
+        const res = await fetch(`/api/admin/courses/${editingCourse.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        });
+        const data = await res.json();
+        if (data.success) {
+          message.success("อัปเดตคอร์สเรียบร้อยแล้ว");
+          fetchCourses();
+        } else {
+          message.error(data.message || "เกิดข้อผิดพลาดในการอัปเดตคอร์ส");
+        }
       } else {
-        // Add new course
-        const newCourse = {
-          id: Date.now(),
-          ...values,
-          students: 0,
-          createdAt: new Date().toISOString().split("T")[0],
-        };
-        setCourses([...courses, newCourse]);
-        message.success("เพิ่มคอร์สใหม่เรียบร้อยแล้ว");
+        // Add new course (POST)
+        const res = await fetch("/api/admin/courses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        });
+        const data = await res.json();
+        if (data.success) {
+          message.success("เพิ่มคอร์สใหม่เรียบร้อยแล้ว");
+          fetchCourses();
+        } else {
+          message.error(data.message || "เกิดข้อผิดพลาดในการเพิ่มคอร์ส");
+        }
       }
       setIsModalVisible(false);
       setEditingCourse(null);
@@ -185,9 +172,16 @@ export default function CoursesPage() {
 
   const handleDelete = async (courseId) => {
     try {
-      const updatedCourses = courses.filter((course) => course.id !== courseId);
-      setCourses(updatedCourses);
-      message.success("ลบคอร์สเรียบร้อยแล้ว");
+      const res = await fetch(`/api/admin/courses/${courseId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        message.success("ลบคอร์สเรียบร้อยแล้ว");
+        fetchCourses();
+      } else {
+        message.error(data.message || "เกิดข้อผิดพลาดในการลบคอร์ส");
+      }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการลบคอร์ส");
     }
