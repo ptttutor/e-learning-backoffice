@@ -1,210 +1,208 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
+import { Card, Button, Space, Typography, Row, Col } from "antd";
 import { 
-  Button, 
-  Card, 
-  Row, 
-  Col, 
-  Typography, 
-  Space,
-  Divider,
-  Tag
-} from 'antd'
-import {
+  SafetyOutlined, 
+  DatabaseOutlined, 
+  UserOutlined, 
   BookOutlined,
-  DatabaseOutlined,
-  ExperimentOutlined,
-  RocketOutlined,
-  CheckCircleOutlined
-} from '@ant-design/icons'
+  BarChartOutlined,
+  ApiOutlined 
+} from "@ant-design/icons";
+import Link from "next/link";
 
-const { Title, Paragraph, Text } = Typography
+const { Title, Text } = Typography;
 
 export default function Home() {
   return (
-    <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <Title level={1} style={{ fontSize: '3rem', marginBottom: 16 }}>
-            <BookOutlined style={{ color: '#1890ff' }} /> ฟิสิกส์พี่เต้ย
+    <div style={{ 
+      minHeight: "100vh", 
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      padding: "40px 20px"
+    }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "60px" }}>
+          <Title level={1} style={{ color: "white", fontSize: "48px", marginBottom: "16px" }}>
+            ฟิสิกส์พี่เต้ย
           </Title>
-          <Title level={2} style={{ color: '#666', fontWeight: 'normal' }}>
-            Learning Management System
+          <Title level={3} style={{ color: "rgba(255,255,255,0.8)", fontWeight: "normal" }}>
+            ระบบจัดการเรียนรู้ออนไลน์
           </Title>
-          <Paragraph style={{ fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-            ระบบเรียนออนไลน์ฟิสิกส์และคณิตศาสตร์ที่ครบครันด้วย Next.js, Prisma และ PostgreSQL
-          </Paragraph>
         </div>
 
-        {/* Status Cards */}
-        <Row gutter={[24, 24]} style={{ marginBottom: 48 }}>
-          <Col xs={24} sm={12} md={6}>
-            <Card style={{ textAlign: 'center', height: '100%' }}>
-              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
-              <Title level={4}>Next.js 15</Title>
-              <Text type="secondary">React Framework</Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card style={{ textAlign: 'center', height: '100%' }}>
-              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
-              <Title level={4}>Prisma ORM</Title>
-              <Text type="secondary">Database Layer</Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card style={{ textAlign: 'center', height: '100%' }}>
-              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
-              <Title level={4}>PostgreSQL</Title>
-              <Text type="secondary">Prisma Cloud</Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card style={{ textAlign: 'center', height: '100%' }}>
-              <CheckCircleOutlined style={{ fontSize: '2rem', color: '#52c41a', marginBottom: 16 }} />
-              <Title level={4}>Ant Design</Title>
-              <Text type="secondary">UI Components</Text>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Features */}
-        <Card style={{ marginBottom: 48 }}>
-          <Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-            ฟีเจอร์ที่พร้อมใช้งาน
-          </Title>
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={12}>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <div>
-                  <Tag color="blue">User Management</Tag>
-                  <Text>ระบบจัดการผู้ใช้ (Admin, Teacher, Student)</Text>
-                </div>
-                <div>
-                  <Tag color="green">Course System</Tag>
-                  <Text>ระบบคอร์สเรียนและบทเรียน</Text>
-                </div>
-                <div>
-                  <Tag color="orange">Payment System</Tag>
-                  <Text>ระบบชำระเงินและใบเสร็จ</Text>
-                </div>
-                <div>
-                  <Tag color="purple">Progress Tracking</Tag>
-                  <Text>ติดตามความก้าวหน้าการเรียน</Text>
-                </div>
-              </Space>
-            </Col>
-            <Col xs={24} md={12}>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <div>
-                  <Tag color="red">Exam Repository</Tag>
-                  <Text>คลังข้อสอบ GAT-PAT, A-Level</Text>
-                </div>
-                <div>
-                  <Tag color="cyan">Review System</Tag>
-                  <Text>ระบบรีวิวและความคิดเห็น</Text>
-                </div>
-                <div>
-                  <Tag color="magenta">Notification</Tag>
-                  <Text>ระบบแจ้งเตือนและประกาศ</Text>
-                </div>
-                <div>
-                  <Tag color="volcano">Analytics</Tag>
-                  <Text>ระบบวิเคราะห์และรายงาน</Text>
-                </div>
-              </Space>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Action Buttons */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 48 }}>
-          <Col xs={24} sm={12} md={8}>
-            <Link href="/test-db">
-              <Button 
-                type="primary" 
-                icon={<DatabaseOutlined />} 
-                size="large" 
-                block
-              >
-                ทดสอบ Database
-              </Button>
-            </Link>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Link href="/test-antd">
-              <Button 
-                icon={<ExperimentOutlined />} 
-                size="large" 
-                block
-              >
-                ทดสอบ Ant Design
-              </Button>
-            </Link>
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Button 
-              icon={<RocketOutlined />} 
-              size="large" 
-              block
-              disabled
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
             >
-              เริ่มพัฒนาระบบ
-            </Button>
+              <SafetyOutlined style={{ fontSize: "48px", color: "#1890ff", marginBottom: "16px" }} />
+              <Title level={4}>Admin Panel</Title>
+              <Text type="secondary">
+                เข้าสู่ระบบจัดการสำหรับผู้ดูแลระบบ
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/admin/login">
+                  <Button type="primary" size="large" block>
+                    เข้าสู่ระบบ Admin
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
+            >
+              <DatabaseOutlined style={{ fontSize: "48px", color: "#52c41a", marginBottom: "16px" }} />
+              <Title level={4}>จัดการฐานข้อมูล</Title>
+              <Text type="secondary">
+                ดูและจัดการข้อมูลในระบบ
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/admin/database/tables">
+                  <Button size="large" block>
+                    เข้าสู่ฐานข้อมูล
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
+            >
+              <ApiOutlined style={{ fontSize: "48px", color: "#fa8c16", marginBottom: "16px" }} />
+              <Title level={4}>ทดสอบ API</Title>
+              <Text type="secondary">
+                ทดสอบ API endpoints ทั้งหมด
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/test-admin-api">
+                  <Button size="large" block>
+                    ทดสอบ API
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
+            >
+              <UserOutlined style={{ fontSize: "48px", color: "#eb2f96", marginBottom: "16px" }} />
+              <Title level={4}>จัดการผู้ใช้</Title>
+              <Text type="secondary">
+                จัดการข้อมูลผู้ใช้ทั้งหมด
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/admin/users">
+                  <Button size="large" block>
+                    จัดการผู้ใช้
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
+            >
+              <BookOutlined style={{ fontSize: "48px", color: "#722ed1", marginBottom: "16px" }} />
+              <Title level={4}>จัดการคอร์ส</Title>
+              <Text type="secondary">
+                จัดการคอร์สเรียนทั้งหมด
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/admin/courses">
+                  <Button size="large" block>
+                    จัดการคอร์ส
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12} lg={8}>
+            <Card
+              hoverable
+              style={{ 
+                height: "100%",
+                textAlign: "center",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+              }}
+            >
+              <BarChartOutlined style={{ fontSize: "48px", color: "#13c2c2", marginBottom: "16px" }} />
+              <Title level={4}>Dashboard</Title>
+              <Text type="secondary">
+                ภาพรวมและสถิติของระบบ
+              </Text>
+              <div style={{ marginTop: "24px" }}>
+                <Link href="/admin/dashboard">
+                  <Button size="large" block>
+                    ดู Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </Card>
           </Col>
         </Row>
 
-        {/* Database Schema Info */}
-        <Card title="Database Schema" style={{ marginBottom: 24 }}>
-          <Paragraph>
-            ระบบได้ถูกออกแบบด้วย <Text strong>30+ Models</Text> ที่ครอบคลุมทุกฟีเจอร์ของระบบ E-Learning:
-          </Paragraph>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>User Management:</Text>
-              <br />
-              <Text type="secondary">Users, Social Login, Sessions</Text>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>Content Management:</Text>
-              <br />
-              <Text type="secondary">Categories, Subjects, Articles</Text>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>Course System:</Text>
-              <br />
-              <Text type="secondary">Courses, Chapters, Lessons</Text>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>Exam Repository:</Text>
-              <br />
-              <Text type="secondary">Exam Types, Sets, Questions</Text>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>Payment System:</Text>
-              <br />
-              <Text type="secondary">Orders, Receipts, Promotions</Text>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Text strong>Analytics:</Text>
-              <br />
-              <Text type="secondary">Progress, Reviews, Logs</Text>
-            </Col>
-          </Row>
-        </Card>
-
-        <Divider />
-
-        {/* Footer */}
-        <div style={{ textAlign: 'center', color: '#666' }}>
-          <Text>
-            พร้อมเริ่มพัฒนาระบบ E-Learning ที่สมบูรณ์แบบ 🚀
-          </Text>
+        <div style={{ 
+          textAlign: "center", 
+          marginTop: "60px",
+          padding: "40px",
+          background: "rgba(255,255,255,0.1)",
+          borderRadius: "12px",
+          backdropFilter: "blur(10px)"
+        }}>
+          <Title level={4} style={{ color: "white", marginBottom: "16px" }}>
+            ข้อมูลสำหรับทดสอบ
+          </Title>
+          <Space direction="vertical" size="small">
+            <Text style={{ color: "rgba(255,255,255,0.9)" }}>
+              <strong>Admin Email:</strong> admin@physics.com
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)" }}>
+              <strong>Admin Password:</strong> admin123
+            </Text>
+          </Space>
         </div>
       </div>
     </div>
-  )
+  );
 }
