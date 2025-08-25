@@ -83,66 +83,10 @@ export default function SubjectsPage() {
     try {
       const response = await fetch("/api/admin/subjects");
       const data = await response.json();
-      
       if (data.success) {
-        setSubjects(data.data || []);
+        setSubjects(data.data.subjects || []);
       } else {
-        // Mock data for development
-        const mockSubjects = [
-          {
-            id: 1,
-            name: "ฟิสิกส์",
-            slug: "physics",
-            description: "วิชาฟิสิกส์ ศึกษาเกี่ยวกับธรรมชาติและปรากฏการณ์ทางกายภาพ",
-            categoryId: 1,
-            color: "#1890ff",
-            icon: "ExperimentOutlined",
-            sortOrder: 1,
-            isActive: true,
-            createdAt: "2024-01-10",
-            coursesCount: 15,
-          },
-          {
-            id: 2,
-            name: "เคมี",
-            slug: "chemistry",
-            description: "วิชาเคมี ศึกษาเกี่ยวกับสารและการเปลี่ยนแปลงของสาร",
-            categoryId: 1,
-            color: "#52c41a",
-            icon: "ExperimentOutlined",
-            sortOrder: 2,
-            isActive: true,
-            createdAt: "2024-01-10",
-            coursesCount: 12,
-          },
-          {
-            id: 3,
-            name: "คณิตศาสตร์",
-            slug: "mathematics",
-            description: "วิชาคณิตศาสตร์ ศึกษาเกี่ยวกับตัวเลข รูปร่าง และรูปแบบ",
-            categoryId: 2,
-            color: "#fa8c16",
-            icon: "BookOutlined",
-            sortOrder: 1,
-            isActive: true,
-            createdAt: "2024-01-08",
-            coursesCount: 18,
-          },
-          {
-            id: 4,
-            name: "ชีววิทยา",
-            slug: "biology",
-            description: "วิชาชีววิทยา ศึกษาเกี่ยวกับสิ่งมีชีวิต",
-            categoryId: 1,
-            color: "#13c2c2",
-            icon: "ExperimentOutlined",
-            sortOrder: 3,
-            isActive: false,
-            createdAt: "2024-01-05",
-            coursesCount: 0,
-          },
-        ];
-        setSubjects(mockSubjects);
+        message.error(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูลวิชา");
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลวิชา");
@@ -156,19 +100,13 @@ export default function SubjectsPage() {
     try {
       const response = await fetch("/api/admin/categories");
       const data = await response.json();
-      
       if (data.success) {
-        setCategories(data.data || []);
+        setCategories(data.data.categories || []);
       } else {
-        // Mock categories
-        const mockCategories = [
-          { id: 1, name: "วิทยาศาสตร์" },
-          { id: 2, name: "คณิตศาสตร์" },
-          { id: 3, name: "ภาษา" },
-        ];
-        setCategories(mockCategories);
+        message.error(data.message || "เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่");
       }
     } catch (error) {
+      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่");
       console.error("Error fetching categories:", error);
     }
   };
@@ -224,49 +162,34 @@ export default function SubjectsPage() {
       };
 
       if (editingSubject) {
-        // Update subject
+        // Update subject (PUT)
         const response = await fetch(`/api/admin/subjects/${editingSubject.id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(subjectData),
         });
-
-        if (response.ok) {
-          const updatedSubjects = subjects.map((subject) =>
-            subject.id === editingSubject.id ? { ...subject, ...subjectData } : subject
-          );
-          setSubjects(updatedSubjects);
+        const result = await response.json();
+        if (result.success) {
           message.success("อัปเดตวิชาเรียบร้อยแล้ว");
+          fetchSubjects();
         } else {
-          throw new Error("Failed to update subject");
+          message.error(result.message || "เกิดข้อผิดพลาดในการอัปเดตวิชา");
         }
       } else {
-        // Add new subject
+        // Add new subject (POST)
         const response = await fetch("/api/admin/subjects", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(subjectData),
         });
-
-        if (response.ok) {
-          const result = await response.json();
-          const newSubject = {
-            id: result.data?.id || Date.now(),
-            ...subjectData,
-            coursesCount: 0,
-            createdAt: new Date().toISOString().split("T")[0],
-          };
-          setSubjects([...subjects, newSubject]);
+        const result = await response.json();
+        if (result.success) {
           message.success("เพิ่มวิชาใหม่เรียบร้อยแล้ว");
+          fetchSubjects();
         } else {
-          throw new Error("Failed to create subject");
+          message.error(result.message || "เกิดข้อผิดพลาดในการเพิ่มวิชา");
         }
       }
-      
       setIsModalVisible(false);
       setEditingSubject(null);
       form.resetFields();
@@ -281,13 +204,12 @@ export default function SubjectsPage() {
       const response = await fetch(`/api/admin/subjects/${subjectId}`, {
         method: "DELETE",
       });
-
-      if (response.ok) {
-        const updatedSubjects = subjects.filter((subject) => subject.id !== subjectId);
-        setSubjects(updatedSubjects);
+      const result = await response.json();
+      if (result.success) {
         message.success("ลบวิชาเรียบร้อยแล้ว");
+        fetchSubjects();
       } else {
-        throw new Error("Failed to delete subject");
+        message.error(result.message || "เกิดข้อผิดพลาดในการลบวิชา");
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการลบวิชา");
@@ -299,25 +221,18 @@ export default function SubjectsPage() {
     try {
       const response = await fetch(`/api/admin/subjects/${subjectId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isActive: !currentStatus,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
-
-      if (response.ok) {
-        const updatedSubjects = subjects.map((subject) =>
-          subject.id === subjectId ? { ...subject, isActive: !currentStatus } : subject
-        );
-        setSubjects(updatedSubjects);
+      const result = await response.json();
+      if (result.success) {
         message.success("เปลี่ยนสถานะวิชาเรียบร้อยแล้ว");
+        fetchSubjects();
       } else {
-        throw new Error("Failed to toggle status");
+        message.error(result.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะวิชา");
       }
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะ");
+      message.error("เกิดข้อผิดพลาดในการเปลี่ยนสถานะวิชา");
       console.error("Error toggling status:", error);
     }
   };
@@ -412,29 +327,11 @@ export default function SubjectsPage() {
             onClick={() => {
               Modal.info({
                 title: "รายละเอียดวิชา",
-                width: 600,
                 content: (
                   <div>
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      <div><strong>ชื่อ:</strong> {record.name}</div>
-                      <div><strong>Slug:</strong> {record.slug}</div>
-                      <div><strong>คำอธิบาย:</strong> {record.description || "ไม่มี"}</div>
-                      <div>
-                        <strong>สี:</strong> 
-                        <span style={{ 
-                          marginLeft: 8,
-                          padding: "2px 8px",
-                          backgroundColor: record.color,
-                          color: "white",
-                          borderRadius: "4px"
-                        }}>
-                          {record.color}
-                        </span>
-                      </div>
-                      <div><strong>ลำดับ:</strong> {record.sortOrder}</div>
-                      <div><strong>สถานะ:</strong> {record.isActive ? "ใช้งาน" : "ปิดใช้งาน"}</div>
-                      <div><strong>จำนวนคอร์ส:</strong> {record.coursesCount}</div>
-                    </Space>
+                    <p>ชื่อ: {record.name}</p>
+                    <p>รายละเอียด: {record.description}</p>
+                    <p>หมวดหมู่: {categories.find((c) => c.id === record.categoryId)?.name || "-"}</p>
                   </div>
                 ),
               });
