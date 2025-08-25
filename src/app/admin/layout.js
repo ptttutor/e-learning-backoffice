@@ -88,10 +88,6 @@ export default function AdminLayout({ children }) {
           label: "รายการคอร์ส",
         },
         {
-          key: "/admin/courses/create",
-          label: "สร้างคอร์สใหม่",
-        },
-        {
           key: "/admin/categories",
           label: "หมวดหมู่",
         },
