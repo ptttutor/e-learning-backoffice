@@ -153,13 +153,20 @@ function BuyCourseButton({ course }) {
   const [order, setOrder] = React.useState(null);
   const [payLoading, setPayLoading] = React.useState(false);
   const [result, setResult] = React.useState(null);
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
 
-  // mock user id (ควรดึงจาก session จริง)
-  const userId =
-    (typeof window !== "undefined" && localStorage.getItem("userId")) ||
-    "f06bdb41-0dd6-40a6-b8b1-2bb44c2e2e16";
+  // ดึง userId จาก localStorage (หลัง login)
+  let userId = null;
+  if (typeof window !== 'undefined') {
+    userId = localStorage.getItem('userId');
+  }
 
   const handleBuy = async () => {
+    if (!userId) {
+      // ถ้าไม่ได้ login ให้ redirect ไปหน้า login
+      if (router) router.push('/login');
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
