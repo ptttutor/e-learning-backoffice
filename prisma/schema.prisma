@@ -14,6 +14,7 @@ model User {
   role        Role          @default(STUDENT)
   courses     Course[]      @relation("InstructorCourses")
   enrollments Enrollment[]
+  orders      Order[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
@@ -32,6 +33,7 @@ model Course {
   categoryId   String?
   chapters     Chapter[]
   enrollments  Enrollment[]
+  orders       Order[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -73,6 +75,28 @@ model Category {
   name      String
   description String?
   courses   Course[]
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    String
+  status      String   // pending, paid, failed, cancelled
+  total       Float
+  createdAt   DateTime @default(now())
+  payment     Payment?
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+  method    String   // credit_card, promptpay, etc.
+  status    String   // pending, paid, failed
+  paidAt    DateTime?
+  ref       String?  // payment gateway ref
 }
 
 enum Role {
