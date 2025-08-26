@@ -1,5 +1,15 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Layout, Menu } from "antd";
+import "antd/dist/reset.css";
+import {
+  AppstoreOutlined,
+  BookOutlined,
+  UserOutlined,
+  DashboardOutlined,
+  TagsOutlined,
+} from "@ant-design/icons";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,6 +26,33 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const menuItems = [
+    {
+      key: "/admin/dashboard",
+      icon: <DashboardOutlined />,
+      label: <a href="/admin/dashboard">แดชบอร์ด</a>,
+    },
+    {
+      key: "/admin/courses",
+      icon: <BookOutlined />,
+      label: <a href="/admin/courses">คอร์สเรียน</a>,
+    },
+    {
+      key: "/admin/categories",
+      icon: <TagsOutlined />,
+      label: <a href="/admin/categories">หมวดหมู่</a>,
+    },
+    {
+      key: "/admin/subjects",
+      icon: <AppstoreOutlined />,
+      label: <a href="/admin/subjects">วิชา</a>,
+    },
+    {
+      key: "/admin/users",
+      icon: <UserOutlined />,
+      label: <a href="/admin/users">ผู้ใช้</a>,
+    },
+  ];
   return (
     <html lang="en">
       <body>
