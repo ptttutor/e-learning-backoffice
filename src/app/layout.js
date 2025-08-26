@@ -1,14 +1,17 @@
+"use client";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, ConfigProvider } from "antd";
 import "antd/dist/reset.css";
 import {
-  AppstoreOutlined,
   BookOutlined,
   UserOutlined,
-  DashboardOutlined,
-  TagsOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+
+const { Header, Content, Footer } = Layout;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,43 +23,120 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "ฟิสิกส์พี่เต้ย Learning System",
-  description: "ระบบเรียนออนไลน์ฟิสิกส์และคณิตศาสตร์",
-};
+// Define menu items
+const menuItems = [
+  {
+    key: "/",
+    icon: <HomeOutlined />,
+    label: <Link href="/">หน้าหลัก</Link>,
+  },
+  {
+    key: "/courses",
+    icon: <BookOutlined />,
+    label: <Link href="/courses">คอร์สเรียน</Link>,
+  },
+  {
+    key: "/about",
+    icon: <UserOutlined />,
+    label: <Link href="/about">เกี่ยวกับเรา</Link>,
+  },
+];
+
+function AppLayout({ children }) {
+  const pathname = usePathname();
+  
+  // Check if current path is admin
+  const isAdminPath = pathname.startsWith('/admin');
+  
+  // Don't show layout for login/register pages
+  const isAuthPath = pathname.startsWith('/login') || pathname.startsWith('/register');
+  
+  if (isAuthPath) {
+    return children;
+  }
+
+  // If admin path, return children without layout
+  if (isAdminPath) {
+    return children;
+  }
+
+  const selectedKeys = [pathname];
+
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 6,
+          fontFamily: 'var(--font-geist-sans)',
+        },
+      }}
+    >
+      <Layout style={{ minHeight: '100vh' }}>
+        {/* Header */}
+        <Header style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          background: '#001529',
+          padding: '0 24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <Link href="/" style={{ 
+            color: 'white', 
+            fontWeight: 'bold', 
+            fontSize: 20,
+            marginRight: 32,
+            textDecoration: 'none'
+          }}>
+            ฟิสิกส์พี่เต้ย Learning System
+          </Link>
+          
+          <Menu
+            theme="dark"
+            mode="horizontal"
+            selectedKeys={selectedKeys}
+            items={menuItems}
+            style={{ 
+              flex: 1, 
+              minWidth: 0,
+              background: 'transparent',
+              border: 'none'
+            }}
+          />
+        </Header>
+
+        {/* Content */}
+        <Content style={{ 
+          background: '#fff',
+          minHeight: 280,
+        }}>
+          {children}
+        </Content>
+
+        {/* Footer */}
+        <Footer style={{ 
+          textAlign: 'center', 
+          background: '#f5f5f5',
+          borderTop: '1px solid #f0f0f0'
+        }}>
+          ฟิสิกส์พี่เต้ย Learning System ©{new Date().getFullYear()} Created with ❤️
+        </Footer>
+      </Layout>
+    </ConfigProvider>
+  );
+}
 
 export default function RootLayout({ children }) {
-  const menuItems = [
-    {
-      key: "/admin/dashboard",
-      icon: <DashboardOutlined />,
-      label: <a href="/admin/dashboard">แดชบอร์ด</a>,
-    },
-    {
-      key: "/admin/courses",
-      icon: <BookOutlined />,
-      label: <a href="/admin/courses">คอร์สเรียน</a>,
-    },
-    {
-      key: "/admin/categories",
-      icon: <TagsOutlined />,
-      label: <a href="/admin/categories">หมวดหมู่</a>,
-    },
-    {
-      key: "/admin/subjects",
-      icon: <AppstoreOutlined />,
-      label: <a href="/admin/subjects">วิชา</a>,
-    },
-    {
-      key: "/admin/users",
-      icon: <UserOutlined />,
-      label: <a href="/admin/users">ผู้ใช้</a>,
-    },
-  ];
   return (
-    <html lang="en">
-      <body>
-        {children}
+    <html lang="th" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <title>ฟิสิกส์พี่เต้ย Learning System</title>
+        <meta name="description" content="ระบบเรียนออนไลน์ฟิสิกส์และคณิตศาสตร์" />
+      </head>
+      <body style={{ fontFamily: 'var(--font-geist-sans)' }}>
+        <AppLayout>
+          {children}
+        </AppLayout>
       </body>
     </html>
   );

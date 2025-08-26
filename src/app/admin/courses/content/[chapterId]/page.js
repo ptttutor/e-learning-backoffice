@@ -1,59 +1,60 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Table, Button, Space, Modal, Form, Input, InputNumber, message } from "antd";
-import { useParams, useRouter } from "next/navigation";
+import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message } from "antd";
+import { useParams } from "next/navigation";
 
-export default function AdminChaptersPage() {
-  const { courseId } = useParams();
-  const router = useRouter();
-  const [chapters, setChapters] = useState([]);
+const { Option } = Select;
+
+export default function AdminContentPage() {
+  const { chapterId } = useParams();
+  const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form] = Form.useForm();
 
-  // Fetch chapters
-  const fetchChapters = async () => {
+  // Fetch contents
+  const fetchContents = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/chapters?courseId=${courseId}`);
+      const res = await fetch(`/api/admin/contents?chapterId=${chapterId}`);
       const data = await res.json();
-      setChapters(data.data || []);
+      setContents(data.data || []);
     } catch (e) {
-      message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
+      message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    if (courseId) fetchChapters();
-  }, [courseId]);
+    if (chapterId) fetchContents();
+  }, [chapterId]);
 
-  // Create or update chapter
+  // Create or update content
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       let res;
       if (editing) {
-        res = await fetch(`/api/admin/chapters/${editing.id}`, {
+        res = await fetch(`/api/admin/contents/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
       } else {
-        res = await fetch(`/api/admin/chapters`, {
+        res = await fetch(`/api/admin/contents`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...values, courseId }),
+          body: JSON.stringify({ ...values, chapterId }),
         });
       }
       const data = await res.json();
       if (data.success) {
-        message.success(editing ? "แก้ไข chapter สำเร็จ" : "สร้าง chapter สำเร็จ");
+        message.success(editing ? "แก้ไขเนื้อหาสำเร็จ" : "สร้างเนื้อหาสำเร็จ");
         setModalOpen(false);
         setEditing(null);
         form.resetFields();
-        fetchChapters();
+        fetchContents();
       } else {
         message.error(data.error || "เกิดข้อผิดพลาด");
       }
@@ -62,16 +63,16 @@ export default function AdminChaptersPage() {
     }
   };
 
-  // Delete chapter
+  // Delete content
   const handleDelete = async (id) => {
     Modal.confirm({
-      title: "ยืนยันการลบ chapter?",
+      title: "ยืนยันการลบเนื้อหา?",
       onOk: async () => {
-        const res = await fetch(`/api/admin/chapters/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/admin/contents/${id}`, { method: "DELETE" });
         const data = await res.json();
         if (data.success) {
-          message.success("ลบ chapter สำเร็จ");
-          fetchChapters();
+          message.success("ลบเนื้อหาสำเร็จ");
+          fetchContents();
         } else {
           message.error(data.error || "เกิดข้อผิดพลาด");
         }
@@ -91,7 +92,9 @@ export default function AdminChaptersPage() {
   };
 
   const columns = [
-    { title: "ชื่อ Chapter", dataIndex: "title" },
+    { title: "ชื่อเนื้อหา", dataIndex: "title" },
+    { title: "ประเภท", dataIndex: "contentType" },
+    { title: "URL/ไฟล์", dataIndex: "contentUrl" },
     { title: "ลำดับ", dataIndex: "order" },
     {
       title: "การจัดการ",
@@ -99,7 +102,6 @@ export default function AdminChaptersPage() {
         <Space>
           <Button onClick={() => openModal(record)}>แก้ไข</Button>
           <Button danger onClick={() => handleDelete(record.id)}>ลบ</Button>
-          <Button type="link" onClick={() => window.location.href = `/admin/courses/content/${record.id}`}>Course Content</Button>
         </Space>
       ),
     },
@@ -107,26 +109,38 @@ export default function AdminChaptersPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h1>Chapter ของคอร์ส</h1>
+      <h1>เนื้อหาใน Chapter</h1>
       <Button type="primary" onClick={() => openModal(null)} style={{ marginBottom: 16 }}>
-        สร้าง Chapter ใหม่
+        สร้างเนื้อหาใหม่
       </Button>
       <Table
         columns={columns}
-        dataSource={chapters}
+        dataSource={contents}
         rowKey="id"
         loading={loading}
         bordered
       />
       <Modal
         open={modalOpen}
-        title={editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}
+        title={editing ? "แก้ไขเนื้อหา" : "สร้างเนื้อหาใหม่"}
         onCancel={() => { setModalOpen(false); setEditing(null); }}
         onOk={handleOk}
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="title" label="ชื่อ Chapter" rules={[{ required: true, message: "กรุณากรอกชื่อ Chapter" }]}>
+          <Form.Item name="title" label="ชื่อเนื้อหา" rules={[{ required: true, message: "กรุณากรอกชื่อเนื้อหา" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="contentType" label="ประเภท" rules={[{ required: true }]}> 
+            <Select>
+              <Option value="VIDEO">วิดีโอ</Option>
+              <Option value="PDF">PDF</Option>
+              <Option value="LINK">ลิงก์</Option>
+              <Option value="QUIZ">Quiz</Option>
+              <Option value="ASSIGNMENT">Assignment</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="contentUrl" label="URL/ไฟล์" rules={[{ required: true, message: "กรุณากรอก URL หรือไฟล์" }]}>
             <Input />
           </Form.Item>
           <Form.Item name="order" label="ลำดับ" rules={[{ required: true, type: 'number', message: "กรุณากรอกลำดับ" }]}>
