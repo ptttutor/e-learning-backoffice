@@ -154,6 +154,28 @@ export default function CoursesListPage() {
             )}
           />
         )}
+
+        <div style={{ marginTop: 32 }}>
+          <Title level={4}>คอร์สเรียนทั้งหมด</Title>
+          <List
+            dataSource={courses}
+            renderItem={(course) => (
+              <List.Item>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div>
+                    <Link href={`/courses/detail/${course.id}`} style={{ fontWeight: 600, fontSize: 18 }}>{course.title}</Link>
+                    <div style={{ color: '#888' }}>{course.description}</div>
+                  </div>
+                  <div>
+                    <Link href={`/courses/detail/${course.id}`}>
+                      <Button type="primary" size="small">ดูรายละเอียด/ชำระเงิน</Button>
+                    </Link>
+                  </div>
+                </div>
+              </List.Item>
+            )}
+          />
+        </div>
       </Space>
     </div>
   );

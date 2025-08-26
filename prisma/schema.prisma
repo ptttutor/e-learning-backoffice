@@ -92,7 +92,7 @@ model Order {
 model Payment {
   id        String   @id @default(uuid())
   order     Order    @relation(fields: [orderId], references: [id])
-  orderId   String
+  orderId   String   @unique
   method    String   // credit_card, promptpay, etc.
   status    String   // pending, paid, failed
   paidAt    DateTime?
