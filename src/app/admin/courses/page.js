@@ -1,15 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message } from "antd";
+import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message, Spin } from "antd";
 
 const { Option } = Select;
 
-export default function AdminCoursesPage() {
+export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form] = Form.useForm();
+  const [categories, setCategories] = useState([]);
+  const [catLoading, setCatLoading] = useState(false);
+  const [instructors, setInstructors] = useState([]);
+  const [instLoading, setInstLoading] = useState(false);
 
   // Fetch courses
   const fetchCourses = async () => {
@@ -24,8 +28,36 @@ export default function AdminCoursesPage() {
     setLoading(false);
   };
 
+  // Fetch categories
+  const fetchCategories = async () => {
+    setCatLoading(true);
+    try {
+      const res = await fetch("/api/admin/categories");
+      const data = await res.json();
+      setCategories(data.data || []);
+    } catch (e) {
+      message.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
+    }
+    setCatLoading(false);
+  };
+
+  // Fetch instructors
+  const fetchInstructors = async () => {
+    setInstLoading(true);
+    try {
+      const res = await fetch("/api/admin/users?role=INSTRUCTOR");
+      const data = await res.json();
+      setInstructors((data.data || []).filter(u => u.role === 'INSTRUCTOR'));
+    } catch (e) {
+      message.error("โหลดข้อมูลผู้สอนไม่สำเร็จ");
+    }
+    setInstLoading(false);
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchCategories();
+    fetchInstructors();
   }, []);
 
   // Create or update course
@@ -101,6 +133,7 @@ export default function AdminCoursesPage() {
         <Space>
           <Button onClick={() => openModal(record)}>แก้ไข</Button>
           <Button danger onClick={() => handleDelete(record.id)}>ลบ</Button>
+          <Button type="link" onClick={() => window.location.href = `/admin/courses/chapter/${record.id}`}>จัดการ Chapter</Button>
         </Space>
       ),
     },
@@ -119,38 +152,62 @@ export default function AdminCoursesPage() {
         loading={loading}
         bordered
       />
-      <Modal
-        open={modalOpen}
-        title={editing ? "แก้ไขคอร์ส" : "สร้างคอร์สใหม่"}
-        onCancel={() => { setModalOpen(false); setEditing(null); }}
-        onOk={handleOk}
-        destroyOnClose
-      >
-        <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="title" label="ชื่อคอร์ส" rules={[{ required: true, message: "กรุณากรอกชื่อคอร์ส" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="รายละเอียด">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="price" label="ราคา">
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="status" label="สถานะ" rules={[{ required: true }]}> 
-            <Select>
-              <Option value="DRAFT">ฉบับร่าง</Option>
-              <Option value="PUBLISHED">เผยแพร่</Option>
-              <Option value="CLOSED">ปิด</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="instructorId" label="รหัสผู้สอน" rules={[{ required: true, message: "กรุณากรอกรหัสผู้สอน" }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="categoryId" label="รหัสหมวดหมู่">
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {modalOpen && (
+        <Modal
+          open={modalOpen}
+          title={editing ? "แก้ไขคอร์ส" : "สร้างคอร์สใหม่"}
+          onCancel={() => { setModalOpen(false); setEditing(null); }}
+          onOk={handleOk}
+          destroyOnClose
+        >
+          <Form form={form} layout="vertical" preserve={false}>
+            <Form.Item name="title" label="ชื่อคอร์ส" rules={[{ required: true, message: "กรุณากรอกชื่อคอร์ส" }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="description" label="รายละเอียด">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="price" label="ราคา">
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item name="status" label="สถานะ" rules={[{ required: true }]}> 
+              <Select>
+                <Option value="DRAFT">ฉบับร่าง</Option>
+                <Option value="PUBLISHED">เผยแพร่</Option>
+                <Option value="CLOSED">ปิด</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="instructorId" label="ผู้สอน" rules={[{ required: true, message: "กรุณาเลือกผู้สอน" }]}>
+              <Select
+                loading={instLoading}
+                placeholder="เลือกผู้สอน"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+              >
+                {instructors.map((instructor) => (
+                  <Option key={instructor.id} value={instructor.id}>
+                    {instructor.name} ({instructor.email})
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="categoryId" label="หมวดหมู่">
+              <Select
+                loading={catLoading}
+                placeholder="เลือกหมวดหมู่"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+              >
+                {categories.map((cat) => (
+                  <Option key={cat.id} value={cat.id}>{cat.name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
     </div>
   );
 }
