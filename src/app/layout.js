@@ -36,6 +36,11 @@ const menuItems = [
     label: <Link href="/courses">คอร์สเรียน</Link>,
   },
   {
+    key: "/my-courses",
+    icon: <BookOutlined />,
+    label: <Link href="/my-courses">คอร์สเรียนของฉัน</Link>,
+  },
+  {
     key: "/about",
     icon: <UserOutlined />,
     label: <Link href="/about">เกี่ยวกับเรา</Link>,
