@@ -64,6 +64,10 @@ CREATE TABLE "public"."Content" (
 );
 
 -- CreateTable
+-- Drop existing table if needed (ระวัง: จะลบข้อมูลทั้งหมด)
+-- DROP TABLE IF EXISTS "public"."Enrollment";
+
+-- Create improved Enrollment table
 CREATE TABLE "public"."Enrollment" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -71,9 +75,54 @@ CREATE TABLE "public"."Enrollment" (
     "progress" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "status" "public"."EnrollStatus" NOT NULL DEFAULT 'ACTIVE',
     "enrolledAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "Enrollment_pkey" PRIMARY KEY ("id")
+    
+    -- เพิ่มฟิลด์ใหม่สำหรับ progress tracking
+    "viewedContentIds" TEXT[] DEFAULT '{}',
+    "completedAt" TIMESTAMP(3),
+    "lastAccessedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Primary key
+    CONSTRAINT "Enrollment_pkey" PRIMARY KEY ("id"),
+    
+    -- Unique constraint ป้องกันการลงทะเบียนซ้ำ
+    CONSTRAINT "Enrollment_userId_courseId_key" UNIQUE ("userId", "courseId"),
+    
+    -- Foreign key constraints
+    CONSTRAINT "Enrollment_userId_fkey" 
+        FOREIGN KEY ("userId") REFERENCES "public"."User"("id") 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Enrollment_courseId_fkey" 
+        FOREIGN KEY ("courseId") REFERENCES "public"."Course"("id") 
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+-- Create indexes for better performance
+CREATE INDEX "Enrollment_userId_idx" ON "public"."Enrollment" ("userId");
+CREATE INDEX "Enrollment_courseId_idx" ON "public"."Enrollment" ("courseId");
+CREATE INDEX "Enrollment_status_idx" ON "public"."Enrollment" ("status");
+CREATE INDEX "Enrollment_enrolledAt_idx" ON "public"."Enrollment" ("enrolledAt");
+
+-- Add comments for documentation
+COMMENT ON TABLE "public"."Enrollment" IS 'การลงทะเบียนเรียนของผู้ใช้';
+COMMENT ON COLUMN "public"."Enrollment"."progress" IS 'ความคืบหน้าการเรียน (0-100)';
+COMMENT ON COLUMN "public"."Enrollment"."viewedContentIds" IS 'รายการ content IDs ที่ดูแล้ว';
+COMMENT ON COLUMN "public"."Enrollment"."completedAt" IS 'วันที่เรียนจบคอร์ส';
+COMMENT ON COLUMN "public"."Enrollment"."lastAccessedAt" IS 'เข้าเรียนครั้งล่าสุดเมื่อไหร่';
+
+-- Create a function to automatically update lastAccessedAt when enrollment is updated
+CREATE OR REPLACE FUNCTION update_enrollment_last_accessed()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."lastAccessedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger to automatically update lastAccessedAt
+CREATE TRIGGER update_enrollment_last_accessed_trigger
+    BEFORE UPDATE ON "public"."Enrollment"
+    FOR EACH ROW
+    EXECUTE FUNCTION update_enrollment_last_accessed();
 
 -- CreateTable
 CREATE TABLE "public"."Category" (
