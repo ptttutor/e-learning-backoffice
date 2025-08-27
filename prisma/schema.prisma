@@ -17,6 +17,7 @@ model User {
   courses     Course[]     @relation("InstructorCourses")
   enrollments Enrollment[]
   orders      Order[]
+  posts       Post[]       @relation("AuthorPosts")
 }
 
 model Course {
@@ -123,4 +124,54 @@ enum EnrollStatus {
   ACTIVE
   COMPLETED
   CANCELED
+}
+
+model PostType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+}
+
+model Post {
+  id                  String    @id @default(uuid())
+  title               String
+  content             String?
+  excerpt             String?
+  imageUrl            String?
+  imageUrlMobileMode  String?
+  slug                String?   @unique
+  isActive            Boolean   @default(true)
+  isFeatured          Boolean   @default(false)
+  publishedAt         DateTime?
+  authorId            String
+  postTypeId          String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  author              User      @relation("AuthorPosts", fields: [authorId], references: [id])
+  postType            PostType  @relation(fields: [postTypeId], references: [id])
+  tags                PostTag[]
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  color     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  posts     PostTag[]
+}
+
+model PostTag {
+  id     String @id @default(uuid())
+  postId String
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
 }

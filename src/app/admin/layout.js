@@ -22,6 +22,21 @@ const menuItems = [
     href: "/admin/subjects",
   },
   {
+    key: "/admin/posts",
+    label: "โพสต์",
+    href: "/admin/posts",
+  },
+  {
+    key: "/admin/post-types",
+    label: "ประเภทโพสต์",
+    href: "/admin/post-types",
+  },
+  {
+    key: "/admin/tags",
+    label: "แท็ก",
+    href: "/admin/tags",
+  },
+  {
     key: "/admin/users",
     label: "ผู้ใช้",
     href: "/admin/users",
