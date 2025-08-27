@@ -8,16 +8,17 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  name        String?
-  role        Role         @default(STUDENT)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  courses     Course[]     @relation("InstructorCourses")
-  enrollments Enrollment[]
-  orders      Order[]
-  posts       Post[]       @relation("AuthorPosts")
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String?
+  role         Role          @default(STUDENT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  courses      Course[]      @relation("InstructorCourses")
+  enrollments  Enrollment[]
+  orders       Order[]
+  posts        Post[]        @relation("AuthorPosts")
+  ebookReviews EbookReview[]
 }
 
 model Course {
@@ -79,15 +80,20 @@ model Category {
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  userId    String
-  courseId  String
-  status    String
-  total     Float
-  createdAt DateTime @default(now())
-  course    Course   @relation(fields: [courseId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  payment   Payment?
+  id           String    @id @default(uuid())
+  userId       String
+  courseId     String?
+  ebookId      String?
+  orderType    OrderType @default(COURSE)
+  status       String
+  total        Float
+  shippingFee  Float     @default(0)
+  createdAt    DateTime  @default(now())
+  course       Course?   @relation(fields: [courseId], references: [id])
+  ebook        Ebook?    @relation(fields: [ebookId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  payment      Payment?
+  shipping     Shipping?
 }
 
 model Payment {
@@ -126,6 +132,25 @@ enum EnrollStatus {
   CANCELED
 }
 
+enum OrderType {
+  COURSE
+  EBOOK
+}
+
+enum EbookFormat {
+  PDF
+  EPUB
+  MOBI
+}
+
+enum ShippingStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 model PostType {
   id          String   @id @default(uuid())
   name        String   @unique
@@ -153,25 +178,86 @@ model Post {
   updatedAt           DateTime  @updatedAt
   author              User      @relation("AuthorPosts", fields: [authorId], references: [id])
   postType            PostType  @relation(fields: [postTypeId], references: [id])
-  tags                PostTag[]
 }
 
-model Tag {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  slug      String    @unique
-  color     String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  posts     PostTag[]
+
+
+
+
+model Ebook {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?
+  author          String
+  isbn            String?       @unique
+  price           Float
+  discountPrice   Float?
+  coverImageUrl   String?
+  previewUrl      String?
+  fileUrl         String?
+  fileSize        Int?
+  pageCount       Int?
+  language        String        @default("th")
+  format          EbookFormat   @default(PDF)
+  isPhysical      Boolean       @default(false)
+  weight          Float?
+  dimensions      String?
+  stock           Int           @default(0)
+  isActive        Boolean       @default(true)
+  isFeatured      Boolean       @default(false)
+  publishedAt     DateTime?
+  categoryId      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  category        EbookCategory? @relation(fields: [categoryId], references: [id])
+  orders          Order[]
+  reviews         EbookReview[]
 }
 
-model PostTag {
-  id     String @id @default(uuid())
-  postId String
-  tagId  String
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+model EbookCategory {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ebooks      Ebook[]
+}
 
-  @@unique([postId, tagId])
+
+
+model EbookReview {
+  id        String   @id @default(uuid())
+  ebookId   String
+  userId    String
+  rating    Int      @default(5)
+  comment   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ebook     Ebook    @relation(fields: [ebookId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([ebookId, userId])
+}
+
+model Shipping {
+  id              String         @id @default(uuid())
+  orderId         String         @unique
+  recipientName   String
+  recipientPhone  String
+  address         String
+  district        String
+  province        String
+  postalCode      String
+  country         String         @default("Thailand")
+  shippingMethod  String
+  trackingNumber  String?
+  status          ShippingStatus @default(PENDING)
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  order           Order          @relation(fields: [orderId], references: [id])
 }

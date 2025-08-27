@@ -80,18 +80,7 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // สร้าง Tag
-  await prisma.tag.createMany({
-    data: [
-      { id: 't1', name: 'JavaScript', slug: 'javascript', color: '#f7df1e', isActive: true },
-      { id: 't2', name: 'React', slug: 'react', color: '#61dafb', isActive: true },
-      { id: 't3', name: 'Next.js', slug: 'nextjs', color: '#000000', isActive: true },
-      { id: 't4', name: 'CSS', slug: 'css', color: '#1572b6', isActive: true },
-      { id: 't5', name: 'Design', slug: 'design', color: '#ff6b6b', isActive: true },
-      { id: 't6', name: 'Tutorial', slug: 'tutorial', color: '#4ecdc4', isActive: true },
-    ],
-    skipDuplicates: true,
-  });
+
 
   // สร้าง Post
   await prisma.post.createMany({
@@ -142,20 +131,125 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // สร้าง PostTag relationships
-  await prisma.postTag.createMany({
+
+
+  // สร้าง EbookCategory
+  await prisma.ebookCategory.createMany({
     data: [
-      { postId: 'p1', tagId: 't3' }, // Next.js
-      { postId: 'p1', tagId: 't2' }, // React
-      { postId: 'p1', tagId: 't6' }, // Tutorial
-      { postId: 'p2', tagId: 't5' }, // Design
-      { postId: 'p2', tagId: 't4' }, // CSS
-      { postId: 'p2', tagId: 't6' }, // Tutorial
+      { id: 'ec1', name: 'การเขียนโปรแกรม', description: 'หนังสือเกี่ยวกับการเขียนโปรแกรม', isActive: true },
+      { id: 'ec2', name: 'การออกแบบ', description: 'หนังสือเกี่ยวกับการออกแบบ', isActive: true },
+      { id: 'ec3', name: 'ธุรกิจ', description: 'หนังสือเกี่ยวกับธุรกิจ', isActive: true },
+      { id: 'ec4', name: 'การพัฒนาตนเอง', description: 'หนังสือเกี่ยวกับการพัฒนาตนเอง', isActive: true },
     ],
     skipDuplicates: true,
   });
 
-  console.log('Seeded users, categories, courses, chapters, contents, posts successfully');
+  // สร้าง Ebook
+  await prisma.ebook.createMany({
+    data: [
+      {
+        id: 'eb1',
+        title: 'เรียนรู้ JavaScript ฉบับสมบูรณ์',
+        description: 'หนังสือสำหรับเรียนรู้ JavaScript ตั้งแต่พื้นฐานจนถึงขั้นสูง',
+        author: 'นาย ดีเวลอปเปอร์',
+        isbn: '978-616-123-456-7',
+        price: 590,
+        discountPrice: 490,
+        coverImageUrl: '/images/ebooks/javascript-book.jpg',
+        previewUrl: '/files/ebooks/javascript-preview.pdf',
+        fileUrl: '/files/ebooks/javascript-full.pdf',
+        fileSize: 15728640, // 15MB
+        pageCount: 350,
+        language: 'th',
+        format: 'PDF',
+        isPhysical: true,
+        weight: 0.8,
+        dimensions: '21x29.7x2 cm',
+        stock: 50,
+        isActive: true,
+        isFeatured: true,
+        publishedAt: new Date(),
+        categoryId: 'ec1',
+      },
+      {
+        id: 'eb2',
+        title: 'React Hooks ในทางปฏิบัติ',
+        description: 'เรียนรู้การใช้ React Hooks อย่างมีประสิทธิภาพ',
+        author: 'นางสาว รีแอคเตอร์',
+        isbn: '978-616-123-457-8',
+        price: 450,
+        coverImageUrl: '/images/ebooks/react-hooks.jpg',
+        fileUrl: '/files/ebooks/react-hooks.epub',
+        fileSize: 8388608, // 8MB
+        pageCount: 280,
+        language: 'th',
+        format: 'EPUB',
+        isPhysical: false,
+        stock: 999,
+        isActive: true,
+        isFeatured: false,
+        publishedAt: new Date(),
+        categoryId: 'ec1',
+      },
+      {
+        id: 'eb3',
+        title: 'UI/UX Design Principles',
+        description: 'หลักการออกแบบ UI/UX ที่ดี',
+        author: 'คุณ ดีไซเนอร์',
+        isbn: '978-616-123-458-9',
+        price: 390,
+        discountPrice: 320,
+        coverImageUrl: '/images/ebooks/ui-ux-design.jpg',
+        previewUrl: '/files/ebooks/ui-ux-preview.pdf',
+        fileUrl: '/files/ebooks/ui-ux-full.pdf',
+        fileSize: 12582912, // 12MB
+        pageCount: 220,
+        language: 'th',
+        format: 'PDF',
+        isPhysical: true,
+        weight: 0.6,
+        dimensions: '21x29.7x1.5 cm',
+        stock: 30,
+        isActive: true,
+        isFeatured: true,
+        publishedAt: new Date(),
+        categoryId: 'ec2',
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+
+
+  // สร้าง EbookReview
+  await prisma.ebookReview.createMany({
+    data: [
+      {
+        ebookId: 'eb1',
+        userId: 'u3',
+        rating: 5,
+        comment: 'หนังสือดีมาก เข้าใจง่าย อธิบายชัดเจน',
+        isActive: true,
+      },
+      {
+        ebookId: 'eb2',
+        userId: 'u3',
+        rating: 4,
+        comment: 'เนื้อหาดี แต่อยากให้มีตัวอย่างเพิ่มเติม',
+        isActive: true,
+      },
+      {
+        ebookId: 'eb3',
+        userId: 'u3',
+        rating: 5,
+        comment: 'หนังสือออกแบบที่ดีที่สุดเล่มหนึ่ง',
+        isActive: true,
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log('Seeded users, categories, courses, chapters, contents, posts, ebooks successfully');
 }
 
 main()

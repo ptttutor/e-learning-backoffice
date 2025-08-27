@@ -22,6 +22,21 @@ const menuItems = [
     href: "/admin/subjects",
   },
   {
+    key: "/admin/ebooks",
+    label: "eBooks",
+    href: "/admin/ebooks",
+  },
+  {
+    key: "/admin/ebook-categories",
+    label: "หมวดหมู่ eBook",
+    href: "/admin/ebook-categories",
+  },
+  {
+    key: "/admin/orders",
+    label: "คำสั่งซื้อ",
+    href: "/admin/orders",
+  },
+  {
     key: "/admin/posts",
     label: "โพสต์",
     href: "/admin/posts",
@@ -31,11 +46,7 @@ const menuItems = [
     label: "ประเภทโพสต์",
     href: "/admin/post-types",
   },
-  {
-    key: "/admin/tags",
-    label: "แท็ก",
-    href: "/admin/tags",
-  },
+
   {
     key: "/admin/users",
     label: "ผู้ใช้",

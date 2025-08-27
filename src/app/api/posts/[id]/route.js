@@ -29,18 +29,6 @@ export async function GET(request, { params }) {
             name: true,
             description: true
           }
-        },
-        tags: {
-          include: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                color: true
-              }
-            }
-          }
         }
       }
     });
@@ -55,15 +43,9 @@ export async function GET(request, { params }) {
       );
     }
 
-    // แปลงข้อมูล tags ให้อ่านง่ายขึ้น
-    const formattedPost = {
-      ...post,
-      tags: post.tags.map(postTag => postTag.tag)
-    };
-
     return NextResponse.json({
       success: true,
-      data: formattedPost
+      data: post
     });
 
   } catch (error) {

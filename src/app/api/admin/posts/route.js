@@ -20,18 +20,7 @@ export async function GET() {
             name: true
           }
         },
-        tags: {
-          include: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                color: true
-              }
-            }
-          }
-        }
+
       },
       orderBy: {
         createdAt: 'desc'
