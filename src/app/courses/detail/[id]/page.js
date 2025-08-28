@@ -23,8 +23,7 @@ import {
 const { Title, Paragraph } = Typography;
 
 async function getCourse(id) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/courses/${id}`, {
+  const res = await fetch(`/api/courses/${id}`, {
     cache: "no-store",
   });
   const data = await res.json();
@@ -121,18 +120,7 @@ export default function CoursePaymentPage({ params }) {
         <Divider />
 
         <div style={{ textAlign: "center", marginTop: 32 }}>
-          {course.price ? (
-            <BuyCourseButton course={course} />
-          ) : (
-            <Button
-              type="primary"
-              size="large"
-              style={{ minWidth: 200 }}
-              href={`/courses/${id}/enroll`}
-            >
-              เข้าเรียนฟรี
-            </Button>
-          )}
+          <BuyCourseButton course={course} />
         </div>
 
         <div style={{ textAlign: "center", marginTop: 24 }}>
@@ -148,7 +136,10 @@ export default function CoursePaymentPage({ params }) {
 // ปุ่มซื้อคอร์ส
 function BuyCourseButton({ course }) {
   const [loading, setLoading] = React.useState(false);
-  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
+  const router =
+    typeof window !== "undefined"
+      ? require("next/navigation").useRouter()
+      : null;
 
   // ใช้ AuthContext เพื่อดึงข้อมูลผู้ใช้
   const { user, isAuthenticated } = useAuth();
@@ -156,10 +147,10 @@ function BuyCourseButton({ course }) {
   const handleBuy = async () => {
     if (!isAuthenticated || !user) {
       // ถ้าไม่ได้ login ให้ redirect ไปหน้า login
-      if (router) router.push('/login?redirect=/courses/detail/' + course.id);
+      if (router) router.push("/login?redirect=/courses/detail/" + course.id);
       return;
     }
-    
+
     setLoading(true);
     try {
       const res = await fetch("/api/courses/purchase", {
@@ -168,20 +159,29 @@ function BuyCourseButton({ course }) {
         body: JSON.stringify({ userId: user.id, courseId: course.id }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
-        // ไปหน้าชำระเงิน
-        if (router) router.push(`/payment/${data.data.orderId}`);
+        // ถ้าเป็นคอร์สฟรี หรือ enrollment สำเร็จแล้ว ไปหน้า success
+        if (data.data.enrollmentId) {
+          if (router)
+            router.push(`/order-success?orderId=${data.data.orderId}`);
+        } else {
+          // ถ้าเป็นคอร์สเสียเงิน ไปหน้าชำระเงิน
+          if (router) router.push(`/payment/${data.data.orderId}`);
+        }
       } else {
-        alert(data.error || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
+        alert(data.error || "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ");
       }
     } catch (error) {
-      console.error('Purchase error:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
+      console.error("Purchase error:", error);
+      alert("เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ");
     } finally {
       setLoading(false);
     }
   };
+
+  const buttonText =
+    course.price && course.price > 0 ? "ซื้อคอร์ส" : "เข้าเรียนฟรี";
 
   return (
     <Button
@@ -191,7 +191,7 @@ function BuyCourseButton({ course }) {
       loading={loading}
       onClick={handleBuy}
     >
-      ซื้อคอร์ส
+      {buttonText}
     </Button>
   );
 }

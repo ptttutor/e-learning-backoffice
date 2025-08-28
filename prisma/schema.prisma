@@ -100,13 +100,18 @@ model Order {
 }
 
 model Payment {
-  id      String    @id @default(uuid())
-  orderId String    @unique
-  method  String
-  status  String
-  paidAt  DateTime?
-  ref     String?
-  order   Order     @relation(fields: [orderId], references: [id])
+  id         String    @id @default(uuid())
+  orderId    String    @unique
+  method     String
+  status     String
+  paidAt     DateTime?
+  ref        String?
+  slipUrl    String?
+  uploadedAt DateTime?
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
+  order      Order     @relation(fields: [orderId], references: [id])
 }
 
 enum Role {

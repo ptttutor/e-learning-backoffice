@@ -32,22 +32,19 @@ const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
 async function getCourse(courseId) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/courses/${courseId}`, { cache: 'no-store' });
+  const res = await fetch(`/api/courses/${courseId}`, { cache: 'no-store' });
   const data = await res.json();
   return data.data;
 }
 
 async function getChapters(courseId) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/admin/chapters?courseId=${courseId}`, { cache: 'no-store' });
+  const res = await fetch(`/api/admin/chapters?courseId=${courseId}`, { cache: 'no-store' });
   const data = await res.json();
   return data.data || [];
 }
 
 async function getContents(chapterId) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/admin/contents?chapterId=${chapterId}`, { cache: 'no-store' });
+  const res = await fetch(`/api/admin/contents?chapterId=${chapterId}`, { cache: 'no-store' });
   const data = await res.json();
   return data.data || [];
 }

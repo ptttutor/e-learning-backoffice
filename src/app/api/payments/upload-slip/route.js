@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { writeFile } from "fs/promises";
+import fs from "fs";
 import path from "path";
 
 export async function POST(request) {
@@ -74,6 +75,11 @@ export async function POST(request) {
     const publicPath = `/uploads/payment-slips/${fileName}`;
 
     try {
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
       // Convert file to buffer and save
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
@@ -116,8 +122,17 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Upload slip error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json(
-      { success: false, error: "เกิดข้อผิดพลาดในการอัพโหลดหลักฐาน" },
+      { 
+        success: false, 
+        error: "เกิดข้อผิดพลาดในการอัพโหลดหลักฐาน",
+        details: error.message 
+      },
       { status: 500 }
     );
   }

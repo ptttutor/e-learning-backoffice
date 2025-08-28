@@ -56,47 +56,89 @@ export async function POST(request) {
       );
     }
 
-    // Create order
+    // Handle free courses
+    if (!course.price || course.price === 0) {
+      // Create completed order for free course
+      const order = await prisma.order.create({
+        data: {
+          userId: user.id,
+          courseId: course.id,
+          orderType: "COURSE",
+          status: "COMPLETED",
+          total: 0,
+          shippingFee: 0,
+        },
+      });
+
+      // Create payment record for free course
+      const payment = await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          method: "free",
+          status: "COMPLETED",
+          paidAt: new Date(),
+          ref: `FREE${Date.now()}${Math.random()
+            .toString(36)
+            .substring(2, 7)
+            .toUpperCase()}`,
+        },
+      });
+
+      // Create enrollment for free course
+      const enrollment = await prisma.enrollment.create({
+        data: {
+          userId: user.id,
+          courseId: course.id,
+          status: "ACTIVE",
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "ลงทะเบียนคอร์สฟรีสำเร็จ",
+        data: {
+          orderId: order.id,
+          enrollmentId: enrollment.id,
+          course: {
+            id: course.id,
+            title: course.title,
+            price: course.price,
+          },
+        },
+      });
+    }
+
+    // Handle paid courses - create pending order
     const order = await prisma.order.create({
       data: {
         userId: user.id,
         courseId: course.id,
         orderType: "COURSE",
-        status: "COMPLETED", // For direct purchase, mark as completed
-        total: course.price || 0,
+        status: "PENDING", // Wait for payment
+        total: course.price,
         shippingFee: 0,
       },
     });
 
-    // Create payment record
+    // Create pending payment record
     const payment = await prisma.payment.create({
       data: {
         orderId: order.id,
-        method: "direct", // Direct purchase method
-        status: "COMPLETED",
-        paidAt: new Date(),
-        ref: `DIR${Date.now()}${Math.random()
+        method: "bank_transfer",
+        status: "PENDING",
+        ref: `COURSE${Date.now()}${Math.random()
           .toString(36)
           .substring(2, 7)
           .toUpperCase()}`,
       },
     });
 
-    // Create enrollment
-    const enrollment = await prisma.enrollment.create({
-      data: {
-        userId: user.id,
-        courseId: course.id,
-        status: "ACTIVE",
-      },
-    });
-
     return NextResponse.json({
       success: true,
-      message: "ลงทะเบียนคอร์สสำเร็จ",
+      message: "สร้างคำสั่งซื้อสำเร็จ กรุณาชำระเงินและอัพโหลดหลักฐาน",
       data: {
         orderId: order.id,
-        enrollmentId: enrollment.id,
+        paymentId: payment.id,
         course: {
           id: course.id,
           title: course.title,
