@@ -171,6 +171,20 @@ export default function CartPage() {
                       </p>
                     )}
 
+                    {item.isPhysical && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '4px 8px',
+                        backgroundColor: '#f6ffed',
+                        border: '1px solid #b7eb8f',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        color: '#389e0d'
+                      }}>
+                        📦 สินค้าต้องจัดส่ง
+                      </div>
+                    )}
+
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 

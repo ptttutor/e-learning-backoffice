@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { customerInfo, billingAddress, items, paymentMethod, total } = body;
+    const { customerInfo, billingAddress, shippingAddress, items, paymentMethod, total } = body;
 
     // Validate required fields
     if (!customerInfo?.email || !items?.length || !total) {
@@ -72,16 +72,16 @@ export async function POST(request) {
       });
 
       // Create shipping record if needed (for physical books)
-      if (item.type === 'ebook' && itemData.isPhysical && billingAddress.address) {
+      if (item.type === 'ebook' && itemData.isPhysical && shippingAddress) {
         await prisma.shipping.create({
           data: {
             orderId: order.id,
-            recipientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
-            recipientPhone: customerInfo.phone || '',
-            address: billingAddress.address || '',
-            district: billingAddress.city || '',
-            province: billingAddress.province || '',
-            postalCode: billingAddress.postalCode || '',
+            recipientName: shippingAddress.name || `${customerInfo.firstName} ${customerInfo.lastName}`,
+            recipientPhone: shippingAddress.phone || customerInfo.phone || '',
+            address: shippingAddress.address || '',
+            district: shippingAddress.city || '',
+            province: shippingAddress.province || '',
+            postalCode: shippingAddress.postalCode || '',
             shippingMethod: 'standard',
             status: 'PENDING'
           }

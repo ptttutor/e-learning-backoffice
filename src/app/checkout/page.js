@@ -22,6 +22,15 @@ export default function CheckoutPage() {
     province: '',
     postalCode: '',
     
+    // Shipping Address
+    needShipping: false,
+    shippingAddress: '',
+    shippingCity: '',
+    shippingProvince: '',
+    shippingPostalCode: '',
+    shippingName: '',
+    shippingPhone: '',
+    
     // Payment Method
     paymentMethod: 'bank_transfer',
     
@@ -38,6 +47,17 @@ export default function CheckoutPage() {
       router.push('/cart');
     }
   }, [items, router]);
+
+  // Check if any item needs shipping
+  useEffect(() => {
+    const hasPhysicalItems = items.some(item => 
+      item.type === 'ebook' && item.isPhysical
+    );
+    setFormData(prev => ({
+      ...prev,
+      needShipping: hasPhysicalItems
+    }));
+  }, [items]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
@@ -76,6 +96,25 @@ export default function CheckoutPage() {
     if (!phoneRegex.test(formData.phone.replace(/[-\s]/g, ''))) {
       setError('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)');
       return false;
+    }
+
+    // Shipping address validation
+    if (formData.needShipping) {
+      const shippingRequired = ['shippingName', 'shippingPhone', 'shippingAddress', 'shippingCity', 'shippingProvince', 'shippingPostalCode'];
+      
+      for (const field of shippingRequired) {
+        if (!formData[field].trim()) {
+          setError(`กรุณากรอก${getShippingFieldLabel(field)}`);
+          return false;
+        }
+      }
+
+      // Shipping phone validation
+      const shippingPhoneRegex = /^[0-9]{10}$/;
+      if (!shippingPhoneRegex.test(formData.shippingPhone.replace(/[-\s]/g, ''))) {
+        setError('กรุณากรอกเบอร์โทรผู้รับให้ถูกต้อง (10 หลัก)');
+        return false;
+      }
     }
 
     // Bank transfer validation
@@ -119,6 +158,18 @@ export default function CheckoutPage() {
     return labels[field] || field;
   };
 
+  const getShippingFieldLabel = (field) => {
+    const labels = {
+      shippingName: 'ชื่อผู้รับ',
+      shippingPhone: 'เบอร์โทรผู้รับ',
+      shippingAddress: 'ที่อยู่จัดส่ง',
+      shippingCity: 'เมือง/อำเภอ',
+      shippingProvince: 'จังหวัด',
+      shippingPostalCode: 'รหัสไปรษณีย์'
+    };
+    return labels[field] || field;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -144,6 +195,14 @@ export default function CheckoutPage() {
           province: formData.province,
           postalCode: formData.postalCode
         },
+        shippingAddress: formData.needShipping ? {
+          address: formData.shippingAddress,
+          city: formData.shippingCity,
+          province: formData.shippingProvince,
+          postalCode: formData.shippingPostalCode,
+          name: formData.shippingName,
+          phone: formData.shippingPhone
+        } : null,
         items: items.map(item => ({
           id: item.id,
           type: item.type,
@@ -323,6 +382,158 @@ export default function CheckoutPage() {
                   />
                 </div>
               </div>
+
+              {/* Shipping Address (if needed) */}
+              {formData.needShipping && (
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '24px',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  marginBottom: '24px',
+                  border: '2px solid #52c41a'
+                }}>
+                  <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 'bold', color: '#52c41a' }}>
+                    🚚 ที่อยู่สำหรับจัดส่งสินค้า
+                  </h2>
+                  
+                  <div style={{
+                    backgroundColor: '#f6ffed',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    marginBottom: '20px',
+                    border: '1px solid #b7eb8f'
+                  }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#389e0d' }}>
+                      📦 คำสั่งซื้อของคุณมีหนังสือกายภาพ กรุณากรอกที่อยู่สำหรับจัดส่ง
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                        ชื่อผู้รับ *
+                      </label>
+                      <input
+                        type="text"
+                        name="shippingName"
+                        value={formData.shippingName}
+                        onChange={handleInputChange}
+                        required={formData.needShipping}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '1px solid #52c41a',
+                          borderRadius: '6px',
+                          fontSize: '16px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                        เบอร์โทรผู้รับ *
+                      </label>
+                      <input
+                        type="tel"
+                        name="shippingPhone"
+                        value={formData.shippingPhone}
+                        onChange={handleInputChange}
+                        required={formData.needShipping}
+                        placeholder="0812345678"
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '1px solid #52c41a',
+                          borderRadius: '6px',
+                          fontSize: '16px'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                      ที่อยู่จัดส่ง *
+                    </label>
+                    <textarea
+                      name="shippingAddress"
+                      value={formData.shippingAddress}
+                      onChange={handleInputChange}
+                      required={formData.needShipping}
+                      rows="3"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #52c41a',
+                        borderRadius: '6px',
+                        fontSize: '16px',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                        เมือง/อำเภอ *
+                      </label>
+                      <input
+                        type="text"
+                        name="shippingCity"
+                        value={formData.shippingCity}
+                        onChange={handleInputChange}
+                        required={formData.needShipping}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '1px solid #52c41a',
+                          borderRadius: '6px',
+                          fontSize: '16px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                        จังหวัด *
+                      </label>
+                      <input
+                        type="text"
+                        name="shippingProvince"
+                        value={formData.shippingProvince}
+                        onChange={handleInputChange}
+                        required={formData.needShipping}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '1px solid #52c41a',
+                          borderRadius: '6px',
+                          fontSize: '16px'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                      รหัสไปรษณีย์ *
+                    </label>
+                    <input
+                      type="text"
+                      name="shippingPostalCode"
+                      value={formData.shippingPostalCode}
+                      onChange={handleInputChange}
+                      required={formData.needShipping}
+                      style={{
+                        width: '200px',
+                        padding: '12px',
+                        border: '1px solid #52c41a',
+                        borderRadius: '6px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Billing Address */}
               <div style={{
@@ -726,6 +937,18 @@ export default function CheckoutPage() {
                         }}>
                           {item.quantity > 1 && `${item.quantity} × `}
                           {formatPrice(item.discountPrice || item.price)}
+                          {item.isPhysical && (
+                            <span style={{ 
+                              marginLeft: '8px',
+                              padding: '2px 4px',
+                              backgroundColor: '#52c41a',
+                              color: 'white',
+                              borderRadius: '2px',
+                              fontSize: '10px'
+                            }}>
+                              📦
+                            </span>
+                          )}
                         </div>
                         <div style={{ 
                           fontSize: '14px', 
@@ -742,14 +965,49 @@ export default function CheckoutPage() {
                 <div style={{
                   borderTop: '2px solid #dee2e6',
                   paddingTop: '16px',
-                  marginBottom: '24px'
+                  marginBottom: '16px'
                 }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px'
+                  }}>
+                    <span>จำนวนสินค้า:</span>
+                    <span>{items.reduce((sum, item) => sum + item.quantity, 0)} รายการ</span>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px'
+                  }}>
+                    <span>ค่าจัดส่ง:</span>
+                    <span style={{ color: '#28a745' }}>
+                      {formData.needShipping ? 'ฟรี (ภายในประเทศ)' : 'ไม่มี'}
+                    </span>
+                  </div>
+
+                  {formData.needShipping && (
+                    <div style={{
+                      padding: '8px',
+                      backgroundColor: '#f6ffed',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: '#389e0d',
+                      marginBottom: '8px'
+                    }}>
+                      📦 มีสินค้าที่ต้องจัดส่ง - จัดส่งฟรีภายในประเทศไทย
+                    </div>
+                  )}
+
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     fontSize: '20px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    borderTop: '1px solid #dee2e6',
+                    paddingTop: '8px'
                   }}>
                     <span>ยอดรวมทั้งสิ้น:</span>
                     <span style={{ color: '#28a745' }}>

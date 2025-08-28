@@ -70,6 +70,7 @@ export default function EbookDetailPage() {
       price: ebook.price,
       discountPrice: ebook.discountPrice,
       coverImageUrl: ebook.coverImageUrl,
+      isPhysical: ebook.isPhysical,
       quantity: 1
     };
     
