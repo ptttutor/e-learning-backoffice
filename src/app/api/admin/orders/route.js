@@ -62,7 +62,10 @@ export async function GET(request) {
             method: true,
             status: true,
             paidAt: true,
-            ref: true
+            ref: true,
+            slipUrl: true,
+            uploadedAt: true,
+            verifiedAt: true
           }
         },
         shipping: {
