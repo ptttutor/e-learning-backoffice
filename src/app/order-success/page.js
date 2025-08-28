@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [orderDetails, setOrderDetails] = useState(null);
@@ -220,7 +220,7 @@ export default function OrderSuccessPage() {
                   เข้าถึงเนื้อหา
                 </div>
                 <div style={{ color: '#6c757d', fontSize: '14px' }}>
-                  สำหรับ eBook: หลังยืนยันการชำระเงินแล้ว คุณสามารถดาวน์โหลดได้ในหน้า "คำสั่งซื้อของฉัน&quot;<br/>
+                  สำหรับ eBook: หลังยืนยันการชำระเงินแล้ว คุณสามารถดาวน์โหลดได้ในหน้า &quot;คำสั่งซื้อของฉัน&quot;<br/>
                   สำหรับหนังสือกายภาพ: เราจะจัดส่งภายใน 2-3 วันทำการหลังยืนยันการชำระเงิน
                 </div>
               </div>
@@ -278,5 +278,26 @@ export default function OrderSuccessPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
+          <div>กำลังโหลด...</div>
+        </div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

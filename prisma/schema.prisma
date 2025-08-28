@@ -71,6 +71,8 @@ model Enrollment {
   enrolledAt DateTime     @default(now())
   course     Course       @relation(fields: [courseId], references: [id])
   user       User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, courseId])
 }
 
 model Category {

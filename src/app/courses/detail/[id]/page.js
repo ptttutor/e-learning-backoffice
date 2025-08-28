@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useAuth } from "@/app/contexts/AuthContext";
 import Link from "next/link";
 import {
   Card,
@@ -155,25 +156,22 @@ function BuyCourseButton({ course }) {
   const [result, setResult] = React.useState(null);
   const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
 
-  // ดึง userId จาก localStorage (หลัง login)
-  let userId = null;
-  if (typeof window !== 'undefined') {
-    userId = localStorage.getItem('userId');
-  }
+  // ใช้ AuthContext เพื่อดึงข้อมูลผู้ใช้
+  const { user, isAuthenticated } = useAuth();
 
   const handleBuy = async () => {
-    if (!userId) {
+    if (!isAuthenticated || !user) {
       // ถ้าไม่ได้ login ให้ redirect ไปหน้า login
-      if (router) router.push('/login');
+      if (router) router.push('/login?redirect=/courses/detail/' + course.id);
       return;
     }
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/courses/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, courseId: course.id }),
+        body: JSON.stringify({ userId: user.id, courseId: course.id }),
       });
       const data = await res.json();
       if (res.ok) {
