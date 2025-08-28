@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
   const { items, getCartTotal, clearCart } = useCart();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,12 +43,29 @@ export default function CheckoutPage() {
     transferAmount: ''
   });
 
-  // Redirect if cart is empty
+  // Redirect if not authenticated or cart is empty
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+      return;
+    }
+    
     if (items.length === 0) {
       router.push('/cart');
     }
-  }, [items, router]);
+  }, [items, router, isAuthenticated, authLoading]);
+
+  // Pre-fill form with user data
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.name?.split(' ')[0] || '',
+        lastName: user.name?.split(' ').slice(1).join(' ') || '',
+        email: user.email || ''
+      }));
+    }
+  }, [user]);
 
   // Check if any item needs shipping
   useEffect(() => {
@@ -183,6 +202,7 @@ export default function CheckoutPage() {
     try {
       // Prepare order data
       const orderData = {
+        userId: user.id, // Add user ID to order
         customerInfo: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -240,7 +260,25 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0) {
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
+          <div style={{ fontSize: '18px', color: '#6c757d' }}>กำลังตรวจสอบการเข้าสู่ระบบ...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || items.length === 0) {
     return null; // Will redirect
   }
 

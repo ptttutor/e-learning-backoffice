@@ -1,10 +1,14 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 export default function ExamDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,10 +33,15 @@ export default function ExamDetailPage() {
   };
 
   useEffect(() => {
-    if (params.id) {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login?redirect=/exams');
+      return;
+    }
+    
+    if (params.id && isAuthenticated) {
       fetchExam();
     }
-  }, [fetchExam, params.id]); // Remove fetchExam from dependencies to avoid infinite loop
+  }, [params.id, isAuthenticated, authLoading, router, fetchExam]);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -75,7 +84,7 @@ export default function ExamDetailPage() {
     document.body.removeChild(link);
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -86,13 +95,15 @@ export default function ExamDetailPage() {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-          <div style={{ fontSize: '18px', color: '#6c757d' }}>กำลังโหลดข้อสอบ...</div>
+          <div style={{ fontSize: '18px', color: '#6c757d' }}>
+            {authLoading ? 'กำลังตรวจสอบการเข้าสู่ระบบ...' : 'กำลังโหลดข้อสอบ...'}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error || !exam) {
+  if (!isAuthenticated || error || !exam) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
         <div style={{ 

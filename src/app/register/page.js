@@ -4,15 +4,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { register } = useAuth();
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -28,11 +30,10 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
+    const result = await register(formData);
     
     if (result.success) {
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
-      router.push(redirect || '/dashboard');
+      router.push('/dashboard');
     } else {
       setError(result.error);
     }
@@ -59,21 +60,21 @@ export default function LoginPage() {
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
           <h1 style={{ 
             margin: '0 0 8px 0', 
             fontSize: '28px', 
             fontWeight: 'bold',
             color: '#212529'
           }}>
-            เข้าสู่ระบบ
+            สมัครสมาชิก
           </h1>
           <p style={{ 
             margin: 0, 
             color: '#6c757d',
             fontSize: '16px'
           }}>
-            เข้าสู่ระบบเพื่อจัดการข้อมูลส่วนตัว
+            สร้างบัญชีใหม่เพื่อเริ่มต้นการเรียนรู้
           </p>
         </div>
 
@@ -91,8 +92,38 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Register Form */}
         <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#495057'
+            }}>
+              👤 ชื่อ-นามสกุล
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e9ecef',
+                borderRadius: '8px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+              placeholder="ชื่อ นามสกุล"
+            />
+          </div>
+
           <div style={{ marginBottom: '20px' }}>
             <label style={{ 
               display: 'block', 
@@ -123,7 +154,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <label style={{ 
               display: 'block', 
               marginBottom: '8px',
@@ -138,6 +169,7 @@ export default function LoginPage() {
               value={formData.password}
               onChange={handleChange}
               required
+              minLength={6}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -149,7 +181,37 @@ export default function LoginPage() {
               }}
               onFocus={(e) => e.target.style.borderColor = '#007bff'}
               onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-              placeholder="รหัสผ่านของคุณ"
+              placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
+            />
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#495057'
+            }}>
+              🔒 ยืนยันรหัสผ่าน
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e9ecef',
+                borderRadius: '8px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+              placeholder="ยืนยันรหัสผ่าน"
             />
           </div>
 
@@ -159,7 +221,7 @@ export default function LoginPage() {
             style={{
               width: '100%',
               padding: '14px 24px',
-              backgroundColor: loading ? '#6c757d' : '#007bff',
+              backgroundColor: loading ? '#6c757d' : '#28a745',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -169,17 +231,17 @@ export default function LoginPage() {
               transition: 'background-color 0.2s'
             }}
             onMouseEnter={(e) => {
-              if (!loading) e.target.style.backgroundColor = '#0056b3';
+              if (!loading) e.target.style.backgroundColor = '#218838';
             }}
             onMouseLeave={(e) => {
-              if (!loading) e.target.style.backgroundColor = '#007bff';
+              if (!loading) e.target.style.backgroundColor = '#28a745';
             }}
           >
-            {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
+            {loading ? '⏳ กำลังสมัครสมาชิก...' : '🚀 สมัครสมาชิก'}
           </button>
         </form>
 
-        {/* Register Link */}
+        {/* Login Link */}
         <div style={{ 
           textAlign: 'center', 
           marginTop: '24px',
@@ -187,14 +249,14 @@ export default function LoginPage() {
           borderTop: '1px solid #e9ecef'
         }}>
           <p style={{ margin: '0 0 16px 0', color: '#6c757d' }}>
-            ยังไม่มีบัญชี?
+            มีบัญชีอยู่แล้ว?
           </p>
           <Link 
-            href="/register"
+            href="/login"
             style={{
               display: 'inline-block',
               padding: '12px 24px',
-              backgroundColor: '#28a745',
+              backgroundColor: '#007bff',
               color: 'white',
               textDecoration: 'none',
               borderRadius: '8px',
@@ -202,10 +264,10 @@ export default function LoginPage() {
               fontWeight: '500',
               transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
           >
-            📝 สมัครสมาชิก
+            🔐 เข้าสู่ระบบ
           </Link>
         </div>
 

@@ -1,28 +1,30 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    // For demo purposes, we'll use a simple email input
-    // In a real app, this would come from authentication
-    const email = prompt('กรุณาใส่อีเมลของคุณเพื่อดูคำสั่งซื้อ:');
-    if (email) {
-      setUserEmail(email);
-      fetchOrders(email);
-    } else {
-      setLoading(false);
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
     }
-  }, []);
+
+    if (user) {
+      fetchOrders(user.email);
+    }
+  }, [user, authLoading, router]);
 
   const fetchOrders = async (email) => {
     try {
-      const response = await fetch(`/api/orders?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`/api/orders?userId=${user.id}`);
       const result = await response.json();
       
       if (result.success) {
@@ -137,7 +139,7 @@ export default function MyOrdersPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -154,7 +156,7 @@ export default function MyOrdersPage() {
     );
   }
 
-  if (!userEmail) {
+  if (!user) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
         <div style={{ 
@@ -335,7 +337,7 @@ export default function MyOrdersPage() {
             color: '#6c757d',
             fontSize: '16px'
           }}>
-            อีเมล: {userEmail}
+            อีเมล: {user?.email}
           </p>
         </div>
       </div>

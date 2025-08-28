@@ -1,10 +1,12 @@
 "use client";
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   const formatPrice = (price) => {
@@ -19,6 +21,12 @@ export default function CartPage() {
       alert('ตะกร้าสินค้าว่างเปล่า');
       return;
     }
+    
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+      return;
+    }
+    
     router.push('/checkout');
   };
 
@@ -390,7 +398,7 @@ export default function CartPage() {
                   marginBottom: '12px'
                 }}
               >
-                🛒 ดำเนินการชำระเงิน
+                {isAuthenticated ? '🛒 ดำเนินการชำระเงิน' : '🔐 เข้าสู่ระบบเพื่อชำระเงิน'}
               </button>
 
               <Link 

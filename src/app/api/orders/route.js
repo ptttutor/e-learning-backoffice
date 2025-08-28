@@ -8,6 +8,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const {
+      userId,
       customerInfo,
       billingAddress,
       shippingAddress,
@@ -24,19 +25,33 @@ export async function POST(request) {
       );
     }
 
-    // Create or find user
-    let user = await prisma.user.findUnique({
-      where: { email: customerInfo.email },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: customerInfo.email,
-          name: `${customerInfo.firstName} ${customerInfo.lastName}`,
-          role: "STUDENT",
-        },
+    // Get user from userId or create/find by email
+    let user;
+    if (userId) {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
       });
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: "ไม่พบผู้ใช้งาน" },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Fallback to email-based user creation (for backward compatibility)
+      user = await prisma.user.findUnique({
+        where: { email: customerInfo.email },
+      });
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email: customerInfo.email,
+            name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+            role: "STUDENT",
+          },
+        });
+      }
     }
 
     // Process each item in the order
@@ -117,7 +132,7 @@ export async function POST(request) {
             status: "PENDING_VERIFICATION",
             ref: `TRF${Date.now()}${Math.random()
               .toString(36)
-              .substr(2, 5)
+              .substring(2, 7)
               .toUpperCase()}`,
           },
         })
@@ -145,7 +160,7 @@ export async function POST(request) {
             paidAt: new Date(),
             ref: `PAY${Date.now()}${Math.random()
               .toString(36)
-              .substr(2, 5)
+              .substring(2, 7)
               .toUpperCase()}`,
           },
         })
@@ -203,18 +218,24 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
     const email = searchParams.get("email");
 
-    if (!email) {
+    let user;
+    if (userId) {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+    } else if (email) {
+      user = await prisma.user.findUnique({
+        where: { email },
+      });
+    } else {
       return NextResponse.json(
-        { success: false, error: "กรุณาระบุอีเมล" },
+        { success: false, error: "กรุณาระบุ userId หรือ email" },
         { status: 400 }
       );
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
 
     if (!user) {
       return NextResponse.json({

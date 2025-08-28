@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import Link from 'next/link';
 
 export default function ExamsPage() {
@@ -8,6 +9,7 @@ export default function ExamsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     fetchCategories();
@@ -16,7 +18,7 @@ export default function ExamsPage() {
 
   useEffect(() => {
     fetchExams();
-  }, [selectedCategory, searchTerm]);
+  }, [selectedCategory, searchTerm, fetchExams]);
 
   const fetchCategories = async () => {
     try {
@@ -313,25 +315,47 @@ export default function ExamsPage() {
                     </div>
                   </div>
 
-                  <Link 
-                    href={`/exams/${exam.id}`}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px 24px',
-                      backgroundColor: '#007bff',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      fontWeight: '500',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
-                  >
-                    📖 ดูรายละเอียด
-                  </Link>
+                  {isAuthenticated ? (
+                    <Link 
+                      href={`/exams/${exam.id}`}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '12px 24px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        fontWeight: '500',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
+                    >
+                      📖 ดูรายละเอียด
+                    </Link>
+                  ) : (
+                    <Link 
+                      href="/login?redirect=/exams"
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '12px 24px',
+                        backgroundColor: '#6c757d',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        fontWeight: '500',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#5a6268'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#6c757d'}
+                    >
+                      🔐 เข้าสู่ระบบเพื่อดูข้อสอบ
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
