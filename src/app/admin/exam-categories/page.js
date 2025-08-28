@@ -1,23 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
-import { 
-  Table, 
-  Button, 
-  Space, 
-  Modal, 
-  Form, 
-  Input, 
-  message, 
-  Card, 
+import {
+  Table,
+  Button,
+  Space,
+  Modal,
+  Form,
+  Input,
+  message,
+  Card,
   Typography,
   Tag,
   Avatar,
   Badge,
 } from "antd";
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   FolderOutlined,
   FileTextOutlined,
   CalendarOutlined,
@@ -42,17 +42,17 @@ export default function AdminExamCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/exam-categories');
+      const response = await fetch("/api/admin/exam-categories");
       const result = await response.json();
-      
+
       if (result.success) {
         setCategories(result.data);
       } else {
         message.error(result.error);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      message.error('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+      console.error("Error fetching categories:", error);
+      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
     } finally {
       setLoading(false);
     }
@@ -68,25 +68,25 @@ export default function AdminExamCategoriesPage() {
     setEditingCategory(category);
     form.setFieldsValue({
       name: category.name,
-      description: category.description
+      description: category.description,
     });
     setModalVisible(true);
   };
 
   const handleSubmit = async (values) => {
     try {
-      const url = editingCategory 
+      const url = editingCategory
         ? `/api/admin/exam-categories/${editingCategory.id}`
-        : '/api/admin/exam-categories';
-      
-      const method = editingCategory ? 'PUT' : 'POST';
-      
+        : "/api/admin/exam-categories";
+
+      const method = editingCategory ? "PUT" : "POST";
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify(values),
       });
 
       const result = await response.json();
@@ -99,35 +99,35 @@ export default function AdminExamCategoriesPage() {
         message.error(result.error);
       }
     } catch (error) {
-      console.error('Error saving category:', error);
-      message.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      console.error("Error saving category:", error);
+      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
   const handleDelete = async (id, name) => {
     Modal.confirm({
-      title: 'ยืนยันการลบหมวดหมู่?',
+      title: "ยืนยันการลบหมวดหมู่?",
       content: `คุณต้องการลบหมวดหมู่ "${name}" ใช่หรือไม่?`,
-      okText: 'ลบ',
-      cancelText: 'ยกเลิก',
-      okType: 'danger',
+      okText: "ลบ",
+      cancelText: "ยกเลิก",
+      okType: "danger",
       onOk: async () => {
         try {
           const response = await fetch(`/api/admin/exam-categories/${id}`, {
-            method: 'DELETE'
+            method: "DELETE",
           });
 
           const result = await response.json();
 
           if (result.success) {
-            message.success(result.message || 'ลบหมวดหมู่สำเร็จ');
+            message.success(result.message || "ลบหมวดหมู่สำเร็จ");
             fetchCategories();
           } else {
             message.error(result.error);
           }
         } catch (error) {
-          console.error('Error deleting category:', error);
-          message.error('เกิดข้อผิดพลาดในการลบข้อมูล');
+          console.error("Error deleting category:", error);
+          message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
         }
       },
     });
@@ -143,20 +143,22 @@ export default function AdminExamCategoriesPage() {
       key: "category",
       render: (_, record) => (
         <Space size={12}>
-          <Avatar 
-            icon={<FolderOutlined />} 
+          <Avatar
+            icon={<FolderOutlined />}
             style={{ backgroundColor: "#1890ff" }}
-            size="default" 
+            size="default"
           />
           <div>
             <div>
-              <Text strong style={{ fontSize: "14px" }}>{record.name}</Text>
+              <Text strong style={{ fontSize: "14px" }}>
+                {record.name}
+              </Text>
             </div>
             {record.description && (
               <div>
                 <Text type="secondary" style={{ fontSize: "12px" }}>
-                  {record.description.length > 50 
-                    ? `${record.description.substring(0, 50)}...` 
+                  {record.description.length > 50
+                    ? `${record.description.substring(0, 50)}...`
                     : record.description}
                 </Text>
               </div>
@@ -184,21 +186,21 @@ export default function AdminExamCategoriesPage() {
       title: "จำนวนข้อสอบ",
       key: "examCount",
       render: (_, record) => (
-        <Badge 
-          count={record._count?.exams || 0} 
-          style={{ backgroundColor: '#52c41a' }}
+        <Badge
+          count={record._count?.exams || 0}
+          style={{ backgroundColor: "#52c41a" }}
           showZero
         />
       ),
       width: 120,
-      align: 'center',
+      align: "center",
     },
     {
       title: "สถานะ",
       dataIndex: "isActive",
       key: "status",
       render: (isActive) => (
-        <Tag 
+        <Tag
           color={isActive ? "success" : "error"}
           icon={isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
         >
@@ -264,7 +266,9 @@ export default function AdminExamCategoriesPage() {
             <BookOutlined style={{ marginRight: "8px" }} />
             จัดการหมวดหมู่ข้อสอบ
           </Title>
-          <Text type="secondary">จัดการหมวดหมู่สำหรับจัดเก็บและจัดระเบียบข้อสอบ</Text>
+          <Text type="secondary">
+            จัดการหมวดหมู่สำหรับจัดเก็บและจัดระเบียบข้อสอบ
+          </Text>
         </Space>
       </Card>
 
@@ -304,7 +308,9 @@ export default function AdminExamCategoriesPage() {
           <Space>
             {editingCategory ? <EditOutlined /> : <PlusOutlined />}
             <Text strong>
-              {editingCategory ? "แก้ไขหมวดหมู่ข้อสอบ" : "เพิ่มหมวดหมู่ข้อสอบใหม่"}
+              {editingCategory
+                ? "แก้ไขหมวดหมู่ข้อสอบ"
+                : "เพิ่มหมวดหมู่ข้อสอบใหม่"}
             </Text>
           </Space>
         }
@@ -319,11 +325,7 @@ export default function AdminExamCategoriesPage() {
         style={{ top: 20 }}
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
             label={
@@ -333,12 +335,12 @@ export default function AdminExamCategoriesPage() {
               </Space>
             }
             rules={[
-              { required: true, message: 'กรุณาระบุชื่อหมวดหมู่' },
+              { required: true, message: "กรุณาระบุชื่อหมวดหมู่" },
               { min: 2, message: "ชื่อหมวดหมู่ต้องมีอย่างน้อย 2 ตัวอักษร" },
-              { max: 255, message: 'ชื่อหมวดหมู่ต้องไม่เกิน 255 ตัวอักษร' }
+              { max: 255, message: "ชื่อหมวดหมู่ต้องไม่เกิน 255 ตัวอักษร" },
             ]}
           >
-            <Input 
+            <Input
               placeholder="เช่น คณิตศาสตร์, ฟิสิกส์, เคมี"
               style={{ borderRadius: "6px" }}
             />
@@ -352,12 +354,10 @@ export default function AdminExamCategoriesPage() {
                 <Text>คำอธิบาย (ไม่บังคับ)</Text>
               </Space>
             }
-            rules={[
-              { max: 500, message: "คำอธิบายต้องไม่เกิน 500 ตัวอักษร" }
-            ]}
+            rules={[{ max: 500, message: "คำอธิบายต้องไม่เกิน 500 ตัวอักษร" }]}
           >
-            <TextArea 
-              rows={4} 
+            <TextArea
+              rows={4}
               placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับหมวดหมู่นี้"
               style={{ borderRadius: "6px" }}
             />
