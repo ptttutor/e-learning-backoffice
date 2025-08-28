@@ -1,7 +1,30 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Table, Button, Space, Modal, Form, Input, InputNumber, message } from "antd";
+import { useEffect, useState, useCallback } from "react";
+import {
+  Table,
+  Button,
+  Space,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Card,
+  Typography,
+  Tag,
+} from "antd";
+import {
+  BookOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FileTextOutlined,
+  OrderedListOutlined,
+  ArrowLeftOutlined,
+} from "@ant-design/icons";
 import { useParams, useRouter } from "next/navigation";
+
+const { Title, Text } = Typography;
 
 export default function AdminChaptersPage() {
   const { courseId } = useParams();
@@ -13,7 +36,7 @@ export default function AdminChaptersPage() {
   const [form] = Form.useForm();
 
   // Fetch chapters
-  const fetchChapters = async () => {
+  const fetchChapters = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/chapters?courseId=${courseId}`);
@@ -23,11 +46,11 @@ export default function AdminChaptersPage() {
       message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
     }
     setLoading(false);
-  };
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) fetchChapters();
-  }, [courseId]);
+  }, [courseId, fetchChapters]);
 
   // Create or update chapter
   const handleOk = async () => {
@@ -49,7 +72,9 @@ export default function AdminChaptersPage() {
       }
       const data = await res.json();
       if (data.success) {
-        message.success(editing ? "แก้ไข chapter สำเร็จ" : "สร้าง chapter สำเร็จ");
+        message.success(
+          editing ? "แก้ไข chapter สำเร็จ" : "สร้าง chapter สำเร็จ"
+        );
         setModalOpen(false);
         setEditing(null);
         form.resetFields();
@@ -67,7 +92,9 @@ export default function AdminChaptersPage() {
     Modal.confirm({
       title: "ยืนยันการลบ chapter?",
       onOk: async () => {
-        const res = await fetch(`/api/admin/chapters/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/admin/chapters/${id}`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (data.success) {
           message.success("ลบ chapter สำเร็จ");
@@ -91,46 +118,198 @@ export default function AdminChaptersPage() {
   };
 
   const columns = [
-    { title: "ชื่อ Chapter", dataIndex: "title" },
-    { title: "ลำดับ", dataIndex: "order" },
     {
-      title: "การจัดการ",
-      render: (_, record) => (
+      title: "ชื่อ Chapter",
+      dataIndex: "title",
+      key: "title",
+      render: (title) => (
         <Space>
-          <Button onClick={() => openModal(record)}>แก้ไข</Button>
-          <Button danger onClick={() => handleDelete(record.id)}>ลบ</Button>
-          <Button type="link" onClick={() => window.location.href = `/admin/courses/content/${record.id}`}>Course Content</Button>
+          <BookOutlined style={{ color: "#1890ff" }} />
+          <Text strong>{title}</Text>
         </Space>
       ),
+      width: 300,
+    },
+    {
+      title: "ลำดับ",
+      dataIndex: "order",
+      key: "order",
+      render: (order) => (
+        <Space>
+          <OrderedListOutlined style={{ color: "#8c8c8c" }} />
+          <Tag color="blue">{order}</Tag>
+        </Space>
+      ),
+      width: 120,
+      sorter: (a, b) => a.order - b.order,
+    },
+    {
+      title: "การจัดการ",
+      key: "actions",
+      render: (_, record) => (
+        <Space size={8} wrap>
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => openModal(record)}
+            style={{ borderRadius: "6px" }}
+          >
+            แก้ไข
+          </Button>
+          <Button
+            icon={<DeleteOutlined />}
+            size="small"
+            danger
+            onClick={() => handleDelete(record.id)}
+            style={{ borderRadius: "6px" }}
+          >
+            ลบ
+          </Button>
+          <Button
+            icon={<FileTextOutlined />}
+            size="small"
+            type="link"
+            onClick={() =>
+              (window.location.href = `/admin/courses/content/${record.id}`)
+            }
+            style={{ borderRadius: "6px" }}
+          >
+            จัดการเนื้อหา
+          </Button>
+        </Space>
+      ),
+      width: 280,
+      fixed: "right",
     },
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Chapter ของคอร์ส</h1>
-      <Button type="primary" onClick={() => openModal(null)} style={{ marginBottom: 16 }}>
-        สร้าง Chapter ใหม่
-      </Button>
-      <Table
-        columns={columns}
-        dataSource={chapters}
-        rowKey="id"
-        loading={loading}
-        bordered
-      />
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <Card style={{ marginBottom: "24px" }}>
+        <Space direction="vertical" size={4}>
+          <Space>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => router.back()}
+              style={{ borderRadius: "6px" }}
+            >
+              กลับ
+            </Button>
+            <Title level={2} style={{ margin: 0 }}>
+              <BookOutlined style={{ marginRight: "8px" }} />
+              จัดการ Chapter
+            </Title>
+          </Space>
+          <Text type="secondary">สร้างและจัดการ Chapter ของคอร์สเรียน</Text>
+        </Space>
+      </Card>
+
+      <Card>
+        <div style={{ marginBottom: "16px" }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => openModal(null)}
+            style={{ borderRadius: "6px" }}
+          >
+            สร้าง Chapter ใหม่
+          </Button>
+        </div>
+
+        <Table
+          columns={columns}
+          dataSource={chapters}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 800 }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} จาก ${total} รายการ`,
+          }}
+          size="middle"
+        />
+      </Card>
+
+      {/* Create/Edit Modal */}
       <Modal
+        title={
+          <Space>
+            {editing ? <EditOutlined /> : <PlusOutlined />}
+            <Text strong>
+              {editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}
+            </Text>
+          </Space>
+        }
         open={modalOpen}
-        title={editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}
-        onCancel={() => { setModalOpen(false); setEditing(null); }}
-        onOk={handleOk}
+        onCancel={() => {
+          setModalOpen(false);
+          setEditing(null);
+          form.resetFields();
+        }}
+        footer={null}
+        width={500}
+        style={{ top: 20 }}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="title" label="ชื่อ Chapter" rules={[{ required: true, message: "กรุณากรอกชื่อ Chapter" }]}>
-            <Input />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleOk}
+          preserve={false}
+        >
+          <Form.Item
+            name="title"
+            label="ชื่อ Chapter"
+            rules={[{ required: true, message: "กรุณากรอกชื่อ Chapter" }]}
+          >
+            <Input placeholder="ใส่ชื่อ Chapter" />
           </Form.Item>
-          <Form.Item name="order" label="ลำดับ" rules={[{ required: true, type: 'number', message: "กรุณากรอกลำดับ" }]}>
-            <InputNumber min={1} style={{ width: "100%" }} />
+
+          <Form.Item
+            name="order"
+            label="ลำดับ"
+            rules={[
+              { required: true, message: "กรุณากรอกลำดับ" },
+              { type: "number", min: 1, message: "ลำดับต้องมากกว่า 0" },
+            ]}
+          >
+            <InputNumber
+              min={1}
+              style={{ width: "100%" }}
+              placeholder="ลำดับของ Chapter"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={editing ? <EditOutlined /> : <PlusOutlined />}
+                style={{ borderRadius: "6px" }}
+              >
+                {editing ? "อัพเดท" : "สร้าง"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setModalOpen(false);
+                  setEditing(null);
+                  form.resetFields();
+                }}
+                style={{ borderRadius: "6px" }}
+              >
+                ยกเลิก
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
