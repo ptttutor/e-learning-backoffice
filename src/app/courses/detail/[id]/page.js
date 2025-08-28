@@ -13,14 +13,21 @@ import {
   Divider,
   Empty,
   Spin,
+  Alert,
 } from "antd";
 import {
   DollarOutlined,
   UserOutlined,
   ArrowLeftOutlined,
+  BookOutlined,
+  ClockCircleOutlined,
+  PlayCircleOutlined,
+  ShoppingCartOutlined,
+  CheckCircleOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 async function getCourse(id) {
   const res = await fetch(`/api/courses/${id}`, {
@@ -59,76 +66,390 @@ export default function CoursePaymentPage({ params }) {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, textAlign: "center" }}>
-        <Spin size="large" />
-        <div style={{ marginTop: 16 }}>กำลังโหลดข้อมูลคอร์ส...</div>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+        }}
+      >
+        <Spin size="large" style={{ color: "white" }} />
+        <div style={{ marginTop: 16, color: "white", fontSize: "16px" }}>
+          กำลังโหลดข้อมูลคอร์ส...
+        </div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div style={{ padding: 32, textAlign: "center" }}>
-        <Empty description="ไม่พบคอร์สที่ต้องการ" />
-        <Link href="/courses">
-          <Button icon={<ArrowLeftOutlined />} style={{ marginTop: 16 }}>
-            กลับหน้ารายการคอร์ส
-          </Button>
-        </Link>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          minHeight: "100vh",
+          padding: "60px 24px",
+        }}
+      >
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <Card
+            style={{
+              borderRadius: "16px",
+              border: "none",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+              textAlign: "center",
+              padding: "40px",
+            }}
+          >
+            <Empty
+              description={
+                <div>
+                  <Text style={{ fontSize: "18px", color: "#64748b" }}>
+                    ไม่พบคอร์สที่ต้องการ
+                  </Text>
+                  <br />
+                  <Text style={{ color: "#94a3b8" }}>
+                    กรุณาตรวจสอบลิงก์หรือกลับไปหน้ารายการคอร์ส
+                  </Text>
+                </div>
+              }
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+            <Link href="/courses">
+              <Button
+                type="primary"
+                icon={<ArrowLeftOutlined />}
+                size="large"
+                style={{
+                  marginTop: 24,
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  borderColor: "transparent",
+                  borderRadius: "12px",
+                }}
+              >
+                กลับหน้ารายการคอร์ส
+              </Button>
+            </Link>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 800, margin: "0 auto" }}>
-      <Card>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={16}>
-            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-              <Title level={1} style={{ margin: 0 }}>
-                {course.title}
-              </Title>
-
-              <Paragraph style={{ fontSize: 16, color: "#666", margin: 0 }}>
-                {course.description || "ไม่มีคำอธิบาย"}
-              </Paragraph>
-
-              <Space wrap>
-                {course.category && (
-                  <Tag color="blue">{course.category.name}</Tag>
-                )}
-                <Tag color="green">
-                  <UserOutlined /> {course.instructor?.name || "ไม่ระบุ"}
-                </Tag>
-              </Space>
-
-              <Divider />
-
-              <div style={{ fontSize: 24, fontWeight: "bold" }}>
-                {course.price ? (
-                  <span style={{ color: "#1890ff" }}>
-                    <DollarOutlined /> ฿{course.price.toLocaleString()}
-                  </span>
-                ) : (
-                  <span style={{ color: "#52c41a" }}>ฟรี</span>
-                )}
-              </div>
-            </Space>
-          </Col>
-        </Row>
-
-        <Divider />
-
-        <div style={{ textAlign: "center", marginTop: 32 }}>
-          <BuyCourseButton course={course} />
+    <div
+      style={{
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Header Section */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          padding: "40px 24px",
+          color: "white",
+        }}
+      >
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <Link href="/courses">
+              <Button
+                icon={<ArrowLeftOutlined />}
+                style={{
+                  background: "rgba(255,255,255,0.2)",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  color: "white",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: "20px",
+                }}
+              >
+                กลับหน้ารายการคอร์ส
+              </Button>
+            </Link>
+          </div>
         </div>
+      </div>
 
-        <div style={{ textAlign: "center", marginTop: 24 }}>
-          <Link href="/courses">
-            <Button icon={<ArrowLeftOutlined />}>กลับหน้ารายการคอร์ส</Button>
-          </Link>
+      {/* Content Section */}
+      <div
+        style={{
+          background: "#f8fafc",
+          padding: "40px 24px",
+          minHeight: "70vh",
+        }}
+      >
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+          <Row gutter={[32, 32]}>
+            {/* Course Information */}
+            <Col xs={24} lg={14}>
+              <Card
+                style={{
+                  borderRadius: "16px",
+                  border: "none",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                  height: "100%",
+                }}
+                styles={{ body: { padding: "32px" } }}
+              >
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: "100%" }}
+                >
+                  {/* Course Header */}
+                  <div>
+                    <div style={{ marginBottom: "16px" }}>
+                      <Space wrap>
+                        {course.category && (
+                          <Tag
+                            color="blue"
+                            style={{
+                              borderRadius: "12px",
+                              padding: "4px 12px",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                            }}
+                          >
+                            <BookOutlined style={{ marginRight: "4px" }} />
+                            {course.category.name}
+                          </Tag>
+                        )}
+                        <Tag
+                          color="green"
+                          style={{
+                            borderRadius: "12px",
+                            padding: "4px 12px",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          <UserOutlined style={{ marginRight: "4px" }} />
+                          {course.instructor?.name || "ไม่ระบุผู้สอน"}
+                        </Tag>
+                        {course.duration && (
+                          <Tag
+                            color="orange"
+                            style={{
+                              borderRadius: "12px",
+                              padding: "4px 12px",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                            }}
+                          >
+                            <ClockCircleOutlined
+                              style={{ marginRight: "4px" }}
+                            />
+                            {course.duration} ชั่วโมง
+                          </Tag>
+                        )}
+                      </Space>
+                    </div>
+
+                    <Title
+                      level={1}
+                      style={{
+                        margin: "0 0 16px 0",
+                        color: "#1a202c",
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {course.title}
+                    </Title>
+
+                    <Paragraph
+                      style={{
+                        fontSize: "16px",
+                        color: "#64748b",
+                        lineHeight: 1.6,
+                        marginBottom: "24px",
+                      }}
+                    >
+                      {course.description || "ไม่มีคำอธิบายสำหรับคอร์สนี้"}
+                    </Paragraph>
+                  </div>
+
+                  <Divider />
+
+                  {/* Course Features */}
+                  <div>
+                    <Title
+                      level={4}
+                      style={{ color: "#1a202c", marginBottom: "16px" }}
+                    >
+                      สิ่งที่คุณจะได้รับ
+                    </Title>
+                    <Space direction="vertical" size="middle">
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircleOutlined
+                          style={{
+                            color: "#52c41a",
+                            marginRight: "12px",
+                            fontSize: "16px",
+                          }}
+                        />
+                        <Text>เข้าถึงเนื้อหาคอร์สตลอดชีวิต</Text>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircleOutlined
+                          style={{
+                            color: "#52c41a",
+                            marginRight: "12px",
+                            fontSize: "16px",
+                          }}
+                        />
+                        <Text>วิดีโอคุณภาพสูงและเอกสารประกอบ</Text>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircleOutlined
+                          style={{
+                            color: "#52c41a",
+                            marginRight: "12px",
+                            fontSize: "16px",
+                          }}
+                        />
+                        <Text>แบบฝึกหัดและการบ้าน</Text>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircleOutlined
+                          style={{
+                            color: "#52c41a",
+                            marginRight: "12px",
+                            fontSize: "16px",
+                          }}
+                        />
+                        <Text>ใบประกาศนียบัตรเมื่อจบคอร์ส</Text>
+                      </div>
+                    </Space>
+                  </div>
+                </Space>
+              </Card>
+            </Col>
+
+            {/* Purchase Card */}
+            <Col xs={24} lg={10}>
+              <Card
+                style={{
+                  borderRadius: "16px",
+                  border: "none",
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                  position: "sticky",
+                  top: "24px",
+                }}
+                styles={{ body: { padding: "32px" } }}
+              >
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: "100%" }}
+                >
+                  {/* Price Section */}
+                  <div style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontSize: "32px",
+                        fontWeight: "bold",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      {course.price && course.price > 0 ? (
+                        <span style={{ color: "#1890ff" }}>
+                          ฿{course.price.toLocaleString()}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#52c41a" }}>ฟรี</span>
+                      )}
+                    </div>
+                    <Text style={{ color: "#64748b", fontSize: "14px" }}>
+                      {course.price && course.price > 0
+                        ? "ชำระครั้งเดียว เข้าถึงตลอดชีวิต"
+                        : "เข้าเรียนได้ทันที"}
+                    </Text>
+                  </div>
+
+                  <Divider />
+
+                  {/* Course Stats */}
+                  <div>
+                    <Space
+                      direction="vertical"
+                      size="middle"
+                      style={{ width: "100%" }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text style={{ color: "#64748b" }}>ระดับ:</Text>
+                        <Tag color="blue">เริ่มต้น - กลาง</Tag>
+                      </div>
+
+                      {course.duration && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text style={{ color: "#64748b" }}>ระยะเวลา:</Text>
+                          <Text strong>{course.duration} ชั่วโมง</Text>
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text style={{ color: "#64748b" }}>ภาษา:</Text>
+                        <Text strong>ไทย</Text>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text style={{ color: "#64748b" }}>การเข้าถึง:</Text>
+                        <Text strong>ตลอดชีวิต</Text>
+                      </div>
+                    </Space>
+                  </div>
+
+                  <Divider />
+
+                  {/* Purchase Button */}
+                  <BuyCourseButton course={course} />
+
+                  {/* Additional Info */}
+                  <Alert
+                    message="รับประกันความพึงพอใจ"
+                    description="หากไม่พอใจสามารถขอเงินคืนได้ภายใน 30 วัน"
+                    type="info"
+                    showIcon
+                    style={{
+                      borderRadius: "12px",
+                      border: "none",
+                      background: "#f0f9ff",
+                    }}
+                  />
+                </Space>
+              </Card>
+            </Col>
+          </Row>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -180,18 +501,48 @@ function BuyCourseButton({ course }) {
     }
   };
 
-  const buttonText =
-    course.price && course.price > 0 ? "ซื้อคอร์ส" : "เข้าเรียนฟรี";
+  const isFree = !course.price || course.price === 0;
+  const buttonText = isFree ? "เข้าเรียนฟรี" : "ซื้อคอร์สเลย";
+  const buttonIcon = isFree ? <PlayCircleOutlined /> : <ShoppingCartOutlined />;
 
   return (
-    <Button
-      type="primary"
-      size="large"
-      style={{ minWidth: 200 }}
-      loading={loading}
-      onClick={handleBuy}
-    >
-      {buttonText}
-    </Button>
+    <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Button
+        type="primary"
+        size="large"
+        block
+        loading={loading}
+        onClick={handleBuy}
+        icon={buttonIcon}
+        style={{
+          height: "56px",
+          fontSize: "18px",
+          fontWeight: "600",
+          borderRadius: "12px",
+          background: isFree
+            ? "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)"
+            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderColor: "transparent",
+          boxShadow: isFree
+            ? "0 4px 15px rgba(82, 196, 26, 0.4)"
+            : "0 4px 15px rgba(102, 126, 234, 0.4)",
+        }}
+      >
+        {buttonText}
+      </Button>
+
+      {!isAuthenticated && (
+        <Text
+          style={{
+            textAlign: "center",
+            color: "#64748b",
+            fontSize: "14px",
+            display: "block",
+          }}
+        >
+          ต้องเข้าสู่ระบบก่อนซื้อคอร์ส
+        </Text>
+      )}
+    </Space>
   );
 }
