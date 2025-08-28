@@ -61,23 +61,39 @@ export default function EbookDetailPage() {
     return stars;
   };
 
-  const handlePurchase = () => {
-    const cartItem = {
-      id: ebook.id,
-      type: 'ebook',
-      title: ebook.title,
-      author: ebook.author,
-      price: ebook.price,
-      discountPrice: ebook.discountPrice,
-      coverImageUrl: ebook.coverImageUrl,
-      isPhysical: ebook.isPhysical,
-      quantity: 1
-    };
-    
-    addToCart(cartItem);
-    
-    if (confirm(`เพิ่ม "${ebook.title}" ลงตะกร้าแล้ว! ต้องการไปหน้าตะกร้าเลยไหม?`)) {
-      router.push('/cart');
+  const handlePurchase = async () => {
+    // ตรวจสอบการ login ก่อน
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!user) {
+      if (confirm('กรุณาเข้าสู่ระบบก่อนซื้อหนังสือ')) {
+        router.push(`/login?redirect=/ebooks/${ebook.id}`);
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/ebooks/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          ebookId: ebook.id,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // ไปหน้าชำระเงิน
+        router.push(`/payment/${result.data.orderId}`);
+      } else {
+        alert(result.error || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
     }
   };
 

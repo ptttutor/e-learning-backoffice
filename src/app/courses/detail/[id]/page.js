@@ -13,8 +13,6 @@ import {
   Divider,
   Empty,
   Spin,
-  Modal,
-  Result,
 } from "antd";
 import {
   DollarOutlined,
@@ -147,13 +145,9 @@ export default function CoursePaymentPage({ params }) {
   );
 }
 
-// ปุ่มซื้อคอร์ส + Modal เลือกวิธีชำระเงิน
+// ปุ่มซื้อคอร์ส
 function BuyCourseButton({ course }) {
   const [loading, setLoading] = React.useState(false);
-  const [modalOpen, setModalOpen] = React.useState(false);
-  const [order, setOrder] = React.useState(null);
-  const [payLoading, setPayLoading] = React.useState(false);
-  const [result, setResult] = React.useState(null);
   const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
 
   // ใช้ AuthContext เพื่อดึงข้อมูลผู้ใช้
@@ -165,8 +159,8 @@ function BuyCourseButton({ course }) {
       if (router) router.push('/login?redirect=/courses/detail/' + course.id);
       return;
     }
+    
     setLoading(true);
-    setResult(null);
     try {
       const res = await fetch("/api/courses/purchase", {
         method: "POST",
@@ -174,106 +168,30 @@ function BuyCourseButton({ course }) {
         body: JSON.stringify({ userId: user.id, courseId: course.id }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setOrder(data);
-        setModalOpen(true);
+      
+      if (data.success) {
+        // ไปหน้าชำระเงิน
+        if (router) router.push(`/payment/${data.data.orderId}`);
       } else {
-        setResult({
-          status: "error",
-          title: "สั่งซื้อไม่สำเร็จ",
-          subTitle: data.error,
-        });
+        alert(data.error || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
       }
-    } catch (e) {
-      setResult({
-        status: "error",
-        title: "เกิดข้อผิดพลาด",
-        subTitle: e.message,
-      });
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
-
-  const handlePayment = async (method) => {
-    setPayLoading(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.id, method }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setResult({
-          status: "success",
-          title: "ชำระเงินสำเร็จ",
-          subTitle: "คุณสามารถเข้าเรียนคอร์สนี้ได้แล้ว",
-        });
-      } else {
-        setResult({
-          status: "error",
-          title: "ชำระเงินไม่สำเร็จ",
-          subTitle: data.error,
-        });
-      }
-    } catch (e) {
-      setResult({
-        status: "error",
-        title: "เกิดข้อผิดพลาด",
-        subTitle: e.message,
-      });
-    }
-    setPayLoading(false);
   };
 
   return (
-    <>
-      <Button
-        type="primary"
-        size="large"
-        style={{ minWidth: 200 }}
-        loading={loading}
-        onClick={handleBuy}
-      >
-        ซื้อคอร์ส
-      </Button>
-      <Modal
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        title="เลือกวิธีชำระเงิน"
-      >
-        {result ? (
-          <div style={{ textAlign: "center", padding: 24 }}>
-            <Result
-              status={result.status}
-              title={result.title}
-              subTitle={result.subTitle}
-            />
-          </div>
-        ) : (
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Button
-              block
-              type="primary"
-              icon={<DollarOutlined />}
-              loading={payLoading}
-              onClick={() => handlePayment("credit_card")}
-            >
-              ชำระด้วยบัตรเครดิต (mock)
-            </Button>
-            <Button
-              block
-              icon={<DollarOutlined />}
-              loading={payLoading}
-              onClick={() => handlePayment("promptpay")}
-            >
-              ชำระด้วย PromptPay (mock)
-            </Button>
-          </Space>
-        )}
-      </Modal>
-    </>
+    <Button
+      type="primary"
+      size="large"
+      style={{ minWidth: 200 }}
+      loading={loading}
+      onClick={handleBuy}
+    >
+      ซื้อคอร์ส
+    </Button>
   );
 }

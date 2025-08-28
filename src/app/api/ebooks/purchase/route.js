@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-// POST - ซื้อ ebook โดยตรง
+// POST - สร้างคำสั่งซื้อ ebook (รอการชำระเงิน)
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { userId, ebookId } = body;
+    const { userId, ebookId, paymentMethod = "bank_transfer" } = body;
 
     // Validate required fields
     if (!userId || !ebookId) {
@@ -57,44 +55,47 @@ export async function POST(request) {
       );
     }
 
-    // Create order
+    // Calculate shipping fee for physical books
+    const shippingFee = ebook.isPhysical ? 50 : 0; // 50 บาทสำหรับหนังสือกายภาพ
+    const total = (ebook.discountPrice || ebook.price || 0) + shippingFee;
+
+    // Create order (pending payment)
     const order = await prisma.order.create({
       data: {
         userId: user.id,
         ebookId: ebook.id,
         orderType: "EBOOK",
-        status: "COMPLETED", // For direct purchase, mark as completed
-        total: ebook.discountPrice || ebook.price || 0,
-        shippingFee: 0,
+        status: "PENDING", // รอการชำระเงิน
+        total: total,
+        shippingFee: shippingFee,
       },
     });
 
-    // Create payment record
+    // Create payment record (pending)
     const payment = await prisma.payment.create({
       data: {
         orderId: order.id,
-        method: "direct", // Direct purchase method
-        status: "COMPLETED",
-        paidAt: new Date(),
-        ref: `DIR${Date.now()}${Math.random()
+        method: paymentMethod,
+        status: "PENDING", // รอการชำระเงิน
+        ref: `ORD${Date.now()}${Math.random()
           .toString(36)
           .substring(2, 7)
           .toUpperCase()}`,
       },
     });
 
-    // Create shipping record if it's a physical book
+    // Create shipping record if it's a physical book (pending)
     if (ebook.isPhysical) {
       await prisma.shipping.create({
         data: {
           orderId: order.id,
           recipientName: user.name || user.email,
-          recipientPhone: "", // Will need to be filled later
-          address: "", // Will need to be filled later
+          recipientPhone: "", // จะต้องกรอกในหน้าชำระเงิน
+          address: "", // จะต้องกรอกในหน้าชำระเงิน
           district: "",
           province: "",
           postalCode: "",
-          shippingMethod: "PENDING",
+          shippingMethod: "STANDARD",
           status: "PENDING",
         },
       });
@@ -102,15 +103,20 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      message: "ซื้อหนังสือสำเร็จ",
+      message: "สร้างคำสั่งซื้อสำเร็จ กรุณาชำระเงินและอัพโหลดหลักฐาน",
       data: {
         orderId: order.id,
+        paymentId: payment.id,
+        paymentRef: payment.ref,
         ebook: {
           id: ebook.id,
           title: ebook.title,
           price: ebook.discountPrice || ebook.price,
           isPhysical: ebook.isPhysical,
         },
+        total: order.total,
+        shippingFee: order.shippingFee,
+        status: order.status,
       },
     });
   } catch (error) {
@@ -118,7 +124,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "เกิดข้อผิดพลาดในการซื้อหนังสือ",
+        error: error.message || "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ",
       },
       { status: 500 }
     );
