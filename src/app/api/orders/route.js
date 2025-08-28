@@ -82,7 +82,7 @@ export async function POST(request) {
             district: shippingAddress.city || '',
             province: shippingAddress.province || '',
             postalCode: shippingAddress.postalCode || '',
-            shippingMethod: 'standard',
+            shippingMethod: 'PENDING',
             status: 'PENDING'
           }
         });

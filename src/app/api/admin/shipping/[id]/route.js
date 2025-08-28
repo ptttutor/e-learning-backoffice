@@ -78,7 +78,7 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status, trackingNumber, notes } = body;
+    const { status, trackingNumber, notes, shippingCompany } = body;
 
     // Prepare update data
     const updateData = {};
@@ -91,7 +91,12 @@ export async function PATCH(request, { params }) {
         updateData.shippedAt = new Date();
       } else if (status === 'DELIVERED') {
         updateData.deliveredAt = new Date();
-        if (!updateData.shippedAt) {
+        // Get current shipment to check if shippedAt exists
+        const currentShipment = await prisma.shipping.findUnique({
+          where: { id },
+          select: { shippedAt: true }
+        });
+        if (!currentShipment?.shippedAt) {
           updateData.shippedAt = new Date();
         }
       }
@@ -105,7 +110,10 @@ export async function PATCH(request, { params }) {
       updateData.notes = notes;
     }
 
-    updateData.updatedAt = new Date();
+    // Use shippingMethod instead of shippingCompany to match schema
+    if (shippingCompany !== undefined) {
+      updateData.shippingMethod = shippingCompany;
+    }
 
     const updatedShipment = await prisma.shipping.update({
       where: { id },

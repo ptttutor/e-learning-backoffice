@@ -43,6 +43,7 @@ export default function AdminShippingPage() {
   const handleUpdateShipping = (shipment) => {
     setSelectedShipment(shipment);
     form.setFieldsValue({
+      shippingCompany: shipment.shippingMethod || 'PENDING',
       status: shipment.status,
       trackingNumber: shipment.trackingNumber || '',
       notes: shipment.notes || ''
@@ -102,6 +103,29 @@ export default function AdminShippingPage() {
     }
   };
 
+  const getCompanyIcon = (company) => {
+    switch (company) {
+      case 'KERRY': return '🚚';
+      case 'THAILAND_POST': return '📮';
+      case 'JT_EXPRESS': return '📦';
+      case 'FLASH_EXPRESS': return '⚡';
+      case 'NINJA_VAN': return '🥷';
+      default: return '📋';
+    }
+  };
+
+  const getCompanyName = (company) => {
+    switch (company) {
+      case 'KERRY': return 'Kerry Express';
+      case 'THAILAND_POST': return 'ไปรษณีย์ไทย';
+      case 'JT_EXPRESS': return 'J&T Express';
+      case 'FLASH_EXPRESS': return 'Flash Express';
+      case 'NINJA_VAN': return 'Ninja Van';
+      case 'PENDING': return 'รอเลือก';
+      default: return company || 'ไม่ระบุ';
+    }
+  };
+
   const columns = [
     {
       title: 'รหัสคำสั่งซื้อ',
@@ -134,6 +158,18 @@ export default function AdminShippingPage() {
         </div>
       ),
       width: 220,
+    },
+    {
+      title: 'บริษัทขนส่ง',
+      dataIndex: 'shippingMethod',
+      key: 'shippingMethod',
+      render: (company) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {getCompanyIcon(company)}
+          <span>{getCompanyName(company)}</span>
+        </div>
+      ),
+      width: 130,
     },
     {
       title: 'สถานะ',
@@ -238,6 +274,13 @@ export default function AdminShippingPage() {
             <Card title="ข้อมูลการจัดส่ง" style={{ marginBottom: '16px' }}>
               <div style={{ display: 'grid', gap: '8px' }}>
                 <div>
+                  <strong>บริษัทขนส่ง:</strong>{' '}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    {getCompanyIcon(selectedShipment.shippingMethod)}
+                    {getCompanyName(selectedShipment.shippingMethod)}
+                  </span>
+                </div>
+                <div>
                   <strong>สถานะ:</strong>{' '}
                   <Tag color={getStatusColor(selectedShipment.status)}>
                     {getStatusText(selectedShipment.status)}
@@ -281,6 +324,20 @@ export default function AdminShippingPage() {
           layout="vertical"
           onFinish={handleUpdateSubmit}
         >
+          <Form.Item
+            name="shippingCompany"
+            label="บริษัทขนส่ง"
+            rules={[{ required: true, message: 'กรุณาเลือกบริษัทขนส่ง' }]}
+          >
+            <Select placeholder="เลือกบริษัทขนส่ง">
+              <Option value="KERRY">🚚 Kerry Express</Option>
+              <Option value="THAILAND_POST">📮 ไปรษณีย์ไทย</Option>
+              <Option value="JT_EXPRESS">📦 J&T Express</Option>
+              <Option value="FLASH_EXPRESS">⚡ Flash Express</Option>
+              <Option value="NINJA_VAN">🥷 Ninja Van</Option>
+            </Select>
+          </Form.Item>
+
           <Form.Item
             name="status"
             label="สถานะการจัดส่ง"

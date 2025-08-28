@@ -95,6 +95,48 @@ export default function MyOrdersPage() {
     }
   };
 
+  const getShippingCompanyName = (company) => {
+    switch (company) {
+      case 'KERRY': return '🚚 Kerry Express';
+      case 'THAILAND_POST': return '📮 ไปรษณีย์ไทย';
+      case 'JT_EXPRESS': return '📦 J&T Express';
+      case 'FLASH_EXPRESS': return '⚡ Flash Express';
+      case 'NINJA_VAN': return '🥷 Ninja Van';
+      case 'DHL': return '✈️ DHL';
+      case 'FEDEX': return '📬 FedEx';
+      case 'PENDING': return '⏳ รอเลือกบริษัทขนส่ง';
+      default: return company || 'ไม่ระบุ';
+    }
+  };
+
+  const getShippingStatusText = (status) => {
+    switch (status) {
+      case 'PENDING': return '⏳ รอดำเนินการ';
+      case 'PROCESSING': return '📦 กำลังเตรียมสินค้า';
+      case 'SHIPPED': return '🚚 จัดส่งแล้ว';
+      case 'IN_TRANSIT': return '🛣️ อยู่ระหว่างขนส่ง';
+      case 'OUT_FOR_DELIVERY': return '🏠 กำลังจัดส่ง';
+      case 'DELIVERED': return '✅ ส่งถึงแล้ว';
+      case 'CANCELLED': return '❌ ยกเลิก';
+      case 'RETURNED': return '↩️ ส่งคืน';
+      default: return status;
+    }
+  };
+
+  const getShippingStatusColor = (status) => {
+    switch (status) {
+      case 'PENDING': return '#ffc107';
+      case 'PROCESSING': return '#17a2b8';
+      case 'SHIPPED': return '#007bff';
+      case 'IN_TRANSIT': return '#6f42c1';
+      case 'OUT_FOR_DELIVERY': return '#fd7e14';
+      case 'DELIVERED': return '#28a745';
+      case 'CANCELLED': return '#dc3545';
+      case 'RETURNED': return '#6c757d';
+      default: return '#6c757d';
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -498,19 +540,146 @@ export default function MyOrdersPage() {
                 {order.shipping && (
                   <div style={{
                     marginTop: '16px',
-                    padding: '12px',
+                    padding: '16px',
                     backgroundColor: '#f8f9fa',
-                    borderRadius: '6px',
-                    fontSize: '14px'
+                    borderRadius: '8px',
+                    border: '1px solid #dee2e6'
                   }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                      📦 ข้อมูลการจัดส่ง
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                        📦 ข้อมูลการจัดส่ง
+                      </div>
+                      <div style={{
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        backgroundColor: getShippingStatusColor(order.shipping.status)
+                      }}>
+                        {getShippingStatusText(order.shipping.status)}
+                      </div>
                     </div>
-                    <div>ผู้รับ: {order.shipping.recipientName}</div>
-                    <div>ที่อยู่: {order.shipping.address}</div>
-                    <div>สถานะ: {order.shipping.status}</div>
-                    {order.shipping.trackingNumber && (
-                      <div>เลขติดตาม: {order.shipping.trackingNumber}</div>
+                    
+                    <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6c757d' }}>ผู้รับ:</span>
+                        <span style={{ fontWeight: '500' }}>{order.shipping.recipientName}</span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6c757d' }}>เบอร์โทร:</span>
+                        <span style={{ fontWeight: '500' }}>{order.shipping.phone}</span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ color: '#6c757d', marginTop: '2px' }}>ที่อยู่:</span>
+                        <span style={{ 
+                          fontWeight: '500', 
+                          textAlign: 'right', 
+                          maxWidth: '60%',
+                          lineHeight: '1.4'
+                        }}>
+                          {order.shipping.address}
+                        </span>
+                      </div>
+                      
+                      {order.shipping.shippingMethod && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#6c757d' }}>บริษัทขนส่ง:</span>
+                          <span style={{ 
+                            fontWeight: '500',
+                            color: order.shipping.shippingMethod === 'PENDING' ? '#ffc107' : '#007bff'
+                          }}>
+                            {getShippingCompanyName(order.shipping.shippingMethod)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {order.shipping.trackingNumber && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#6c757d' }}>เลขติดตาม:</span>
+                          <span style={{ 
+                            fontFamily: 'monospace',
+                            backgroundColor: '#e9ecef',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            color: '#495057'
+                          }}>
+                            {order.shipping.trackingNumber}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {order.shipping.estimatedDelivery && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#6c757d' }}>กำหนดส่ง:</span>
+                          <span style={{ fontWeight: '500', color: '#28a745' }}>
+                            {formatDate(order.shipping.estimatedDelivery)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {order.shipping.deliveredAt && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#6c757d' }}>ส่งถึงเมื่อ:</span>
+                          <span style={{ fontWeight: '500', color: '#28a745' }}>
+                            {formatDate(order.shipping.deliveredAt)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tracking Link */}
+                    {order.shipping.trackingNumber && order.shipping.shippingMethod && order.shipping.shippingMethod !== 'PENDING' && (
+                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #dee2e6' }}>
+                        <button
+                          onClick={() => {
+                            let trackingUrl = '';
+                            switch (order.shipping.shippingMethod) {
+                              case 'KERRY':
+                                trackingUrl = `https://th.kerryexpress.com/th/track/?track=${order.shipping.trackingNumber}`;
+                                break;
+                              case 'THAILAND_POST':
+                                trackingUrl = `https://track.thailandpost.co.th/?trackNumber=${order.shipping.trackingNumber}`;
+                                break;
+                              case 'JT_EXPRESS':
+                                trackingUrl = `https://www.jtexpress.co.th/trajectoryQuery?billCode=${order.shipping.trackingNumber}`;
+                                break;
+                              case 'FLASH_EXPRESS':
+                                trackingUrl = `https://www.flashexpress.co.th/tracking/?se=${order.shipping.trackingNumber}`;
+                                break;
+                              case 'NINJA_VAN':
+                                trackingUrl = `https://www.ninjavan.co/th-th/tracking?id=${order.shipping.trackingNumber}`;
+                                break;
+                              default:
+                                alert('ลิงก์ติดตามพัสดุจะพัฒนาในขั้นตอนถัดไป');
+                                return;
+                            }
+                            window.open(trackingUrl, '_blank');
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 16px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          🔍 ติดตามพัสดุ
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
