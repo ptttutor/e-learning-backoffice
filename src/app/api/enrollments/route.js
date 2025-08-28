@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 // GET: /api/enrollments?userId=...&courseId=...
 export async function GET(req) {
@@ -141,13 +139,25 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ต้องระบุ userId และ courseId' }, { status: 400 });
     }
 
-    // ตรวจสอบว่าเคยลงทะเบียนแล้วหรือยัง
-    const existingEnrollment = await prisma.enrollment.findFirst({
-      where: { userId, courseId }
+    // ตรวจสอบว่าเคยลงทะเบียนแล้วหรือยัง โดยใช้ unique constraint
+    const existingEnrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId: userId,
+          courseId: courseId
+        }
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        course: { select: { id: true, title: true } }
+      }
     });
 
     if (existingEnrollment) {
-      return NextResponse.json({ enrollment: existingEnrollment });
+      return NextResponse.json({ 
+        enrollment: existingEnrollment,
+        message: 'คุณได้ลงทะเบียนคอร์สนี้แล้ว'
+      });
     }
 
     // สร้าง enrollment ใหม่
@@ -162,6 +172,35 @@ export async function POST(req) {
     return NextResponse.json({ enrollment }, { status: 201 });
   } catch (error) {
     console.error('Error creating enrollment:', error);
+    
+    // จัดการ unique constraint error
+    if (error.code === 'P2002') {
+      // ถ้าเกิด unique constraint error ให้ดึงข้อมูล enrollment ที่มีอยู่แล้ว
+      try {
+        const existingEnrollment = await prisma.enrollment.findUnique({
+          where: {
+            userId_courseId: {
+              userId: userId,
+              courseId: courseId
+            }
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+            course: { select: { id: true, title: true } }
+          }
+        });
+        
+        if (existingEnrollment) {
+          return NextResponse.json({ 
+            enrollment: existingEnrollment,
+            message: 'คุณได้ลงทะเบียนคอร์สนี้แล้ว'
+          });
+        }
+      } catch (fetchError) {
+        console.error('Error fetching existing enrollment:', fetchError);
+      }
+    }
+    
     return NextResponse.json({ error: `Database error: ${error.message}` }, { status: 500 });
   }
 }
