@@ -8,7 +8,7 @@ const { Title, Paragraph, Text } = Typography;
 
 async function getCourses() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/admin/courses`, { cache: 'no-store' });
+  const res = await fetch(`${baseUrl}/api/courses`, { cache: 'no-store' });
   const data = await res.json();
   return data.data || [];
 }
