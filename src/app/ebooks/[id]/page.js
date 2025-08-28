@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCart } from '../../contexts/CartContext';
 
 export default function EbookDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { addToCart } = useCart();
   const [ebook, setEbook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,8 +62,22 @@ export default function EbookDetailPage() {
   };
 
   const handlePurchase = () => {
-    // TODO: Implement purchase logic
-    alert('ระบบการซื้อจะพัฒนาในขั้นตอนถัดไป');
+    const cartItem = {
+      id: ebook.id,
+      type: 'ebook',
+      title: ebook.title,
+      author: ebook.author,
+      price: ebook.price,
+      discountPrice: ebook.discountPrice,
+      coverImageUrl: ebook.coverImageUrl,
+      quantity: 1
+    };
+    
+    addToCart(cartItem);
+    
+    if (confirm(`เพิ่ม "${ebook.title}" ลงตะกร้าแล้ว! ต้องการไปหน้าตะกร้าเลยไหม?`)) {
+      router.push('/cart');
+    }
   };
 
   const handlePreview = () => {

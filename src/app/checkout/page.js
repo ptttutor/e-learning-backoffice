@@ -23,13 +23,13 @@ export default function CheckoutPage() {
     postalCode: '',
     
     // Payment Method
-    paymentMethod: 'credit_card',
+    paymentMethod: 'bank_transfer',
     
-    // Credit Card (for demo)
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardName: ''
+    // Bank Transfer Info
+    transferSlip: null,
+    transferDate: '',
+    transferTime: '',
+    transferAmount: ''
   });
 
   // Redirect if cart is empty
@@ -76,6 +76,34 @@ export default function CheckoutPage() {
     if (!phoneRegex.test(formData.phone.replace(/[-\s]/g, ''))) {
       setError('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)');
       return false;
+    }
+
+    // Bank transfer validation
+    if (formData.paymentMethod === 'bank_transfer') {
+      if (!formData.transferSlip) {
+        setError('กรุณาอัพโหลดสลิปการโอนเงิน');
+        return false;
+      }
+      if (!formData.transferDate) {
+        setError('กรุณาระบุวันที่โอนเงิน');
+        return false;
+      }
+      if (!formData.transferTime) {
+        setError('กรุณาระบุเวลาที่โอนเงิน');
+        return false;
+      }
+      if (!formData.transferAmount || parseFloat(formData.transferAmount) <= 0) {
+        setError('กรุณาระบุจำนวนเงินที่โอน');
+        return false;
+      }
+      
+      // Check if transfer amount matches total (with some tolerance)
+      const transferAmount = parseFloat(formData.transferAmount);
+      const cartTotal = getCartTotal();
+      if (Math.abs(transferAmount - cartTotal) > 1) {
+        setError(`จำนวนเงินที่โอนไม่ตรงกับยอดรวม (${formatPrice(cartTotal)})`);
+        return false;
+      }
     }
 
     return true;
@@ -395,7 +423,7 @@ export default function CheckoutPage() {
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}>
                 <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 'bold' }}>
-                  💳 วิธีการชำระเงิน
+                  🏦 วิธีการชำระเงิน
                 </h2>
                 
                 <div style={{ marginBottom: '20px' }}>
@@ -404,117 +432,222 @@ export default function CheckoutPage() {
                     alignItems: 'center', 
                     gap: '8px',
                     padding: '12px',
-                    border: '2px solid #007bff',
+                    border: '2px solid #4CAF50',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    backgroundColor: '#f8f9ff'
+                    backgroundColor: '#f8fff8'
                   }}>
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="credit_card"
-                      checked={formData.paymentMethod === 'credit_card'}
+                      value="bank_transfer"
+                      checked={formData.paymentMethod === 'bank_transfer'}
                       onChange={handleInputChange}
                     />
-                    <span style={{ fontSize: '16px' }}>💳 บัตรเครดิต/เดบิต</span>
+                    <span style={{ fontSize: '16px' }}>🏦 โอนเงินผ่านธนาคารกสิกรไทย</span>
                   </label>
                 </div>
 
-                {formData.paymentMethod === 'credit_card' && (
+                {formData.paymentMethod === 'bank_transfer' && (
                   <div style={{ 
-                    padding: '16px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '6px',
-                    border: '1px solid #dee2e6'
+                    padding: '20px',
+                    backgroundColor: '#f8fff8',
+                    borderRadius: '8px',
+                    border: '2px solid #4CAF50'
                   }}>
-                    <p style={{ 
-                      margin: '0 0 16px 0', 
-                      fontSize: '14px', 
-                      color: '#6c757d',
-                      fontStyle: 'italic'
+                    {/* Bank Account Info */}
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      marginBottom: '20px',
+                      border: '1px solid #4CAF50'
                     }}>
-                      🔒 นี่เป็นระบบสาธิต - กรุณาอย่าใส่ข้อมูลบัตรจริง
-                    </p>
-                    
-                    <div style={{ marginBottom: '16px' }}>
-                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                        ชื่อบนบัตร
-                      </label>
-                      <input
-                        type="text"
-                        name="cardName"
-                        value={formData.cardName}
-                        onChange={handleInputChange}
-                        placeholder="John Doe"
-                        style={{
-                          width: '100%',
-                          padding: '12px',
-                          border: '1px solid #dee2e6',
-                          borderRadius: '6px',
-                          fontSize: '16px'
-                        }}
-                      />
+                      <h3 style={{ 
+                        margin: '0 0 12px 0', 
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#4CAF50'
+                      }}>
+                        🏦 ข้อมูลบัญชีธนาคาร
+                      </h3>
+                      
+                      <div style={{ display: 'grid', gap: '8px', fontSize: '16px' }}>
+                        <div><strong>ธนาคาร:</strong> กสิกรไทย</div>
+                        <div><strong>ชื่อบัญชี:</strong> ฟิสิกส์พี่เต้ย Learning System</div>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px'
+                        }}>
+                          <strong>เลขที่บัญชี:</strong> 
+                          <span style={{ 
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontFamily: 'monospace',
+                            fontSize: '18px',
+                            fontWeight: 'bold'
+                          }}>
+                            123-4-56789-0
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText('1234567890');
+                              alert('คัดลอกเลขบัญชีแล้ว!');
+                            }}
+                            style={{
+                              padding: '4px 8px',
+                              backgroundColor: '#007bff',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            📋 คัดลอก
+                          </button>
+                        </div>
+                        <div style={{ 
+                          color: '#dc3545',
+                          fontWeight: 'bold',
+                          fontSize: '18px'
+                        }}>
+                          <strong>จำนวนเงิน:</strong> {formatPrice(getCartTotal())}
+                        </div>
+                      </div>
                     </div>
 
-                    <div style={{ marginBottom: '16px' }}>
-                      <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                        หมายเลขบัตร
-                      </label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        value={formData.cardNumber}
-                        onChange={handleInputChange}
-                        placeholder="1234 5678 9012 3456"
-                        style={{
-                          width: '100%',
-                          padding: '12px',
-                          border: '1px solid #dee2e6',
-                          borderRadius: '6px',
-                          fontSize: '16px'
-                        }}
-                      />
+                    {/* Transfer Instructions */}
+                    <div style={{
+                      backgroundColor: '#fff3cd',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      marginBottom: '20px',
+                      border: '1px solid #ffeaa7'
+                    }}>
+                      <h4 style={{ margin: '0 0 8px 0', color: '#856404' }}>
+                        📝 วิธีการโอนเงิน:
+                      </h4>
+                      <ol style={{ margin: 0, paddingLeft: '20px', color: '#856404' }}>
+                        <li>โอนเงินตามจำนวนที่ระบุข้างต้น</li>
+                        <li>ถ่ายรูปหลักฐานการโอนเงิน (สลิป)</li>
+                        <li>อัพโหลดสลิปในช่องด้านล่าง</li>
+                        <li>กรอกข้อมูลการโอนให้ครบถ้วน</li>
+                        <li>กดยืนยันการสั่งซื้อ</li>
+                      </ol>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {/* Transfer Details Form */}
+                    <div style={{ display: 'grid', gap: '16px' }}>
                       <div>
                         <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                          วันหมดอายุ
+                          อัพโหลดสลิปการโอนเงิน *
                         </label>
                         <input
-                          type="text"
-                          name="expiryDate"
-                          value={formData.expiryDate}
-                          onChange={handleInputChange}
-                          placeholder="MM/YY"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            setFormData(prev => ({
+                              ...prev,
+                              transferSlip: file
+                            }));
+                          }}
                           style={{
                             width: '100%',
                             padding: '12px',
-                            border: '1px solid #dee2e6',
+                            border: '2px dashed #4CAF50',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                            backgroundColor: 'white'
+                          }}
+                        />
+                        <small style={{ color: '#6c757d', fontSize: '12px' }}>
+                          รองรับไฟล์: JPG, PNG, GIF (ขนาดไม่เกิน 5MB)
+                        </small>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                            วันที่โอน *
+                          </label>
+                          <input
+                            type="date"
+                            name="transferDate"
+                            value={formData.transferDate}
+                            onChange={handleInputChange}
+                            max={new Date().toISOString().split('T')[0]}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              border: '1px solid #4CAF50',
+                              borderRadius: '6px',
+                              fontSize: '16px'
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                            เวลาที่โอน *
+                          </label>
+                          <input
+                            type="time"
+                            name="transferTime"
+                            value={formData.transferTime}
+                            onChange={handleInputChange}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              border: '1px solid #4CAF50',
+                              borderRadius: '6px',
+                              fontSize: '16px'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                          จำนวนเงินที่โอน *
+                        </label>
+                        <input
+                          type="number"
+                          name="transferAmount"
+                          value={formData.transferAmount}
+                          onChange={handleInputChange}
+                          placeholder={getCartTotal().toString()}
+                          step="0.01"
+                          min="0"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            border: '1px solid #4CAF50',
                             borderRadius: '6px',
                             fontSize: '16px'
                           }}
                         />
+                        <small style={{ color: '#6c757d', fontSize: '12px' }}>
+                          ควรตรงกับยอดรวม: {formatPrice(getCartTotal())}
+                        </small>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
-                          CVV
-                        </label>
-                        <input
-                          type="text"
-                          name="cvv"
-                          value={formData.cvv}
-                          onChange={handleInputChange}
-                          placeholder="123"
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            border: '1px solid #dee2e6',
-                            borderRadius: '6px',
-                            fontSize: '16px'
-                          }}
-                        />
-                      </div>
+                    </div>
+
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '12px',
+                      backgroundColor: '#d1ecf1',
+                      borderRadius: '6px',
+                      border: '1px solid #bee5eb',
+                      fontSize: '14px',
+                      color: '#0c5460'
+                    }}>
+                      💡 <strong>หมายเหตุ:</strong> หลังจากยืนยันการสั่งซื้อ เราจะตรวจสอบการโอนเงินภายใน 1-2 ชั่วโมง 
+                      และจะส่งอีเมลยืนยันให้คุณทราบ
                     </div>
                   </div>
                 )}

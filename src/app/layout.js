@@ -7,9 +7,12 @@ import {
   BookOutlined,
   UserOutlined,
   HomeOutlined,
+  ShoppingCartOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { CartProvider } from "./contexts/CartContext";
 
 const { Header, Content, Footer } = Layout;
 
@@ -36,9 +39,24 @@ const menuItems = [
     label: <Link href="/courses">คอร์สเรียน</Link>,
   },
   {
+    key: "/ebooks",
+    icon: <BookOutlined />,
+    label: <Link href="/ebooks">หนังสือ</Link>,
+  },
+  {
     key: "/my-courses",
     icon: <BookOutlined />,
     label: <Link href="/my-courses">คอร์สเรียนของฉัน</Link>,
+  },
+  {
+    key: "/cart",
+    icon: <ShoppingCartOutlined />,
+    label: <Link href="/cart">ตะกร้า</Link>,
+  },
+  {
+    key: "/my-orders",
+    icon: <FileTextOutlined />,
+    label: <Link href="/my-orders">คำสั่งซื้อ</Link>,
   },
   {
     key: "/about",
@@ -139,9 +157,11 @@ export default function RootLayout({ children }) {
         <meta name="description" content="ระบบเรียนออนไลน์ฟิสิกส์และคณิตศาสตร์" />
       </head>
       <body style={{ fontFamily: 'var(--font-geist-sans)' }}>
-        <AppLayout>
-          {children}
-        </AppLayout>
+        <CartProvider>
+          <AppLayout>
+            {children}
+          </AppLayout>
+        </CartProvider>
       </body>
     </html>
   );
