@@ -1,18 +1,39 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, Row, Col, Statistic, Table, Tag, Progress, Button, Space } from "antd";
-import { 
-  ShoppingCartOutlined, 
-  DollarOutlined, 
-  UserOutlined, 
+import {
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Table,
+  Tag,
+  Progress,
+  Button,
+  Space,
+  Typography,
+  Avatar,
+  Spin,
+  message,
+} from "antd";
+import {
+  ShoppingCartOutlined,
+  DollarOutlined,
+  UserOutlined,
   BookOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
   FolderOutlined,
-  UploadOutlined
+  DashboardOutlined,
+  RiseOutlined,
+  CalendarOutlined,
+  EyeOutlined,
+  AppstoreOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
+
+const { Title, Text } = Typography;
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -21,7 +42,7 @@ export default function AdminDashboardPage() {
     totalCustomers: 0,
     totalProducts: 0,
     pendingOrders: 0,
-    completedOrders: 0
+    completedOrders: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +54,8 @@ export default function AdminDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       const [statsResponse, ordersResponse] = await Promise.all([
-        fetch('/api/admin/dashboard/stats'),
-        fetch('/api/admin/orders?limit=10')
+        fetch("/api/admin/dashboard/stats"),
+        fetch("/api/admin/orders?limit=10"),
       ]);
 
       const statsResult = await statsResponse.json();
@@ -42,227 +63,449 @@ export default function AdminDashboardPage() {
 
       if (statsResult.success) {
         setStats(statsResult.data);
+      } else {
+        message.error("เกิดข้อผิดพลาดในการโหลดสถิติ");
       }
 
       if (ordersResult.success) {
         setRecentOrders(ordersResult.data);
+      } else {
+        message.error("เกิดข้อผิดพลาดในการโหลดคำสั่งซื้อ");
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
+      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
     } finally {
       setLoading(false);
     }
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('th-TH', {
-      style: 'currency',
-      currency: 'THB'
+    return new Intl.NumberFormat("th-TH", {
+      style: "currency",
+      currency: "THB",
     }).format(price);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('th-TH');
+    return new Date(dateString).toLocaleDateString("th-TH");
   };
 
   const getOrderStatusColor = (status) => {
     switch (status) {
-      case 'COMPLETED': return 'success';
-      case 'PENDING_PAYMENT': return 'warning';
-      case 'CANCELLED': return 'error';
-      default: return 'default';
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case 'COMPLETED': return 'success';
-      case 'PENDING_VERIFICATION': return 'processing';
-      case 'FAILED': return 'error';
-      default: return 'default';
+      case "COMPLETED":
+        return "success";
+      case "PENDING_PAYMENT":
+        return "warning";
+      case "CANCELLED":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   const recentOrdersColumns = [
     {
-      title: 'รหัสคำสั่งซื้อ',
-      dataIndex: 'id',
-      key: 'id',
-      render: (id) => `#${id.slice(-8)}`,
+      title: "รหัสคำสั่งซื้อ",
+      dataIndex: "id",
+      key: "id",
+      render: (id) => (
+        <Text code style={{ fontSize: "12px" }}>
+          #{id.slice(-8)}
+        </Text>
+      ),
       width: 120,
     },
     {
-      title: 'ลูกค้า',
-      dataIndex: 'user',
-      key: 'customer',
-      render: (user) => user?.name || 'N/A',
+      title: "ลูกค้า",
+      dataIndex: "user",
+      key: "customer",
+      render: (user) => (
+        <Space size={8}>
+          <Avatar icon={<UserOutlined />} size="small" />
+          <Text style={{ fontSize: "13px" }}>{user?.name || "N/A"}</Text>
+        </Space>
+      ),
       width: 150,
     },
     {
-      title: 'สินค้า',
-      key: 'product',
+      title: "สินค้า",
+      key: "product",
       render: (_, record) => (
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-            {record.ebook?.title || record.course?.title}
+        <Space size={8}>
+          <Avatar
+            icon={
+              record.orderType === "EBOOK" ? (
+                <BookOutlined />
+              ) : (
+                <FileTextOutlined />
+              )
+            }
+            size="small"
+            style={{
+              backgroundColor:
+                record.orderType === "EBOOK" ? "#1890ff" : "#52c41a",
+            }}
+          />
+          <div>
+            <div>
+              <Text strong style={{ fontSize: "13px" }}>
+                {record.ebook?.title || record.course?.title}
+              </Text>
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: "11px" }}>
+                {record.orderType === "EBOOK" ? "หนังสือ" : "คอร์ส"}
+              </Text>
+            </div>
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.orderType === 'EBOOK' ? 'หนังสือ' : 'คอร์ส'}
-          </div>
-        </div>
+        </Space>
       ),
-      width: 200,
+      width: 250,
     },
     {
-      title: 'ยอดรวม',
-      dataIndex: 'total',
-      key: 'total',
-      render: (total) => formatPrice(total),
-      width: 100,
+      title: "ยอดรวม",
+      dataIndex: "total",
+      key: "total",
+      render: (total) => (
+        <Text strong style={{ color: "#52c41a" }}>
+          {formatPrice(total)}
+        </Text>
+      ),
+      width: 120,
     },
     {
-      title: 'สถานะ',
-      dataIndex: 'status',
-      key: 'status',
+      title: "สถานะ",
+      dataIndex: "status",
+      key: "status",
       render: (status) => (
-        <Tag color={getOrderStatusColor(status)}>
-          {status === 'COMPLETED' ? 'สำเร็จ' :
-           status === 'PENDING_PAYMENT' ? 'รอตรวจสอบ' :
-           status === 'CANCELLED' ? 'ยกเลิก' : status}
+        <Tag
+          color={getOrderStatusColor(status)}
+          icon={
+            status === "COMPLETED" ? (
+              <CheckCircleOutlined />
+            ) : (
+              <ClockCircleOutlined />
+            )
+          }
+        >
+          {status === "COMPLETED"
+            ? "สำเร็จ"
+            : status === "PENDING_PAYMENT"
+            ? "รอตรวจสอบ"
+            : status === "CANCELLED"
+            ? "ยกเลิก"
+            : status}
         </Tag>
       ),
-      width: 100,
+      width: 120,
     },
     {
-      title: 'วันที่',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => formatDate(date),
-      width: 100,
+      title: "วันที่",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => (
+        <Space size={8}>
+          <CalendarOutlined style={{ color: "#8c8c8c" }} />
+          <Text style={{ fontSize: "12px" }}>{formatDate(date)}</Text>
+        </Space>
+      ),
+      width: 130,
     },
   ];
 
-  const completionRate = stats.totalOrders > 0 
-    ? Math.round((stats.completedOrders / stats.totalOrders) * 100) 
-    : 0;
+  const completionRate =
+    stats.totalOrders > 0
+      ? Math.round((stats.completedOrders / stats.totalOrders) * 100)
+      : 0;
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          padding: "24px",
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
-          📊 แดชบอร์ด
-        </h1>
-        <p style={{ color: '#666', margin: '8px 0 0 0' }}>
-          ภาพรวมระบบจัดการคำสั่งซื้อ
-        </p>
-      </div>
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <Card style={{ marginBottom: "24px" }}>
+        <Space direction="vertical" size={4}>
+          <Title level={2} style={{ margin: 0 }}>
+            <DashboardOutlined style={{ marginRight: "8px" }} />
+            แดชบอร์ด
+          </Title>
+          <Text type="secondary">ภาพรวมระบบจัดการคำสั่งซื้อและข้อมูลสำคัญ</Text>
+        </Space>
+      </Card>
 
       {/* Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card hoverable style={{ borderRadius: "8px", padding: "20px" }}>
             <Statistic
-              title="คำสั่งซื้อทั้งหมด"
+              title={
+                <Space>
+                  <ShoppingCartOutlined style={{ color: "#1890ff" }} />
+                  <Text>คำสั่งซื้อทั้งหมด</Text>
+                </Space>
+              }
               value={stats.totalOrders}
-              prefix={<ShoppingCartOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{
+                color: "#1890ff",
+                fontSize: "28px",
+                fontWeight: "bold",
+              }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card hoverable style={{ borderRadius: "8px", padding: "20px" }}>
             <Statistic
-              title="รายได้รวม"
+              title={
+                <Space>
+                  <DollarOutlined style={{ color: "#52c41a" }} />
+                  <Text>รายได้รวม</Text>
+                </Space>
+              }
               value={stats.totalRevenue}
-              prefix={<DollarOutlined />}
               formatter={(value) => formatPrice(value)}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{
+                color: "#52c41a",
+                fontSize: "28px",
+                fontWeight: "bold",
+              }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card hoverable style={{ borderRadius: "8px", padding: "20px" }}>
             <Statistic
-              title="ลูกค้าทั้งหมด"
+              title={
+                <Space>
+                  <UserOutlined style={{ color: "#722ed1" }} />
+                  <Text>ลูกค้าทั้งหมด</Text>
+                </Space>
+              }
               value={stats.totalCustomers}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              valueStyle={{
+                color: "#722ed1",
+                fontSize: "28px",
+                fontWeight: "bold",
+              }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card hoverable style={{ borderRadius: "8px", padding: "20px" }}>
             <Statistic
-              title="สินค้าทั้งหมด"
+              title={
+                <Space>
+                  <BookOutlined style={{ color: "#fa8c16" }} />
+                  <Text>สินค้าทั้งหมด</Text>
+                </Space>
+              }
               value={stats.totalProducts}
-              prefix={<BookOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
+              valueStyle={{
+                color: "#fa8c16",
+                fontSize: "28px",
+                fontWeight: "bold",
+              }}
             />
           </Card>
         </Col>
       </Row>
 
       {/* Order Status Overview */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} lg={12}>
-          <Card title="สถานะคำสั่งซื้อ" extra={<ShoppingCartOutlined />}>
+          <Card
+            title={
+              <Space>
+                <ShoppingCartOutlined style={{ color: "#1890ff" }} />
+                <Text strong>สถานะคำสั่งซื้อ</Text>
+              </Space>
+            }
+            style={{ borderRadius: "8px", padding: "20px" }}
+          >
             <Row gutter={16}>
               <Col span={12}>
-                <Statistic
-                  title="รอตรวจสอบ"
-                  value={stats.pendingOrders}
-                  prefix={<ClockCircleOutlined />}
-                  valueStyle={{ color: '#faad14' }}
-                />
+                <Card
+                  size="small"
+                  style={{
+                    backgroundColor: "#fff7e6",
+                    border: "1px solid #ffd591",
+                  }}
+                >
+                  <Statistic
+                    title={
+                      <Space>
+                        <ClockCircleOutlined style={{ color: "#faad14" }} />
+                        <Text>รอตรวจสอบ</Text>
+                      </Space>
+                    }
+                    value={stats.pendingOrders}
+                    valueStyle={{
+                      color: "#faad14",
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                    }}
+                  />
+                </Card>
               </Col>
               <Col span={12}>
-                <Statistic
-                  title="สำเร็จแล้ว"
-                  value={stats.completedOrders}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
-                />
+                <Card
+                  size="small"
+                  style={{
+                    backgroundColor: "#f6ffed",
+                    border: "1px solid #b7eb8f",
+                  }}
+                >
+                  <Statistic
+                    title={
+                      <Space>
+                        <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                        <Text>สำเร็จแล้ว</Text>
+                      </Space>
+                    }
+                    value={stats.completedOrders}
+                    valueStyle={{
+                      color: "#52c41a",
+                      fontSize: "24px",
+                      fontWeight: "bold",
+                    }}
+                  />
+                </Card>
               </Col>
             </Row>
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="อัตราความสำเร็จ" extra={<CheckCircleOutlined />}>
-            <div style={{ textAlign: 'center' }}>
+          <Card
+            title={
+              <Space>
+                <RiseOutlined style={{ color: "#52c41a" }} />
+                <Text strong>อัตราความสำเร็จ</Text>
+              </Space>
+            }
+            style={{ borderRadius: "8px", padding: "20px" }}
+          >
+            <div style={{ textAlign: "center" }}>
               <Progress
                 type="circle"
                 percent={completionRate}
                 format={(percent) => `${percent}%`}
                 strokeColor={{
-                  '0%': '#108ee9',
-                  '100%': '#87d068',
+                  "0%": "#108ee9",
+                  "100%": "#87d068",
                 }}
                 size={120}
+                strokeWidth={8}
               />
-              <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
-                {stats.completedOrders} จาก {stats.totalOrders} คำสั่งซื้อ
+              <div style={{ marginTop: "16px" }}>
+                <Text style={{ fontSize: "16px", color: "#666" }}>
+                  <Text strong style={{ color: "#52c41a" }}>
+                    {stats.completedOrders}
+                  </Text>{" "}
+                  จาก{" "}
+                  <Text strong style={{ color: "#1890ff" }}>
+                    {stats.totalOrders}
+                  </Text>{" "}
+                  คำสั่งซื้อ
+                </Text>
               </div>
             </div>
           </Card>
         </Col>
       </Row>
 
-      {/* Exam Management Section */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24}>
-          <Card title="📝 จัดการคลังข้อสอบ" extra={<FileTextOutlined />}>
-            <p style={{ color: '#666', marginBottom: '16px' }}>
+      {/* Quick Actions Section */}
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: "#1890ff" }} />
+                <Text strong>จัดการคลังข้อสอบ</Text>
+              </Space>
+            }
+            style={{ borderRadius: "8px", padding: "20px" }}
+          >
+            <Text
+              type="secondary"
+              style={{ display: "block", marginBottom: "16px" }}
+            >
               จัดการหมวดหมู่ข้อสอบ คลังข้อสอบ และไฟล์ที่เกี่ยวข้อง
-            </p>
-            <Space size="middle">
+            </Text>
+            <Space size="middle" wrap>
               <Link href="/admin/exam-categories">
-                <Button type="primary" icon={<FolderOutlined />} size="large">
+                <Button
+                  type="primary"
+                  icon={<FolderOutlined />}
+                  style={{ borderRadius: "6px" }}
+                >
                   จัดการหมวดหมู่ข้อสอบ
                 </Button>
               </Link>
               <Link href="/admin/exam-bank">
-                <Button type="default" icon={<FileTextOutlined />} size="large">
+                <Button
+                  icon={<FileTextOutlined />}
+                  style={{ borderRadius: "6px" }}
+                >
                   จัดการคลังข้อสอบ
+                </Button>
+              </Link>
+            </Space>
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <Space>
+                <AppstoreOutlined style={{ color: "#52c41a" }} />
+                <Text strong>จัดการเนื้อหา</Text>
+              </Space>
+            }
+            style={{ borderRadius: "8px", padding: "20px" }}
+          >
+            <Text
+              type="secondary"
+              style={{ display: "block", marginBottom: "16px" }}
+            >
+              จัดการหมวดหมู่ eBook, โพสต์ และเนื้อหาต่างๆ
+            </Text>
+            <Space size="middle" wrap>
+              <Link href="/admin/categories">
+                <Button
+                  type="primary"
+                  icon={<AppstoreOutlined />}
+                  style={{
+                    borderRadius: "6px",
+                    backgroundColor: "#52c41a",
+                    borderColor: "#52c41a",
+                  }}
+                >
+                  จัดการหมวดหมู่
+                </Button>
+              </Link>
+              <Link href="/admin/posts">
+                <Button icon={<FileOutlined />} style={{ borderRadius: "6px" }}>
+                  จัดการโพสต์
                 </Button>
               </Link>
             </Space>
@@ -271,14 +514,48 @@ export default function AdminDashboardPage() {
       </Row>
 
       {/* Recent Orders */}
-      <Card title="คำสั่งซื้อล่าสุด" extra={<ShoppingCartOutlined />}>
+      <Card
+        title={
+          <Space>
+            <ShoppingCartOutlined style={{ color: "#1890ff" }} />
+            <Text strong>คำสั่งซื้อล่าสุด</Text>
+          </Space>
+        }
+        extra={
+          <Link href="/admin/orders">
+            <Button type="link" icon={<EyeOutlined />} style={{ padding: 0 }}>
+              ดูทั้งหมด
+            </Button>
+          </Link>
+        }
+        style={{ borderRadius: "8px", padding: "20px" }}
+      >
         <Table
           columns={recentOrdersColumns}
           dataSource={recentOrders}
           loading={loading}
           rowKey="id"
           pagination={false}
-          scroll={{ x: 800 }}
+          scroll={{ x: 1000 }}
+          size="middle"
+          locale={{
+            emptyText: (
+              <div style={{ padding: "40px", textAlign: "center" }}>
+                <ShoppingCartOutlined
+                  style={{
+                    fontSize: "48px",
+                    color: "#bfbfbf",
+                    marginBottom: "16px",
+                  }}
+                />
+                <div>
+                  <Text type="secondary" style={{ fontSize: "16px" }}>
+                    ยังไม่มีคำสั่งซื้อ
+                  </Text>
+                </div>
+              </div>
+            ),
+          }}
         />
       </Card>
     </div>
