@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // GET - ดึงข้อมูล ebook ตาม ID สำหรับลูกค้า
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const ebook = await prisma.ebook.findUnique({
       where: { 
@@ -17,8 +17,7 @@ export async function GET(request, { params }) {
         category: {
           select: {
             id: true,
-            name: true,
-            slug: true
+            name: true
           }
         },
         reviews: {

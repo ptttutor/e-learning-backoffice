@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function EbookDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const [ebook, setEbook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -396,7 +395,7 @@ export default function EbookDetailPage() {
                 {ebook.category && (
                   <div style={{ marginBottom: '16px' }}>
                     <Link 
-                      href={`/ebooks?category=${ebook.category.slug}`}
+                      href={`/ebooks?category=${ebook.category.id}`}
                       style={{
                         display: 'inline-block',
                         backgroundColor: '#e9ecef',
