@@ -1,14 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, Row, Col, Statistic, Table, Tag, Progress } from "antd";
+import { Card, Row, Col, Statistic, Table, Tag, Progress, Button, Space } from "antd";
 import { 
   ShoppingCartOutlined, 
   DollarOutlined, 
   UserOutlined, 
   BookOutlined,
   ClockCircleOutlined,
-  CheckCircleOutlined 
+  CheckCircleOutlined,
+  FileTextOutlined,
+  FolderOutlined,
+  UploadOutlined
 } from "@ant-design/icons";
+import Link from "next/link";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -239,6 +243,29 @@ export default function AdminDashboardPage() {
                 {stats.completedOrders} จาก {stats.totalOrders} คำสั่งซื้อ
               </div>
             </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Exam Management Section */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24}>
+          <Card title="📝 จัดการคลังข้อสอบ" extra={<FileTextOutlined />}>
+            <p style={{ color: '#666', marginBottom: '16px' }}>
+              จัดการหมวดหมู่ข้อสอบ คลังข้อสอบ และไฟล์ที่เกี่ยวข้อง
+            </p>
+            <Space size="middle">
+              <Link href="/admin/exam-categories">
+                <Button type="primary" icon={<FolderOutlined />} size="large">
+                  จัดการหมวดหมู่ข้อสอบ
+                </Button>
+              </Link>
+              <Link href="/admin/exam-bank">
+                <Button type="default" icon={<FileTextOutlined />} size="large">
+                  จัดการคลังข้อสอบ
+                </Button>
+              </Link>
+            </Space>
           </Card>
         </Col>
       </Row>

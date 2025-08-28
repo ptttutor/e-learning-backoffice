@@ -37,8 +37,18 @@ const menuItems = [
     href: "/admin/ebook-categories",
   },
   {
+    key: "/admin/exam-categories",
+    label: "� หมวดหมู่ข้อสอบ",
+    href: "/admin/exam-categories",
+  },
+  {
+    key: "/admin/exam-bank",
+    label: "📝 คลังข้อสอบ",
+    href: "/admin/exam-bank",
+  },
+  {
     key: "/admin/posts",
-    label: "📝 โพสต์",
+    label: "� โูพสต์",
     href: "/admin/posts",
   },
   {

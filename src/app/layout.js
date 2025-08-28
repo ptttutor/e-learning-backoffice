@@ -44,6 +44,11 @@ const menuItems = [
     label: <Link href="/ebooks">หนังสือ</Link>,
   },
   {
+    key: "/exams",
+    icon: <FileTextOutlined />,
+    label: <Link href="/exams">คลังข้อสอบ</Link>,
+  },
+  {
     key: "/my-courses",
     icon: <BookOutlined />,
     label: <Link href="/my-courses">คอร์สเรียนของฉัน</Link>,

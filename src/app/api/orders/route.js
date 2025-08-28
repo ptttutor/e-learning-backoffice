@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -7,19 +7,26 @@ const prisma = new PrismaClient();
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { customerInfo, billingAddress, shippingAddress, items, paymentMethod, total } = body;
+    const {
+      customerInfo,
+      billingAddress,
+      shippingAddress,
+      items,
+      paymentMethod,
+      total,
+    } = body;
 
     // Validate required fields
     if (!customerInfo?.email || !items?.length || !total) {
       return NextResponse.json(
-        { success: false, error: 'ข้อมูลไม่ครบถ้วน' },
+        { success: false, error: "ข้อมูลไม่ครบถ้วน" },
         { status: 400 }
       );
     }
 
     // Create or find user
     let user = await prisma.user.findUnique({
-      where: { email: customerInfo.email }
+      where: { email: customerInfo.email },
     });
 
     if (!user) {
@@ -27,8 +34,8 @@ export async function POST(request) {
         data: {
           email: customerInfo.email,
           name: `${customerInfo.firstName} ${customerInfo.lastName}`,
-          role: 'STUDENT'
-        }
+          role: "STUDENT",
+        },
       });
     }
 
@@ -36,13 +43,13 @@ export async function POST(request) {
     const orderPromises = items.map(async (item) => {
       // Verify item exists and get current price
       let itemData;
-      if (item.type === 'ebook') {
+      if (item.type === "ebook") {
         itemData = await prisma.ebook.findUnique({
-          where: { id: item.id, isActive: true }
+          where: { id: item.id, isActive: true },
         });
-      } else if (item.type === 'course') {
+      } else if (item.type === "course") {
         itemData = await prisma.course.findUnique({
-          where: { id: item.id, status: 'PUBLISHED' }
+          where: { id: item.id, status: "PUBLISHED" },
         });
       }
 
@@ -54,12 +61,14 @@ export async function POST(request) {
       const order = await prisma.order.create({
         data: {
           userId: user.id,
-          orderType: item.type === 'ebook' ? 'EBOOK' : 'COURSE',
-          status: 'PENDING',
+          orderType: item.type === "ebook" ? "EBOOK" : "COURSE",
+          status: "PENDING",
           total: item.price * item.quantity,
           shippingFee: 0,
-          ...(item.type === 'ebook' ? { ebookId: item.id } : { courseId: item.id })
-        }
+          ...(item.type === "ebook"
+            ? { ebookId: item.id }
+            : { courseId: item.id }),
+        },
       });
 
       // Create payment record
@@ -67,24 +76,29 @@ export async function POST(request) {
         data: {
           orderId: order.id,
           method: paymentMethod,
-          status: paymentMethod === 'bank_transfer' ? 'PENDING_VERIFICATION' : 'PENDING'
-        }
+          status:
+            paymentMethod === "bank_transfer"
+              ? "PENDING_VERIFICATION"
+              : "PENDING",
+        },
       });
 
       // Create shipping record if needed (for physical books)
-      if (item.type === 'ebook' && itemData.isPhysical && shippingAddress) {
+      if (item.type === "ebook" && itemData.isPhysical && shippingAddress) {
         await prisma.shipping.create({
           data: {
             orderId: order.id,
-            recipientName: shippingAddress.name || `${customerInfo.firstName} ${customerInfo.lastName}`,
-            recipientPhone: shippingAddress.phone || customerInfo.phone || '',
-            address: shippingAddress.address || '',
-            district: shippingAddress.city || '',
-            province: shippingAddress.province || '',
-            postalCode: shippingAddress.postalCode || '',
-            shippingMethod: 'PENDING',
-            status: 'PENDING'
-          }
+            recipientName:
+              shippingAddress.name ||
+              `${customerInfo.firstName} ${customerInfo.lastName}`,
+            recipientPhone: shippingAddress.phone || customerInfo.phone || "",
+            address: shippingAddress.address || "",
+            district: shippingAddress.city || "",
+            province: shippingAddress.province || "",
+            postalCode: shippingAddress.postalCode || "",
+            shippingMethod: "PENDING",
+            status: "PENDING",
+          },
         });
       }
 
@@ -94,15 +108,18 @@ export async function POST(request) {
     const results = await Promise.all(orderPromises);
 
     // Handle payment processing based on method
-    if (paymentMethod === 'bank_transfer') {
+    if (paymentMethod === "bank_transfer") {
       // For bank transfer, keep status as pending verification
       const paymentUpdates = results.map(({ payment }) =>
         prisma.payment.update({
           where: { id: payment.id },
           data: {
-            status: 'PENDING_VERIFICATION',
-            ref: `TRF${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`
-          }
+            status: "PENDING_VERIFICATION",
+            ref: `TRF${Date.now()}${Math.random()
+              .toString(36)
+              .substr(2, 5)
+              .toUpperCase()}`,
+          },
         })
       );
 
@@ -110,24 +127,27 @@ export async function POST(request) {
       const orderUpdates = results.map(({ order }) =>
         prisma.order.update({
           where: { id: order.id },
-          data: { status: 'PENDING_PAYMENT' }
+          data: { status: "PENDING_PAYMENT" },
         })
       );
 
       await Promise.all([...paymentUpdates, ...orderUpdates]);
     } else {
       // Simulate other payment processing
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Update payment status to completed
       const paymentUpdates = results.map(({ payment }) =>
         prisma.payment.update({
           where: { id: payment.id },
           data: {
-            status: 'COMPLETED',
+            status: "COMPLETED",
             paidAt: new Date(),
-            ref: `PAY${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`
-          }
+            ref: `PAY${Date.now()}${Math.random()
+              .toString(36)
+              .substr(2, 5)
+              .toUpperCase()}`,
+          },
         })
       );
 
@@ -135,7 +155,7 @@ export async function POST(request) {
       const orderUpdates = results.map(({ order }) =>
         prisma.order.update({
           where: { id: order.id },
-          data: { status: 'COMPLETED' }
+          data: { status: "COMPLETED" },
         })
       );
 
@@ -143,16 +163,18 @@ export async function POST(request) {
     }
 
     // For courses, create enrollment only if payment is completed
-    if (paymentMethod !== 'bank_transfer') {
-      const courseOrders = results.filter(({ order }) => order.orderType === 'COURSE');
+    if (paymentMethod !== "bank_transfer") {
+      const courseOrders = results.filter(
+        ({ order }) => order.orderType === "COURSE"
+      );
       if (courseOrders.length > 0) {
         const enrollmentPromises = courseOrders.map(({ order }) =>
           prisma.enrollment.create({
             data: {
               userId: user.id,
               courseId: order.courseId,
-              status: 'ACTIVE'
-            }
+              status: "ACTIVE",
+            },
           })
         );
         await Promise.all(enrollmentPromises);
@@ -161,15 +183,17 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      message: 'สั่งซื้อสำเร็จ',
+      message: "สั่งซื้อสำเร็จ",
       orderId: results[0].order.id,
-      orders: results.map(({ order }) => order.id)
+      orders: results.map(({ order }) => order.id),
     });
-
   } catch (error) {
-    console.error('Order creation error:', error);
+    console.error("Order creation error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ' },
+      {
+        success: false,
+        error: error.message || "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ",
+      },
       { status: 500 }
     );
   }
@@ -179,23 +203,23 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get('email');
+    const email = searchParams.get("email");
 
     if (!email) {
       return NextResponse.json(
-        { success: false, error: 'กรุณาระบุอีเมล' },
+        { success: false, error: "กรุณาระบุอีเมล" },
         { status: 400 }
       );
     }
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
       return NextResponse.json({
         success: true,
-        data: []
+        data: [],
       });
     }
 
@@ -206,33 +230,32 @@ export async function GET(request) {
           select: {
             title: true,
             coverImageUrl: true,
-            author: true
-          }
+            author: true,
+          },
         },
         course: {
           select: {
             title: true,
             description: true,
             instructor: {
-              select: { name: true }
-            }
-          }
+              select: { name: true },
+            },
+          },
         },
         payment: true,
-        shipping: true
+        shipping: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({
       success: true,
-      data: orders
+      data: orders,
     });
-
   } catch (error) {
-    console.error('Error fetching orders:', error);
+    console.error("Error fetching orders:", error);
     return NextResponse.json(
-      { success: false, error: 'เกิดข้อผิดพลาดในการดึงข้อมูลคำสั่งซื้อ' },
+      { success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูลคำสั่งซื้อ" },
       { status: 500 }
     );
   }

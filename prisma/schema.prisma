@@ -260,3 +260,36 @@ model Shipping {
   updatedAt       DateTime       @updatedAt
   order           Order          @relation(fields: [orderId], references: [id])
 }
+
+model ExamCategory {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  exams       ExamBank[]
+}
+
+model ExamBank {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  categoryId  String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  category    ExamCategory? @relation(fields: [categoryId], references: [id])
+  files       ExamFile[]
+}
+
+model ExamFile {
+  id         String   @id @default(uuid())
+  examId     String
+  fileName   String
+  filePath   String
+  fileType   String?
+  fileSize   Int?
+  uploadedAt DateTime @default(now())
+  exam       ExamBank @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
