@@ -17,11 +17,6 @@ const menuItems = [
     href: "/admin/categories",
   },
   {
-    key: "/admin/subjects",
-    label: "วิชา",
-    href: "/admin/subjects",
-  },
-  {
     key: "/admin/ebooks",
     label: "eBooks",
     href: "/admin/ebooks",
@@ -58,24 +53,28 @@ export default function AdminLayout({ children }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       {/* Sidebar */}
-      <div style={{ 
-        width: "220px", 
-        backgroundColor: "#222", 
-        color: "#fff",
-        position: "fixed",
-        height: "100vh",
-        overflowY: "auto"
-      }}>
-        <div style={{ 
-          fontWeight: "bold", 
-          fontSize: "22px", 
-          padding: "24px 16px", 
-          borderBottom: "1px solid #333", 
-          letterSpacing: "1px" 
-        }}>
+      <div
+        style={{
+          width: "220px",
+          backgroundColor: "#222",
+          color: "#fff",
+          position: "fixed",
+          height: "100vh",
+          overflowY: "auto",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: "bold",
+            fontSize: "22px",
+            padding: "24px 16px",
+            borderBottom: "1px solid #333",
+            letterSpacing: "1px",
+          }}
+        >
           Admin Panel
         </div>
-        
+
         <nav style={{ padding: "16px 0" }}>
           {menuItems.map((item) => (
             <a
@@ -100,15 +99,17 @@ export default function AdminLayout({ children }) {
           ))}
         </nav>
       </div>
-      
+
       {/* Main Content */}
-      <div style={{ 
-        marginLeft: "220px", 
-        backgroundColor: "#f7f7f7", 
-        minHeight: "100vh", 
-        width: "calc(100% - 220px)",
-        padding: "0"
-      }}>
+      <div
+        style={{
+          marginLeft: "220px",
+          backgroundColor: "#f7f7f7",
+          minHeight: "100vh",
+          width: "calc(100% - 220px)",
+          padding: "0",
+        }}
+      >
         {children}
       </div>
     </div>

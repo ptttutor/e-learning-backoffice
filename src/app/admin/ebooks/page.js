@@ -24,12 +24,14 @@ export default function EbooksPage() {
     isPhysical: false,
     weight: 0,
     dimensions: '',
-    stock: 0,
     isActive: true,
     isFeatured: false,
     categoryId: '',
     publishedAt: ''
   });
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchEbooks();
@@ -39,10 +41,18 @@ export default function EbooksPage() {
   const fetchEbooks = async () => {
     try {
       const response = await fetch('/api/admin/ebooks');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        setError(`Failed to fetch ebooks: ${errorData.error}`);
+        return;
+      }
       const data = await response.json();
       setEbooks(data);
+      setError('');
     } catch (error) {
       console.error('Error fetching ebooks:', error);
+      setError('Network error while fetching ebooks');
     } finally {
       setLoading(false);
     }
@@ -71,7 +81,6 @@ export default function EbooksPage() {
         fileSize: formData.fileSize ? parseInt(formData.fileSize) : null,
         pageCount: formData.pageCount ? parseInt(formData.pageCount) : null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
-        stock: parseInt(formData.stock),
         publishedAt: formData.publishedAt ? new Date(formData.publishedAt) : null
       };
       
@@ -88,9 +97,15 @@ export default function EbooksPage() {
         setShowForm(false);
         setEditingEbook(null);
         resetForm();
+        setError('');
+      } else {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        setError(`Failed to save ebook: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Error saving ebook:', error);
+      setError('Network error while saving ebook');
     }
   };
 
@@ -112,7 +127,6 @@ export default function EbooksPage() {
       isPhysical: false,
       weight: 0,
       dimensions: '',
-      stock: 0,
       isActive: true,
       isFeatured: false,
       categoryId: '',
@@ -139,7 +153,6 @@ export default function EbooksPage() {
       isPhysical: ebook.isPhysical,
       weight: ebook.weight || 0,
       dimensions: ebook.dimensions || '',
-      stock: ebook.stock,
       isActive: ebook.isActive,
       isFeatured: ebook.isFeatured,
       categoryId: ebook.categoryId || '',
@@ -159,6 +172,55 @@ export default function EbooksPage() {
         }
       } catch (error) {
         console.error('Error deleting ebook:', error);
+      }
+    }
+  };
+
+  const handleFileUpload = async (file, type) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+
+    try {
+      if (type === 'ebook') {
+        setUploadingFile(true);
+      } else if (type === 'cover') {
+        setUploadingCover(true);
+      }
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        if (type === 'ebook') {
+          setFormData(prev => ({
+            ...prev,
+            fileUrl: result.url,
+            fileSize: file.size
+          }));
+        } else if (type === 'cover') {
+          setFormData(prev => ({
+            ...prev,
+            coverImageUrl: result.url
+          }));
+        }
+      } else {
+        alert('การอัปโหลดไฟล์ล้มเหลว: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
+    } finally {
+      if (type === 'ebook') {
+        setUploadingFile(false);
+      } else if (type === 'cover') {
+        setUploadingCover(false);
       }
     }
   };
@@ -197,6 +259,19 @@ export default function EbooksPage() {
           เพิ่ม eBook ใหม่
         </button>
       </div>
+
+      {error && (
+        <div style={{
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          padding: '12px 16px',
+          borderRadius: '4px',
+          marginBottom: '24px',
+          border: '1px solid #f5c6cb'
+        }}>
+          {error}
+        </div>
+      )}
 
       {showForm && (
         <div style={{
@@ -283,7 +358,7 @@ export default function EbooksPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                     ISBN
@@ -292,6 +367,26 @@ export default function EbooksPage() {
                     type="text"
                     value={formData.isbn}
                     onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+                    placeholder="978-0123456789"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '16px'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    จำนวนหน้า
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.pageCount}
+                    onChange={(e) => setFormData({ ...formData, pageCount: e.target.value })}
+                    placeholder="250"
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -387,6 +482,73 @@ export default function EbooksPage() {
                 </div>
               </div>
 
+              {/* File Upload Section */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    ไฟล์ eBook
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="file"
+                      accept=".pdf,.epub,.mobi"
+                      onChange={(e) => handleFileUpload(e.target.files[0], 'ebook')}
+                      disabled={uploadingFile}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    {uploadingFile && <span style={{ color: '#007bff' }}>กำลังอัปโหลด...</span>}
+                  </div>
+                  {formData.fileUrl && (
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                      ✅ ไฟล์ถูกอัปโหลดแล้ว ({Math.round(formData.fileSize / 1024 / 1024 * 100) / 100} MB)
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                    รูปปก
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e.target.files[0], 'cover')}
+                      disabled={uploadingCover}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px'
+                      }}
+                    />
+                    {uploadingCover && <span style={{ color: '#007bff' }}>กำลังอัปโหลด...</span>}
+                  </div>
+                  {formData.coverImageUrl && (
+                    <div style={{ marginTop: '8px' }}>
+                      <img 
+                        src={formData.coverImageUrl} 
+                        alt="Cover preview"
+                        style={{ 
+                          width: '60px', 
+                          height: '80px', 
+                          objectFit: 'cover', 
+                          borderRadius: '4px',
+                          border: '1px solid #ddd'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
@@ -415,7 +577,7 @@ export default function EbooksPage() {
               </div>
 
               {formData.isPhysical && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
                       น้ำหนัก (kg)
@@ -425,6 +587,7 @@ export default function EbooksPage() {
                       step="0.01"
                       value={formData.weight}
                       onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                      placeholder="0.5"
                       style={{
                         width: '100%',
                         padding: '12px',
@@ -444,24 +607,6 @@ export default function EbooksPage() {
                       value={formData.dimensions}
                       onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
                       placeholder="21x29.7x2 cm"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '16px'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                      สต็อก
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.stock}
-                      onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                       style={{
                         width: '100%',
                         padding: '12px',
@@ -524,7 +669,7 @@ export default function EbooksPage() {
               <th style={{ padding: '16px', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>ผู้เขียน</th>
               <th style={{ padding: '16px', textAlign: 'right', borderBottom: '1px solid #dee2e6' }}>ราคา</th>
               <th style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>รูปแบบ</th>
-              <th style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>สต็อก</th>
+              <th style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>หน้า</th>
               <th style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>สถานะ</th>
               <th style={{ padding: '16px', textAlign: 'center', borderBottom: '1px solid #dee2e6' }}>จัดการ</th>
             </tr>
@@ -600,13 +745,12 @@ export default function EbooksPage() {
                 </td>
                 <td style={{ padding: '16px', textAlign: 'center' }}>
                   <span style={{
-                    backgroundColor: ebook.stock > 10 ? '#d4edda' : ebook.stock > 0 ? '#fff3cd' : '#f8d7da',
-                    color: ebook.stock > 10 ? '#155724' : ebook.stock > 0 ? '#856404' : '#721c24',
+                    backgroundColor: '#e9ecef',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     fontSize: '12px'
                   }}>
-                    {ebook.stock}
+                    {ebook.pageCount || '-'}
                   </span>
                 </td>
                 <td style={{ padding: '16px', textAlign: 'center' }}>

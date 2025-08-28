@@ -202,7 +202,6 @@ model Ebook {
   isPhysical      Boolean       @default(false)
   weight          Float?
   dimensions      String?
-  stock           Int           @default(0)
   isActive        Boolean       @default(true)
   isFeatured      Boolean       @default(false)
   publishedAt     DateTime?
