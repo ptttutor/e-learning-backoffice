@@ -1,9 +1,33 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Table, Button, Space, Modal, Form, Input, message, Card, Popconfirm, Tag } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, FolderOutlined } from "@ant-design/icons";
+import { 
+  Table, 
+  Button, 
+  Space, 
+  Modal, 
+  Form, 
+  Input, 
+  message, 
+  Card, 
+  Typography,
+  Tag,
+  Avatar,
+  Badge,
+} from "antd";
+import { 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  FolderOutlined,
+  FileTextOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  BookOutlined,
+} from "@ant-design/icons";
 
 const { TextArea } = Input;
+const { Title, Text } = Typography;
 
 export default function AdminExamCategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -80,123 +104,178 @@ export default function AdminExamCategoriesPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/admin/exam-categories/${id}`, {
-        method: 'DELETE'
-      });
+  const handleDelete = async (id, name) => {
+    Modal.confirm({
+      title: 'ยืนยันการลบหมวดหมู่?',
+      content: `คุณต้องการลบหมวดหมู่ "${name}" ใช่หรือไม่?`,
+      okText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const response = await fetch(`/api/admin/exam-categories/${id}`, {
+            method: 'DELETE'
+          });
 
-      const result = await response.json();
+          const result = await response.json();
 
-      if (result.success) {
-        message.success(result.message);
-        fetchCategories();
-      } else {
-        message.error(result.error);
-      }
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      message.error('เกิดข้อผิดพลาดในการลบข้อมูล');
-    }
+          if (result.success) {
+            message.success(result.message || 'ลบหมวดหมู่สำเร็จ');
+            fetchCategories();
+          } else {
+            message.error(result.error);
+          }
+        } catch (error) {
+          console.error('Error deleting category:', error);
+          message.error('เกิดข้อผิดพลาดในการลบข้อมูล');
+        }
+      },
+    });
+  };
+
+  const formatDate = (dateString) => {
+    return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
   };
 
   const columns = [
     {
-      title: 'ชื่อหมวดหมู่',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FolderOutlined style={{ color: '#1890ff' }} />
-          <strong>{text}</strong>
-        </div>
-      )
-    },
-    {
-      title: 'คำอธิบาย',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text) => text || '-'
-    },
-    {
-      title: 'จำนวนข้อสอบ',
-      dataIndex: '_count',
-      key: 'examCount',
-      render: (count) => (
-        <Tag color="blue">{count.exams} ข้อสอบ</Tag>
-      )
-    },
-    {
-      title: 'สถานะ',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (isActive) => (
-        <Tag color={isActive ? 'green' : 'red'}>
-          {isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-        </Tag>
-      )
-    },
-    {
-      title: 'วันที่สร้าง',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('th-TH')
-    },
-    {
-      title: 'การจัดการ',
-      key: 'actions',
+      title: "หมวดหมู่",
+      key: "category",
       render: (_, record) => (
-        <Space>
+        <Space size={12}>
+          <Avatar 
+            icon={<FolderOutlined />} 
+            style={{ backgroundColor: "#1890ff" }}
+            size="default" 
+          />
+          <div>
+            <div>
+              <Text strong style={{ fontSize: "14px" }}>{record.name}</Text>
+            </div>
+            {record.description && (
+              <div>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  {record.description.length > 50 
+                    ? `${record.description.substring(0, 50)}...` 
+                    : record.description}
+                </Text>
+              </div>
+            )}
+          </div>
+        </Space>
+      ),
+      width: 300,
+    },
+    {
+      title: "คำอธิบาย",
+      dataIndex: "description",
+      key: "description",
+      render: (description) => (
+        <Space size={8}>
+          <FileTextOutlined style={{ color: "#8c8c8c" }} />
+          <Text style={{ fontSize: "13px" }}>
+            {description || <Text type="secondary">ไม่มีคำอธิบาย</Text>}
+          </Text>
+        </Space>
+      ),
+      width: 250,
+    },
+    {
+      title: "จำนวนข้อสอบ",
+      key: "examCount",
+      render: (_, record) => (
+        <Badge 
+          count={record._count?.exams || 0} 
+          style={{ backgroundColor: '#52c41a' }}
+          showZero
+        />
+      ),
+      width: 120,
+      align: 'center',
+    },
+    {
+      title: "สถานะ",
+      dataIndex: "isActive",
+      key: "status",
+      render: (isActive) => (
+        <Tag 
+          color={isActive ? "success" : "error"}
+          icon={isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+        >
+          {isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+        </Tag>
+      ),
+      width: 120,
+    },
+    {
+      title: "วันที่สร้าง",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => (
+        <Space size={8}>
+          <CalendarOutlined style={{ color: "#8c8c8c" }} />
+          <Text style={{ fontSize: "13px" }}>{formatDate(date)}</Text>
+        </Space>
+      ),
+      width: 150,
+    },
+    {
+      title: "การดำเนินการ",
+      key: "actions",
+      render: (_, record) => (
+        <Space size={8} wrap>
           <Button
             type="primary"
-            size="small"
             icon={<EditOutlined />}
+            size="small"
             onClick={() => handleEdit(record)}
+            style={{ borderRadius: "6px" }}
           >
             แก้ไข
           </Button>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="ลบ"
-            cancelText="ยกเลิก"
-            okType="danger"
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+            onClick={() => handleDelete(record.id, record.name)}
+            disabled={record._count?.exams > 0}
+            style={{ borderRadius: "6px" }}
           >
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              disabled={record._count.exams > 0}
-            >
-              ลบ
-            </Button>
-          </Popconfirm>
+            ลบ
+          </Button>
         </Space>
-      )
-    }
+      ),
+      width: 150,
+      fixed: "right",
+    },
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <Card style={{ marginBottom: "24px" }}>
+        <Space direction="vertical" size={4}>
+          <Title level={2} style={{ margin: 0 }}>
+            <BookOutlined style={{ marginRight: "8px" }} />
+            จัดการหมวดหมู่ข้อสอบ
+          </Title>
+          <Text type="secondary">จัดการหมวดหมู่สำหรับจัดเก็บและจัดระเบียบข้อสอบ</Text>
+        </Space>
+      </Card>
+
       <Card>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '24px'
-        }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px' }}>📁 จัดการหมวดหมู่ข้อสอบ</h1>
-            <p style={{ margin: '8px 0 0 0', color: '#666' }}>
-              จัดการหมวดหมู่สำหรับจัดเก็บข้อสอบ
-            </p>
-          </div>
+        <div style={{ marginBottom: "16px" }}>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={handleCreate}
-            size="large"
+            style={{ borderRadius: "6px" }}
+            size="middle"
           >
             เพิ่มหมวดหมู่ใหม่
           </Button>
@@ -207,56 +286,102 @@ export default function AdminExamCategoriesPage() {
           dataSource={categories}
           rowKey="id"
           loading={loading}
+          scroll={{ x: 1000 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `ทั้งหมด ${total} รายการ`
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} จาก ${total} รายการ`,
           }}
+          size="middle"
         />
       </Card>
 
+      {/* Create/Edit Modal */}
       <Modal
-        title={editingCategory ? "แก้ไขหมวดหมู่ข้อสอบ" : "เพิ่มหมวดหมู่ข้อสอบใหม่"}
+        title={
+          <Space>
+            {editingCategory ? <EditOutlined /> : <PlusOutlined />}
+            <Text strong>
+              {editingCategory ? "แก้ไขหมวดหมู่ข้อสอบ" : "เพิ่มหมวดหมู่ข้อสอบใหม่"}
+            </Text>
+          </Space>
+        }
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          setEditingCategory(null);
+          form.resetFields();
+        }}
         footer={null}
         width={600}
+        style={{ top: 20 }}
+        destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          style={{ marginTop: '24px' }}
         >
           <Form.Item
             name="name"
-            label="ชื่อหมวดหมู่"
+            label={
+              <Space size={6}>
+                <FolderOutlined style={{ color: "#8c8c8c" }} />
+                <Text>ชื่อหมวดหมู่</Text>
+              </Space>
+            }
             rules={[
               { required: true, message: 'กรุณาระบุชื่อหมวดหมู่' },
+              { min: 2, message: "ชื่อหมวดหมู่ต้องมีอย่างน้อย 2 ตัวอักษร" },
               { max: 255, message: 'ชื่อหมวดหมู่ต้องไม่เกิน 255 ตัวอักษร' }
             ]}
           >
-            <Input placeholder="เช่น คณิตศาสตร์, ฟิสิกส์, เคมี" />
+            <Input 
+              placeholder="เช่น คณิตศาสตร์, ฟิสิกส์, เคมี"
+              style={{ borderRadius: "6px" }}
+            />
           </Form.Item>
 
           <Form.Item
             name="description"
-            label="คำอธิบาย (ไม่บังคับ)"
+            label={
+              <Space size={6}>
+                <FileTextOutlined style={{ color: "#8c8c8c" }} />
+                <Text>คำอธิบาย (ไม่บังคับ)</Text>
+              </Space>
+            }
+            rules={[
+              { max: 500, message: "คำอธิบายต้องไม่เกิน 500 ตัวอักษร" }
+            ]}
           >
             <TextArea 
               rows={4} 
               placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับหมวดหมู่นี้"
+              style={{ borderRadius: "6px" }}
             />
           </Form.Item>
 
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+          <Form.Item>
             <Space>
-              <Button onClick={() => setModalVisible(false)}>
-                ยกเลิก
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={editingCategory ? <EditOutlined /> : <PlusOutlined />}
+                style={{ borderRadius: "6px" }}
+              >
+                {editingCategory ? "อัพเดท" : "สร้าง"}
               </Button>
-              <Button type="primary" htmlType="submit">
-                {editingCategory ? 'อัพเดท' : 'สร้าง'}
+              <Button
+                onClick={() => {
+                  setModalVisible(false);
+                  setEditingCategory(null);
+                  form.resetFields();
+                }}
+                style={{ borderRadius: "6px" }}
+              >
+                ยกเลิก
               </Button>
             </Space>
           </Form.Item>
