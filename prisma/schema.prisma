@@ -20,6 +20,8 @@ model User {
   orders       Order[]
   posts        Post[]        @relation("AuthorPosts")
   ebookReviews EbookReview[]
+  couponUsages CouponUsage[]
+  downloads    EbookDownload[]
 }
 
 model Course {
@@ -85,35 +87,53 @@ model Category {
 }
 
 model Order {
-  id           String    @id @default(uuid())
-  userId       String
-  courseId     String?
-  ebookId      String?
-  orderType    OrderType @default(COURSE)
-  status       String
-  total        Float
-  shippingFee  Float     @default(0)
-  createdAt    DateTime  @default(now())
-  course       Course?   @relation(fields: [courseId], references: [id])
-  ebook        Ebook?    @relation(fields: [ebookId], references: [id])
-  user         User      @relation(fields: [userId], references: [id])
-  payment      Payment?
-  shipping     Shipping?
+  id             String      @id @default(uuid())
+  orderNumber    String      @unique @default(cuid())
+  userId         String
+  courseId       String?
+  ebookId        String?
+  orderType      OrderType   @default(COURSE)
+  status         OrderStatus @default(PENDING)
+  subtotal       Float       // ราคาสินค้า
+  shippingFee    Float       @default(0)
+  tax            Float       @default(0)
+  discount       Float       @default(0)
+  couponDiscount Float       @default(0)
+  total          Float
+  notes          String?
+  couponId       String?
+  couponCode     String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  user           User        @relation(fields: [userId], references: [id])
+  course         Course?     @relation(fields: [courseId], references: [id])
+  ebook          Ebook?      @relation(fields: [ebookId], references: [id])
+  coupon         Coupon?     @relation(fields: [couponId], references: [id])
+  items          OrderItem[]
+  payment        Payment?
+  shipping       Shipping?
+  couponUsages   CouponUsage[]
+  downloads      EbookDownload[]
 }
 
 model Payment {
-  id         String    @id @default(uuid())
-  orderId    String    @unique
-  method     String
-  status     String
-  paidAt     DateTime?
-  ref        String?
-  slipUrl    String?
-  uploadedAt DateTime?
-  verifiedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now()) @updatedAt
-  order      Order     @relation(fields: [orderId], references: [id])
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  method       PaymentMethod @default(BANK_TRANSFER)
+  status       PaymentStatus @default(PENDING)
+  amount       Float
+  paidAt       DateTime?
+  ref          String?
+  slipUrl      String?
+  uploadedAt   DateTime?
+  verifiedAt   DateTime?
+  verifiedBy   String?       // Admin ID ที่ตรวจสอบ
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  order        Order         @relation(fields: [orderId], references: [id])
 }
 
 enum Role {
@@ -145,6 +165,56 @@ enum EnrollStatus {
 enum OrderType {
   COURSE
   EBOOK
+  MIXED
+}
+
+enum OrderStatus {
+  PENDING
+  PENDING_PAYMENT
+  PENDING_VERIFICATION
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CREDIT_CARD
+  PROMPTPAY
+  TRUE_MONEY
+  FREE
+}
+
+enum PaymentStatus {
+  PENDING
+  PENDING_VERIFICATION
+  COMPLETED
+  REJECTED
+  FAILED
+  REFUNDED
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+  KERRY
+  THAILAND_POST
+  JT_EXPRESS
+  FLASH_EXPRESS
+  NINJA_VAN
+  DHL
+  FEDEX
+}
+
+enum ShippingStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
 }
 
 enum EbookFormat {
@@ -153,12 +223,23 @@ enum EbookFormat {
   MOBI
 }
 
-enum ShippingStatus {
-  PENDING
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+enum ApplicableType {
+  ALL
+  COURSE_ONLY
+  EBOOK_ONLY
+  CATEGORY
+  SPECIFIC_ITEM
+}
+
+enum ItemType {
+  COURSE
+  EBOOK
 }
 
 model PostType {
@@ -210,17 +291,21 @@ model Ebook {
   language        String        @default("th")
   format          EbookFormat   @default(PDF)
   isPhysical      Boolean       @default(false)
-  weight          Float?
-  dimensions      String?
+  weight          Float?        // กรัม
+  dimensions      String?       // "กว้าง x ยาว x สูง (ซม.)"
+  downloadLimit   Int?          // จำกัดการดาวน์โหลด
+  accessDuration  Int?          // ระยะเวลาการเข้าถึง (วัน)
   isActive        Boolean       @default(true)
   isFeatured      Boolean       @default(false)
   publishedAt     DateTime?
   categoryId      String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  
   category        EbookCategory? @relation(fields: [categoryId], references: [id])
   orders          Order[]
   reviews         EbookReview[]
+  downloads       EbookDownload[]
 }
 
 model EbookCategory {
@@ -251,24 +336,27 @@ model EbookReview {
 }
 
 model Shipping {
-  id              String         @id @default(uuid())
-  orderId         String         @unique
-  recipientName   String
-  recipientPhone  String
-  address         String
-  district        String
-  province        String
-  postalCode      String
-  country         String         @default("Thailand")
-  shippingMethod  String
-  trackingNumber  String?
-  status          ShippingStatus @default(PENDING)
-  shippedAt       DateTime?
-  deliveredAt     DateTime?
-  notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  order           Order          @relation(fields: [orderId], references: [id])
+  id                String         @id @default(uuid())
+  orderId           String         @unique
+  recipientName     String
+  recipientPhone    String
+  address           String
+  district          String
+  province          String
+  postalCode        String
+  country           String         @default("Thailand")
+  shippingMethod    ShippingMethod @default(STANDARD)
+  shippingFee       Float          @default(0)
+  trackingNumber    String?
+  status            ShippingStatus @default(PENDING)
+  estimatedDelivery DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  order             Order          @relation(fields: [orderId], references: [id])
 }
 
 model ExamCategory {
@@ -302,4 +390,100 @@ model ExamFile {
   fileSize   Int?
   uploadedAt DateTime @default(now())
   exam       ExamBank @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+// ระบบ Coupon/Discount Code
+model Coupon {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  name            String         // ชื่อโปรโมชั่น
+  description     String?
+  type            CouponType     @default(PERCENTAGE)
+  value           Float          // เปอร์เซ็นต์ หรือ จำนวนเงิน
+  minOrderAmount  Float?         // ยอดขั้นต่ำ
+  maxDiscount     Float?         // ส่วนลดสูงสุด (สำหรับ percentage)
+  usageLimit      Int?           // จำนวนครั้งที่ใช้ได้ทั้งหมด
+  usageCount      Int            @default(0)
+  userUsageLimit  Int?           // จำนวนครั้งที่ user คนเดียวใช้ได้
+  isActive        Boolean        @default(true)
+  validFrom       DateTime
+  validUntil      DateTime
+  applicableType  ApplicableType @default(ALL)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Relations
+  orders          Order[]
+  usages          CouponUsage[]
+  categories      CouponCategory[]
+  items           CouponItem[]
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  userId    String
+  orderId   String
+  usedAt    DateTime @default(now())
+  
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  
+  @@unique([couponId, userId, orderId])
+}
+
+model CouponCategory {
+  id         String   @id @default(uuid())
+  couponId   String
+  categoryId String
+  itemType   ItemType // COURSE หรือ EBOOK
+  
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  
+  @@unique([couponId, categoryId, itemType])
+}
+
+model CouponItem {
+  id       String   @id @default(uuid())
+  couponId String
+  itemId   String
+  itemType ItemType
+  
+  coupon   Coupon   @relation(fields: [couponId], references: [id])
+  
+  @@unique([couponId, itemId, itemType])
+}
+
+// ระบบ Order Items (สำหรับ multiple items ต่อ order)
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  itemType   ItemType
+  itemId     String
+  title      String   // เก็บชื่อสินค้าตอนสั่งซื้อ
+  quantity   Int      @default(1)
+  unitPrice  Float
+  totalPrice Float
+  createdAt  DateTime @default(now())
+  
+  order      Order    @relation(fields: [orderId], references: [id])
+}
+
+// ระบบ Download Management
+model EbookDownload {
+  id           String    @id @default(uuid())
+  userId       String
+  ebookId      String
+  orderId      String
+  downloadUrl  String
+  expiresAt    DateTime
+  downloadedAt DateTime?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  
+  user         User      @relation(fields: [userId], references: [id])
+  ebook        Ebook     @relation(fields: [ebookId], references: [id])
+  order        Order     @relation(fields: [orderId], references: [id])
 }
