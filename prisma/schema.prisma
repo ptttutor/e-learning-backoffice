@@ -32,6 +32,8 @@ model Course {
   status       CourseStatus @default(DRAFT)
   instructorId String
   categoryId   String?
+  coverImageUrl String?
+  coverPublicId String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   chapters     Chapter[]

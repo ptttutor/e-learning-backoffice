@@ -14,6 +14,8 @@ import {
   Card,
   Typography,
   Tag,
+  Upload,
+  Image,
 } from "antd";
 import {
   BookOutlined,
@@ -24,6 +26,8 @@ import {
   UserOutlined,
   TagOutlined,
   DollarOutlined,
+  UploadOutlined,
+  PictureOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -39,6 +43,8 @@ export default function CoursesPage() {
   const [catLoading, setCatLoading] = useState(false);
   const [instructors, setInstructors] = useState([]);
   const [instLoading, setInstLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
 
   // Fetch courses
   const fetchCourses = async () => {
@@ -85,22 +91,69 @@ export default function CoursesPage() {
     fetchInstructors();
   }, []);
 
+  // Handle cover image upload
+  const handleCoverUpload = async (file) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "cover");
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setCoverImageUrl(result.url);
+        form.setFieldsValue({ 
+          coverImageUrl: result.url,
+          coverPublicId: result.public_id // Store Cloudinary public_id for future deletion
+        });
+        message.success("อัพโหลดรูปปกสำเร็จ");
+      } else {
+        message.error(result.error || "อัพโหลดรูปปกไม่สำเร็จ");
+      }
+    } catch (error) {
+      message.error("เกิดข้อผิดพลาดในการอัพโหลด");
+    }
+    setUploading(false);
+    return false; // Prevent default upload behavior
+  };
+
+  // Handle cover image removal
+  const handleRemoveCover = () => {
+    setCoverImageUrl("");
+    form.setFieldsValue({ 
+      coverImageUrl: "",
+      coverPublicId: ""
+    });
+    message.success("ลบรูปปกสำเร็จ");
+  };
+
   // Create or update course
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      // Include cover image URL in the data
+      const courseData = {
+        ...values,
+        coverImageUrl: coverImageUrl || values.coverImageUrl,
+      };
+
       let res;
       if (editing) {
         res = await fetch(`/api/admin/courses/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
+          body: JSON.stringify(courseData),
         });
       } else {
         res = await fetch("/api/admin/courses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
+          body: JSON.stringify(courseData),
         });
       }
       const data = await res.json();
@@ -109,6 +162,7 @@ export default function CoursesPage() {
         setModalOpen(false);
         setEditing(null);
         form.resetFields();
+        setCoverImageUrl("");
         fetchCourses();
       } else {
         message.error(data.error || "เกิดข้อผิดพลาด");
@@ -143,8 +197,10 @@ export default function CoursesPage() {
     setModalOpen(true);
     if (record) {
       form.setFieldsValue(record);
+      setCoverImageUrl(record.coverImageUrl || "");
     } else {
       form.resetFields();
+      setCoverImageUrl("");
     }
   };
 
@@ -175,6 +231,42 @@ export default function CoursesPage() {
   };
 
   const columns = [
+    {
+      title: "รูปปก",
+      dataIndex: "coverImageUrl",
+      key: "coverImageUrl",
+      render: (coverImageUrl) => (
+        <div
+          style={{ width: 60, height: 40, overflow: "hidden", borderRadius: 4 }}
+        >
+          {coverImageUrl ? (
+            <Image
+              src={coverImageUrl}
+              alt="Course Cover"
+              width={60}
+              height={40}
+              style={{ objectFit: "cover" }}
+              fallback="/placeholder-course.svg"
+            />
+          ) : (
+            <div
+              style={{
+                width: 60,
+                height: 40,
+                backgroundColor: "#f0f0f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 4,
+              }}
+            >
+              <PictureOutlined style={{ color: "#d9d9d9" }} />
+            </div>
+          )}
+        </div>
+      ),
+      width: 80,
+    },
     {
       title: "ชื่อคอร์ส",
       dataIndex: "title",
@@ -337,6 +429,7 @@ export default function CoursesPage() {
           setModalOpen(false);
           setEditing(null);
           form.resetFields();
+          setCoverImageUrl("");
         }}
         footer={null}
         width={600}
@@ -359,6 +452,50 @@ export default function CoursesPage() {
 
           <Form.Item name="description" label="รายละเอียด">
             <Input.TextArea rows={3} placeholder="รายละเอียดคอร์ส" />
+          </Form.Item>
+
+          <Form.Item name="coverImageUrl" label="รูปปกคอร์ส">
+            <Space direction="vertical" style={{ width: "100%" }}>
+              <Upload
+                beforeUpload={handleCoverUpload}
+                showUploadList={false}
+                accept="image/*"
+                disabled={uploading}
+              >
+                <Button
+                  icon={<UploadOutlined />}
+                  loading={uploading}
+                  style={{ borderRadius: "6px" }}
+                >
+                  {uploading ? "กำลังอัพโหลด..." : "อัพโหลดรูปปก"}
+                </Button>
+              </Upload>
+              {coverImageUrl && (
+                <div style={{ marginTop: 8 }}>
+                  <Image
+                    src={coverImageUrl}
+                    alt="Course Cover Preview"
+                    width={200}
+                    height={120}
+                    style={{
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      border: "1px solid #d9d9d9",
+                    }}
+                  />
+                  <div style={{ marginTop: 4 }}>
+                    <Button
+                      size="small"
+                      danger
+                      type="link"
+                      onClick={handleRemoveCover}
+                    >
+                      ลบรูปปก
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Space>
           </Form.Item>
 
           <Form.Item name="price" label="ราคา">
@@ -454,6 +591,7 @@ export default function CoursesPage() {
                   setModalOpen(false);
                   setEditing(null);
                   form.resetFields();
+                  setCoverImageUrl("");
                 }}
                 style={{ borderRadius: "6px" }}
               >

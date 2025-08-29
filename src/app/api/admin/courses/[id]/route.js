@@ -39,6 +39,8 @@ export async function PUT(req, { params }) {
         status: body.status,
         instructorId: body.instructorId,
         categoryId: body.categoryId,
+        coverImageUrl: body.coverImageUrl,
+        coverPublicId: body.coverPublicId,
       },
     });
     return NextResponse.json({ success: true, data: course });

@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import cloudinary from '@/lib/cloudinary';
 
 export async function POST(request) {
   try {
@@ -34,38 +32,54 @@ export async function POST(request) {
       }
     }
 
-    // Create upload directory
-    const uploadDir = join(process.cwd(), 'public', 'uploads', type === 'ebook' ? 'ebooks' : 'covers');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${timestamp}_${originalName}`;
-    const filepath = join(uploadDir, filename);
-
-    // Convert file to buffer and save
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/${type === 'ebook' ? 'ebooks' : 'covers'}/${filename}`;
+    // Upload to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadOptions = {
+        folder: type === 'ebook' ? 'e-learning/ebooks' : 'e-learning/covers',
+        resource_type: type === 'ebook' ? 'raw' : 'image',
+        public_id: `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
+      };
+
+      // For images, add transformation options
+      if (type === 'cover') {
+        uploadOptions.transformation = [
+          { width: 800, height: 600, crop: 'limit' },
+          { quality: 'auto' },
+          { format: 'auto' }
+        ];
+      }
+
+      cloudinary.uploader.upload_stream(
+        uploadOptions,
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      ).end(buffer);
+    });
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
-      filename: filename,
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
+      filename: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
+      cloudinary_url: uploadResult.secure_url
     });
 
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { success: false, error: 'Upload failed' },
+      { success: false, error: 'Upload failed: ' + error.message },
       { status: 500 }
     );
   }

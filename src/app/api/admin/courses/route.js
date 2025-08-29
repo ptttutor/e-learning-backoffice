@@ -33,6 +33,8 @@ export async function POST(req) {
         status: body.status ?? 'DRAFT',
         instructorId: body.instructorId,
         categoryId: body.categoryId,
+        coverImageUrl: body.coverImageUrl,
+        coverPublicId: body.coverPublicId,
       },
     });
     return NextResponse.json({ success: true, data: course });
@@ -59,6 +61,8 @@ export async function PUT(req) {
         status: body.status,
         instructorId: body.instructorId,
         categoryId: body.categoryId,
+        coverImageUrl: body.coverImageUrl,
+        coverPublicId: body.coverPublicId,
       },
     });
     return NextResponse.json({ success: true, data: course });
