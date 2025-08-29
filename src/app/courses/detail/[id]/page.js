@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Card,
   Typography,
@@ -200,6 +201,30 @@ export default function CoursePaymentPage({ params }) {
                   size="large"
                   style={{ width: "100%" }}
                 >
+                  {/* Course Cover Image */}
+                  {course.coverImageUrl && (
+                    <div 
+                      style={{ 
+                        position: "relative", 
+                        width: "100%", 
+                        height: "300px",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        marginBottom: "24px"
+                      }}
+                    >
+                      <Image
+                        src={course.coverImageUrl}
+                        alt={course.title}
+                        fill
+                        style={{ 
+                          objectFit: "cover"
+                        }}
+                        priority
+                      />
+                    </div>
+                  )}
+
                   {/* Course Header */}
                   <div>
                     <div style={{ marginBottom: "16px" }}>

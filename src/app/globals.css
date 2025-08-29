@@ -68,3 +68,29 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+/* Course cover image hover effects */
+.feature-card:hover .course-cover-image {
+  transform: scale(1.05);
+}
+
+.course-cover-image {
+  transition: transform 0.3s ease;
+}
+
+/* Course card improvements */
+.feature-card .ant-card-body {
+  padding: 0 !important;
+}
+
+/* Responsive course grid */
+@media (max-width: 768px) {
+  .course-cover-image {
+    height: 180px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .course-cover-image {
+    height: 160px !important;
+  }
+}
