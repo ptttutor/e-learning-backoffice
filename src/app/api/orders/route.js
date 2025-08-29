@@ -7,13 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(request) {
   try {
     const body = await request.json();
-    const {
-      userId,
-      itemType,
-      itemId,
-      couponCode,
-      shippingAddress,
-    } = body;
+    const { userId, itemType, itemId, couponCode, shippingAddress } = body;
 
     // Validate required fields
     if (!userId || !itemType || !itemId) {
@@ -37,11 +31,11 @@ export async function POST(request) {
 
     // Get item data
     let item;
-    if (itemType === 'course') {
+    if (itemType === "course") {
       item = await prisma.course.findUnique({
         where: { id: itemId, status: "PUBLISHED" },
       });
-    } else if (itemType === 'ebook') {
+    } else if (itemType === "ebook") {
       item = await prisma.ebook.findUnique({
         where: { id: itemId, isActive: true },
       });
@@ -58,7 +52,7 @@ export async function POST(request) {
     const existingOrder = await prisma.order.findFirst({
       where: {
         userId: userId,
-        ...(itemType === 'course' ? { courseId: itemId } : { ebookId: itemId }),
+        ...(itemType === "course" ? { courseId: itemId } : { ebookId: itemId }),
         status: "COMPLETED",
       },
     });
@@ -72,13 +66,13 @@ export async function POST(request) {
 
     // Calculate prices
     let itemPrice = 0;
-    if (itemType === 'course') {
+    if (itemType === "course") {
       itemPrice = item.price || 0;
     } else {
       itemPrice = item.discountPrice || item.price || 0;
     }
 
-    const shippingFee = (itemType === 'ebook' && item.isPhysical) ? 50 : 0;
+    const shippingFee = itemType === "ebook" && item.isPhysical ? 50 : 0;
     let couponDiscount = 0;
     let couponId = null;
 
@@ -88,9 +82,9 @@ export async function POST(request) {
         where: { code: couponCode, isActive: true },
         include: {
           usages: {
-            where: { userId }
-          }
-        }
+            where: { userId },
+          },
+        },
       });
 
       if (coupon) {
@@ -98,17 +92,23 @@ export async function POST(request) {
         const now = new Date();
         if (now >= coupon.validFrom && now <= coupon.validUntil) {
           if (!coupon.usageLimit || coupon.usageCount < coupon.usageLimit) {
-            if (!coupon.userUsageLimit || coupon.usages.length < coupon.userUsageLimit) {
-              if (!coupon.minOrderAmount || itemPrice >= coupon.minOrderAmount) {
+            if (
+              !coupon.userUsageLimit ||
+              coupon.usages.length < coupon.userUsageLimit
+            ) {
+              if (
+                !coupon.minOrderAmount ||
+                itemPrice >= coupon.minOrderAmount
+              ) {
                 // Calculate discount
-                if (coupon.type === 'PERCENTAGE') {
+                if (coupon.type === "PERCENTAGE") {
                   couponDiscount = Math.min(
                     (itemPrice * coupon.value) / 100,
                     coupon.maxDiscount || Infinity
                   );
-                } else if (coupon.type === 'FIXED_AMOUNT') {
+                } else if (coupon.type === "FIXED_AMOUNT") {
                   couponDiscount = Math.min(coupon.value, itemPrice);
-                } else if (coupon.type === 'FREE_SHIPPING') {
+                } else if (coupon.type === "FREE_SHIPPING") {
                   couponDiscount = shippingFee;
                 }
                 couponId = coupon.id;
@@ -128,9 +128,11 @@ export async function POST(request) {
       const order = await prisma.order.create({
         data: {
           userId: user.id,
-          ...(itemType === 'course' ? { courseId: itemId } : { ebookId: itemId }),
-          orderType: itemType === 'course' ? 'COURSE' : 'EBOOK',
-          status: 'COMPLETED',
+          ...(itemType === "course"
+            ? { courseId: itemId }
+            : { ebookId: itemId }),
+          orderType: itemType === "course" ? "COURSE" : "EBOOK",
+          status: "COMPLETED",
           subtotal,
           shippingFee,
           couponDiscount,
@@ -144,8 +146,8 @@ export async function POST(request) {
       await prisma.payment.create({
         data: {
           orderId: order.id,
-          method: 'FREE',
-          status: 'COMPLETED',
+          method: "FREE",
+          status: "COMPLETED",
           amount: 0,
           paidAt: new Date(),
           ref: `FREE${Date.now()}`,
@@ -153,12 +155,12 @@ export async function POST(request) {
       });
 
       // Create enrollment for free course
-      if (itemType === 'course') {
+      if (itemType === "course") {
         await prisma.enrollment.create({
           data: {
             userId: user.id,
             courseId: itemId,
-            status: 'ACTIVE',
+            status: "ACTIVE",
           },
         });
       }
@@ -167,7 +169,7 @@ export async function POST(request) {
       if (couponId) {
         await prisma.coupon.update({
           where: { id: couponId },
-          data: { usageCount: { increment: 1 } }
+          data: { usageCount: { increment: 1 } },
         });
 
         await prisma.couponUsage.create({
@@ -175,7 +177,7 @@ export async function POST(request) {
             couponId,
             userId: user.id,
             orderId: order.id,
-          }
+          },
         });
       }
 
@@ -193,9 +195,9 @@ export async function POST(request) {
     const order = await prisma.order.create({
       data: {
         userId: user.id,
-        ...(itemType === 'course' ? { courseId: itemId } : { ebookId: itemId }),
-        orderType: itemType === 'course' ? 'COURSE' : 'EBOOK',
-        status: 'PENDING',
+        ...(itemType === "course" ? { courseId: itemId } : { ebookId: itemId }),
+        orderType: itemType === "course" ? "COURSE" : "EBOOK",
+        status: "PENDING",
         subtotal,
         shippingFee,
         couponDiscount,
@@ -209,8 +211,8 @@ export async function POST(request) {
     const payment = await prisma.payment.create({
       data: {
         orderId: order.id,
-        method: 'BANK_TRANSFER',
-        status: 'PENDING',
+        method: "BANK_TRANSFER",
+        status: "PENDING",
         amount: total,
         ref: `ORD${Date.now()}${Math.random()
           .toString(36)
@@ -220,18 +222,18 @@ export async function POST(request) {
     });
 
     // Create shipping record if needed
-    if (itemType === 'ebook' && item.isPhysical && shippingAddress) {
+    if (itemType === "ebook" && item.isPhysical && shippingAddress) {
       await prisma.shipping.create({
         data: {
           orderId: order.id,
           recipientName: shippingAddress.name || user.name || user.email,
-          recipientPhone: shippingAddress.phone || '',
-          address: shippingAddress.address || '',
-          district: shippingAddress.district || '',
-          province: shippingAddress.province || '',
-          postalCode: shippingAddress.postalCode || '',
-          shippingMethod: 'STANDARD',
-          status: 'PENDING',
+          recipientPhone: shippingAddress.phone || "",
+          address: shippingAddress.address || "",
+          district: shippingAddress.district || "",
+          province: shippingAddress.province || "",
+          postalCode: shippingAddress.postalCode || "",
+          shippingMethod: "STANDARD",
+          status: "PENDING",
         },
       });
     }
