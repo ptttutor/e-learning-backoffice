@@ -2,12 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useCart } from '../../contexts/CartContext';
 
 export default function EbookDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart } = useCart();
   const [ebook, setEbook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
