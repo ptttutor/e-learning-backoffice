@@ -380,7 +380,7 @@ export default function CoursesListPage() {
                     {/* Action Button */}
                     {enrollments[course.id] ? (
                       // Already enrolled - go to course content
-                      <Link href={`/courses/${course.id}`}>
+                      <Link href={`/courses/content/${course.id}`}>
                         <Button
                           type="primary"
                           size="large"

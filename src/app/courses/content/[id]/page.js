@@ -105,7 +105,7 @@ function VideoPlayerWithError({ url, onVideoCompleted }) {
   }
 
   // Track video completion (simplified)
-  useEffect(() => {
+  React.useEffect(() => {
     // Auto-mark as completed after 30 seconds (placeholder logic)
     const timer = setTimeout(() => {
       if (onVideoCompleted) {
@@ -151,8 +151,8 @@ export default function CourseDetailPage({ params }) {
 }
 
 function CourseDetailContent({ params }) {
-  const { courseId } = React.use(params);
-  const { message } = App.useApp(); // ใช้ App context
+  const { id } = React.use(params); // Changed from courseId to id
+  const { message } = App.useApp();
 
   const [course, setCourse] = useState(null);
   const [chaptersWithContents, setChaptersWithContents] = useState([]);
@@ -173,10 +173,10 @@ function CourseDetailContent({ params }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const courseData = await getCourse(courseId);
+        const courseData = await getCourse(id); // Changed from courseId to id
         setCourse(courseData);
 
-        const chapters = await getChapters(courseId);
+        const chapters = await getChapters(id); // Changed from courseId to id
         const chaptersWithContentsData = await Promise.all(
           chapters.map(async (chapter) => {
             const contents = await getContents(chapter.id);
@@ -208,18 +208,18 @@ function CourseDetailContent({ params }) {
     };
 
     fetchData();
-  }, [courseId]);
+  }, [id]); // Changed from courseId to id
 
   // Fetch enrollment info และสร้าง enrollment ใหม่หากยังไม่มี
   useEffect(() => {
-    if (!userId || !courseId) return;
+    if (!userId || !id) return; // Changed from courseId to id
 
     const fetchOrCreateEnrollment = async () => {
       setEnrollLoading(true);
       try {
         // ลองดึง enrollment ที่มีอยู่
         let res = await fetch(
-          `/api/enrollments?userId=${userId}&courseId=${courseId}`
+          `/api/enrollments?userId=${userId}&courseId=${id}` // Changed from courseId to id
         );
         let data = await res.json();
 
@@ -229,7 +229,7 @@ function CourseDetailContent({ params }) {
           res = await fetch("/api/enrollments", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, courseId }),
+            body: JSON.stringify({ userId, courseId: id }), // Changed from courseId to id
           });
           data = await res.json();
 
@@ -245,7 +245,7 @@ function CourseDetailContent({ params }) {
         setEnrollment({
           id: "mock",
           userId,
-          courseId,
+          courseId: id, // Changed from courseId to id
           progress: 0,
           status: "ACTIVE",
           viewedContentIds: [],
@@ -256,7 +256,7 @@ function CourseDetailContent({ params }) {
     };
 
     fetchOrCreateEnrollment();
-  }, [userId, courseId]);
+  }, [userId, id, message]); // Changed from courseId to id
 
   // Handler for selecting content
   const handleSelectContent = (chapter, content) => {
@@ -266,7 +266,7 @@ function CourseDetailContent({ params }) {
 
   // ฟังก์ชัน auto mark content เมื่อดูครบ (สำหรับ video)
   const handleContentViewed = async (contentId) => {
-    if (!userId || !courseId || !enrollment) return;
+    if (!userId || !id || !enrollment) return; // Changed from courseId to id
 
     const currentViewed = new Set(enrollment.viewedContentIds || []);
     if (currentViewed.has(contentId)) return; // เคยดูแล้ว
@@ -283,7 +283,7 @@ function CourseDetailContent({ params }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          courseId,
+          courseId: id, // Changed from courseId to id
           progress,
           viewedContentIds: Array.from(currentViewed),
         }),
@@ -476,7 +476,7 @@ function CourseDetailContent({ params }) {
                 }}
                 styles={{ body: { padding: "16px" } }}
               >
-                {/* Progress Overview - แสดงเสมอ */}
+                {/* Progress Overview */}
                 <div
                   style={{
                     marginBottom: 16,
@@ -635,23 +635,6 @@ function CourseDetailContent({ params }) {
                                   onClick={() =>
                                     handleSelectContent(chapter, content)
                                   }
-                                  onMouseEnter={(e) => {
-                                    if (!isSelected) {
-                                      e.target.style.background = "#fafafa";
-                                      e.target.style.border =
-                                        "1px solid #d9d9d9";
-                                    }
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!isSelected) {
-                                      e.target.style.background = isCompleted
-                                        ? "linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%)"
-                                        : "transparent";
-                                      e.target.style.border = isCompleted
-                                        ? "1px solid #b7eb8f"
-                                        : "1px solid transparent";
-                                    }
-                                  }}
                                 >
                                   <List.Item.Meta
                                     avatar={
@@ -883,7 +866,8 @@ function CourseDetailContent({ params }) {
                               rel="noopener noreferrer"
                               onClick={() =>
                                 setTimeout(
-                                  () => handleContentViewed(selectedContent.id),
+                                  () =>
+                                    handleContentViewed(selectedContent.id),
                                   5000
                                 )
                               }
@@ -945,7 +929,8 @@ function CourseDetailContent({ params }) {
                               rel="noopener noreferrer"
                               onClick={() =>
                                 setTimeout(
-                                  () => handleContentViewed(selectedContent.id),
+                                  () =>
+                                    handleContentViewed(selectedContent.id),
                                   3000
                                 )
                               }
@@ -1016,7 +1001,8 @@ function CourseDetailContent({ params }) {
                               rel="noopener noreferrer"
                               onClick={() =>
                                 setTimeout(
-                                  () => handleContentViewed(selectedContent.id),
+                                  () =>
+                                    handleContentViewed(selectedContent.id),
                                   3000
                                 )
                               }
@@ -1163,7 +1149,8 @@ function CourseDetailContent({ params }) {
                                 height: "48px",
                                 fontSize: "16px",
                                 fontWeight: "600",
-                                boxShadow: "0 4px 12px rgba(82, 196, 26, 0.3)",
+                                boxShadow:
+                                  "0 4px 12px rgba(82, 196, 26, 0.3)",
                               }}
                             >
                               บันทึกว่าเรียนจบเนื้อหานี้แล้ว
@@ -1184,16 +1171,9 @@ function CourseDetailContent({ params }) {
                     }}
                   >
                     <BookOutlined
-                      style={{
-                        fontSize: 64,
-                        color: "#94a3b8",
-                        marginBottom: 24,
-                      }}
+                      style={{ fontSize: 64, color: "#94a3b8", marginBottom: 24 }}
                     />
-                    <Title
-                      level={3}
-                      style={{ color: "#64748b", marginBottom: 16 }}
-                    >
+                    <Title level={3} style={{ color: "#64748b", marginBottom: 16 }}>
                       กรุณาเลือกเนื้อหา
                     </Title>
                     <Text style={{ color: "#94a3b8", fontSize: "16px" }}>
