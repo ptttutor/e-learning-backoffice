@@ -481,7 +481,6 @@ export default function CoursePaymentPage({ params }) {
 
 // ปุ่มซื้อคอร์ส
 function BuyCourseButton({ course }) {
-  const [loading, setLoading] = React.useState(false);
   const router =
     typeof window !== "undefined"
       ? require("next/navigation").useRouter()
@@ -490,40 +489,9 @@ function BuyCourseButton({ course }) {
   // ใช้ AuthContext เพื่อดึงข้อมูลผู้ใช้
   const { user, isAuthenticated } = useAuth();
 
-  const handleBuy = async () => {
-    if (!isAuthenticated || !user) {
-      // ถ้าไม่ได้ login ให้ redirect ไปหน้า login
-      if (router) router.push("/login?redirect=/courses/detail/" + course.id);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/courses/purchase", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, courseId: course.id }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        // ถ้าเป็นคอร์สฟรี หรือ enrollment สำเร็จแล้ว ไปหน้า success
-        if (data.data.enrollmentId) {
-          if (router)
-            router.push(`/order-success?orderId=${data.data.orderId}`);
-        } else {
-          // ถ้าเป็นคอร์สเสียเงิน ไปหน้าชำระเงิน
-          if (router) router.push(`/payment/${data.data.orderId}`);
-        }
-      } else {
-        alert(data.error || "เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ");
-      }
-    } catch (error) {
-      console.error("Purchase error:", error);
-      alert("เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ");
-    } finally {
-      setLoading(false);
-    }
+  const handleBuy = () => {
+    // ไปหน้า purchase พร้อมข้อมูล course
+    if (router) router.push(`/purchase?type=course&id=${course.id}`);
   };
 
   const isFree = !course.price || course.price === 0;
@@ -536,7 +504,6 @@ function BuyCourseButton({ course }) {
         type="primary"
         size="large"
         block
-        loading={loading}
         onClick={handleBuy}
         icon={buttonIcon}
         style={{
