@@ -1,25 +1,37 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error("Error parsing saved user:", error);
-        localStorage.removeItem("user");
-      }
+    if (status === "loading") {
+      setLoading(true);
+      return;
     }
-    setLoading(false);
-  }, []);
+
+    if (session?.user) {
+      setUser(session.user);
+      setLoading(false);
+    } else {
+      // Check if user is logged in from localStorage (legacy support)
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          console.error("Error parsing saved user:", error);
+          localStorage.removeItem("user");
+        }
+      }
+      setLoading(false);
+    }
+  }, [session, status]);
 
   const login = async (email, password) => {
     try {
@@ -73,9 +85,16 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (session) {
+      await signOut({ redirect: false });
+    }
     setUser(null);
     localStorage.removeItem("user");
+  };
+
+  const loginWithLine = () => {
+    signIn("line");
   };
 
   const updateUser = (updatedUser) => {
@@ -89,6 +108,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    loginWithLine,
     updateUser,
     isAuthenticated: !!user,
   };

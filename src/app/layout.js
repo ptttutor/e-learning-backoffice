@@ -15,6 +15,7 @@ import {
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SessionProvider } from "next-auth/react";
 import { Button, Dropdown, Avatar } from "antd";
 
 const { Header, Content, Footer } = Layout;
@@ -274,9 +275,11 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body style={{ fontFamily: "var(--font-geist-sans)" }}>
-        <AuthProvider>
-          <AppLayout>{children}</AppLayout>
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <AppLayout>{children}</AppLayout>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

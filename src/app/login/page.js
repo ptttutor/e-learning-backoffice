@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login } = useAuth();
+  const { login, loginWithLine } = useAuth();
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -178,6 +178,63 @@ export default function LoginPage() {
             {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
           </button>
         </form>
+
+        {/* LINE Login */}
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '24px 0',
+          position: 'relative'
+        }}>
+          <div style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '20px 0'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: 0,
+              right: 0,
+              height: '1px',
+              backgroundColor: '#e9ecef'
+            }}></div>
+            <span style={{
+              backgroundColor: 'white',
+              padding: '0 16px',
+              color: '#6c757d',
+              fontSize: '14px'
+            }}>
+              หรือ
+            </span>
+          </div>
+          
+          <button
+            onClick={loginWithLine}
+            style={{
+              width: '100%',
+              padding: '14px 24px',
+              backgroundColor: '#00B900',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#009900'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#00B900'}
+          >
+            <span style={{ fontSize: '20px' }}>💬</span>
+            เข้าสู่ระบบด้วย LINE
+          </button>
+        </div>
 
         {/* Register Link */}
         <div style={{ 
