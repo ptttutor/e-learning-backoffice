@@ -130,6 +130,25 @@ model Payment {
   verifiedAt   DateTime?
   verifiedBy   String?       // Admin ID ที่ตรวจสอบ
   notes        String?
+  
+  // Slip Analysis Fields
+  slipAnalysisData    String?      // JSON ข้อมูลการวิเคราะห์สลิป
+  detectedAmount      Float?       // จำนวนเงินที่ AI ตรวจพบ
+  detectedDate        DateTime?    // วันที่ที่ AI ตรวจพบ
+  detectedTime        String?      // เวลาที่ AI ตรวจพบ
+  senderAccount       String?      // บัญชีผู้โอน
+  senderName          String?      // ชื่อผู้โอน
+  senderBank          String?      // ธนาคารผู้โอน
+  receiverAccount     String?      // บัญชีผู้รับ
+  receiverName        String?      // ชื่อผู้รับ
+  receiverBank        String?      // ธนาคารผู้รับ
+  transactionRef      String?      // เลขอ้างอิงธุรกรรม
+  confidenceScore     Float?       // คะแนนความเชื่อมั่นจาก AI
+  validationScore     String?      // คะแนนการตรวจสอบ เช่น "3/3"
+  validationPassed    Boolean?     // ผ่านการตรวจสอบหรือไม่
+  analysisError       String?      // ข้อผิดพลาดในการวิเคราะห์
+  lastAnalyzedAt      DateTime?    // วันที่วิเคราะห์ครั้งล่าสุด
+  
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   

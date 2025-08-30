@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import { verifySlipWithEasySlip, parseSlipResult, validateSlipData } from "@/lib/easyslip";
+import { verifySlipWithSlipOK, parseSlipResult, validateSlipData } from "@/lib/easyslip";
 
 const prisma = new PrismaClient();
 
@@ -59,54 +59,77 @@ export async function POST(request) {
       );
     }
 
-    console.log('Starting slip upload process for order:', orderId);
+    console.log('Starting slip verification process for order:', orderId);
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
-    let cloudinaryResult;
-    try {
-      const publicId = `slip_${orderId}_${Date.now()}`;
-      cloudinaryResult = await uploadToCloudinary(buffer, 'payment-slips', publicId);
-      console.log('Cloudinary upload successful:', cloudinaryResult.public_id);
-    } catch (cloudinaryError) {
-      console.error("Cloudinary upload error:", cloudinaryError);
-      console.error("Error details:", cloudinaryError.message);
-      console.error("Error stack:", cloudinaryError.stack);
-      return NextResponse.json(
-        { success: false, error: "เกิดข้อผิดพลาดในการอัพโหลดไฟล์: " + cloudinaryError.message },
-        { status: 500 }
-      );
-    }
-
-    // Verify slip with EasySlip (optional - don't fail if it doesn't work)
+    // Step 1: Verify slip with SlipOK FIRST
+    console.log('🔍 Step 1: Verifying slip with SlipOK API...');
     let slipVerification = null;
     let slipValidation = null;
     
     try {
-      console.log('Starting EasySlip verification...');
-      const easySlipResult = await verifySlipWithEasySlip(cloudinaryResult.secure_url);
-      slipVerification = parseSlipResult(easySlipResult);
+      const slipOKResult = await verifySlipWithSlipOK(buffer, file.name, file.type);
+      slipVerification = parseSlipResult(slipOKResult);
       
       if (slipVerification.success) {
-        console.log('EasySlip verification successful');
+        console.log('✅ SlipOK verification successful');
+        
         // Validate against order data
         slipValidation = validateSlipData(slipVerification.data, {
           total: order.total,
           createdAt: order.createdAt,
           bankAccount: '123-4-56789-0' // Your bank account number
         });
+        
+        console.log('✅ Slip validation completed');
+      } else {
+        console.log('❌ SlipOK verification failed:', slipVerification.error);
+        
+        // Return error if slip verification fails
+        return NextResponse.json({
+          success: false,
+          error: "ไม่สามารถตรวจสอบสลิปได้: " + slipVerification.error,
+          details: {
+            step: "slip_verification",
+            slipOKError: slipVerification.error
+          }
+        }, { status: 400 });
       }
-    } catch (easySlipError) {
-      console.error("EasySlip verification error:", easySlipError);
-      // Continue without EasySlip verification
-      slipVerification = {
+    } catch (slipOKError) {
+      console.error("❌ SlipOK verification error:", slipOKError);
+      return NextResponse.json({
         success: false,
-        error: 'ไม่สามารถตรวจสอบสลิปอัตโนมัติได้',
-        data: null
-      };
+        error: "เกิดข้อผิดพลาดในการตรวจสอบสลิป: " + slipOKError.message,
+        details: {
+          step: "slip_verification",
+          error: slipOKError.message
+        }
+      }, { status: 500 });
+    }
+
+    // Step 2: Upload to Cloudinary only if verification succeeds
+    console.log('📤 Step 2: Uploading verified slip to Cloudinary...');
+    let cloudinaryResult;
+    try {
+      const publicId = `slip_${orderId}_${Date.now()}`;
+      cloudinaryResult = await uploadToCloudinary(buffer, 'payment-slips', publicId);
+      console.log('✅ Cloudinary upload successful:', cloudinaryResult.public_id);
+    } catch (cloudinaryError) {
+      console.error("❌ Cloudinary upload error:", cloudinaryError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "เกิดข้อผิดพลาดในการอัพโหลดไฟล์: " + cloudinaryError.message,
+          details: {
+            step: "cloudinary_upload",
+            error: cloudinaryError.message
+          }
+        },
+        { status: 500 }
+      );
     }
 
     // Prepare slip analysis data
@@ -116,22 +139,23 @@ export async function POST(request) {
       fileSize: file.size,
       fileType: file.type,
       originalName: file.name,
-      easySlipResult: slipVerification,
+      slipOKResult: slipVerification,
       validation: slipValidation,
       uploadedAt: new Date()
     };
 
-    // Update payment record
+    // Update payment record with detailed analysis data
     console.log('Updating payment with analysis data...');
     console.log('Analysis data:', JSON.stringify(slipAnalysis, null, 2));
     
+    // For now, use the notes field until Prisma client is regenerated
     const updatedPayment = await prisma.payment.update({
       where: { id: order.payment.id },
       data: {
         slipUrl: cloudinaryResult.secure_url,
         status: "PENDING_VERIFICATION",
         uploadedAt: new Date(),
-        notes: JSON.stringify(slipAnalysis), // Store analysis data in notes field
+        notes: JSON.stringify(slipAnalysis), // Store analysis data in notes field temporarily
       },
     });
     
@@ -152,7 +176,7 @@ export async function POST(request) {
       slipUrl: cloudinaryResult.secure_url,
       status: "PENDING_VERIFICATION",
       slipAnalysis: {
-        easySlipSuccess: slipVerification?.success || false,
+        slipOKSuccess: slipVerification?.success || false,
         validationSummary: slipValidation?.summary || null,
         detectedAmount: slipVerification?.data?.amount || null,
         detectedDate: slipVerification?.data?.date || null,
