@@ -36,6 +36,8 @@ import {
   SearchOutlined,
   FilterOutlined,
   ReloadOutlined,
+  RobotOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
@@ -48,6 +50,8 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [slipAnalysis, setSlipAnalysis] = useState(null);
+  const [analyzingSlip, setAnalyzingSlip] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [actionType, setActionType] = useState("");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -119,6 +123,7 @@ export default function AdminOrdersPage() {
     setDetailModalVisible(true);
     setDetailLoading(true);
     setSelectedOrder(null);
+    setSlipAnalysis(null);
 
     try {
       const response = await fetch(`/api/admin/orders/${order.id}`);
@@ -126,6 +131,11 @@ export default function AdminOrdersPage() {
 
       if (result.success) {
         setSelectedOrder(result.data);
+        
+        // Load slip analysis if payment exists
+        if (result.data.payment?.id) {
+          loadSlipAnalysis(result.data.payment.id);
+        }
       } else {
         message.error(result.error || "เกิดข้อผิดพลาดในการโหลดรายละเอียด");
         setDetailModalVisible(false);
@@ -136,6 +146,53 @@ export default function AdminOrdersPage() {
       setDetailModalVisible(false);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const loadSlipAnalysis = async (paymentId) => {
+    try {
+      const response = await fetch(`/api/admin/payments/analyze-slip?paymentId=${paymentId}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setSlipAnalysis(result.data);
+      }
+    } catch (error) {
+      console.error("Error loading slip analysis:", error);
+    }
+  };
+
+  const handleAnalyzeSlip = async () => {
+    if (!selectedOrder?.payment?.id) {
+      message.error('ไม่พบข้อมูลการชำระเงิน');
+      return;
+    }
+
+    setAnalyzingSlip(true);
+    try {
+      const response = await fetch('/api/admin/payments/analyze-slip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentId: selectedOrder.payment.id
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        message.success('วิเคราะห์สลิปเสร็จสิ้น');
+        setSlipAnalysis(result.data);
+      } else {
+        message.error(result.error || 'เกิดข้อผิดพลาดในการวิเคราะห์สลิป');
+      }
+    } catch (error) {
+      console.error('Error analyzing slip:', error);
+      message.error('เกิดข้อผิดพลาดในการวิเคราะห์สลิป');
+    } finally {
+      setAnalyzingSlip(false);
     }
   };
 
@@ -419,9 +476,18 @@ export default function AdminOrdersPage() {
       dataIndex: "payment",
       key: "paymentStatus",
       render: (payment) => (
-        <Tag color={getPaymentStatusColor(payment?.status)}>
-          {getPaymentStatusText(payment?.status)}
-        </Tag>
+        <div>
+          <Tag color={getPaymentStatusColor(payment?.status)}>
+            {getPaymentStatusText(payment?.status)}
+          </Tag>
+          {payment?.slipUrl && (
+            <div style={{ marginTop: "2px" }}>
+              <Tag color="blue" size="small">
+                📄 มีสลิป
+              </Tag>
+            </div>
+          )}
+        </div>
       ),
       width: 130,
     },
@@ -1116,6 +1182,88 @@ export default function AdminOrdersPage() {
                         </Space>
                       </Card>
                       
+                      {/* EasySlip Analysis */}
+                      {selectedOrder.payment?.slipUrl && (
+                        <Card
+                          size="small"
+                          style={{
+                            backgroundColor: "#f6ffed",
+                            border: "1px solid #b7eb8f",
+                            marginTop: "12px"
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                            <Text strong style={{ color: "#389e0d" }}>
+                              🤖 การตรวจสอบสลิปอัตโนมัติ (EasySlip)
+                            </Text>
+                            <Button
+                              size="small"
+                              type="primary"
+                              loading={analyzingSlip}
+                              onClick={handleAnalyzeSlip}
+                              style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                            >
+                              {slipAnalysis ? 'วิเคราะห์ใหม่' : 'วิเคราะห์สลิป'}
+                            </Button>
+                          </div>
+                          
+                          {slipAnalysis ? (
+                            <div>
+                              {slipAnalysis.summary?.canReadSlip ? (
+                                <div style={{ marginBottom: "12px" }}>
+                                  <Tag color="success" style={{ marginBottom: "8px" }}>
+                                    ✅ อ่านสลิปได้สำเร็จ
+                                  </Tag>
+                                  <div style={{ fontSize: "12px", lineHeight: "1.5" }}>
+                                    <div><strong>จำนวนเงินที่ตรวจพบ:</strong> {slipAnalysis.summary.detectedAmount || 'ไม่พบ'} บาท</div>
+                                    <div><strong>วันที่โอนเงิน:</strong> {slipAnalysis.summary.detectedDate || 'ไม่พบ'}</div>
+                                    <div><strong>การตรวจสอบ:</strong> {slipAnalysis.summary.validationScore}</div>
+                                    <div>
+                                      <strong>จำนวนเงินถูกต้อง:</strong> 
+                                      {slipAnalysis.summary.amountMatches ? (
+                                        <Tag color="success" size="small" style={{ marginLeft: "4px" }}>ถูกต้อง</Tag>
+                                      ) : (
+                                        <Tag color="error" size="small" style={{ marginLeft: "4px" }}>ไม่ตรงกัน</Tag>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <Tag color="warning" style={{ marginBottom: "8px" }}>
+                                    ⚠️ ไม่สามารถอ่านสลิปได้
+                                  </Tag>
+                                  <div style={{ fontSize: "12px", color: "#d46b08" }}>
+                                    {slipAnalysis.easySlipResult?.error || 'ไม่สามารถประมวลผลสลิปได้'}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Validation Details */}
+                              {slipAnalysis.validation?.validations && (
+                                <div style={{ marginTop: "12px", padding: "8px", backgroundColor: "#fff", borderRadius: "4px", border: "1px solid #d9f7be" }}>
+                                  <Text strong style={{ fontSize: "12px", display: "block", marginBottom: "6px" }}>
+                                    รายละเอียดการตรวจสอบ:
+                                  </Text>
+                                  {slipAnalysis.validation.validations.map((validation, index) => (
+                                    <div key={index} style={{ fontSize: "11px", marginBottom: "2px" }}>
+                                      {validation.status === 'pass' && '✅ '}
+                                      {validation.status === 'fail' && '❌ '}
+                                      {validation.status === 'warning' && '⚠️ '}
+                                      {validation.message}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              คลิก วิเคราะห์สลิป เพื่อตรวจสอบสลิปอัตโนมัติด้วย AI
+                            </div>
+                          )}
+                        </Card>
+                      )}
+
                       {/* Admin Guidelines */}
                       {selectedOrder.payment?.status === 'PENDING_VERIFICATION' && (
                         <Card
@@ -1137,6 +1285,7 @@ export default function AdminOrdersPage() {
                                 <div>✓ ตรวจสอบวันที่และเวลาการโอนเงิน</div>
                                 <div>✓ ตรวจสอบหมายเลขบัญชีปลายทาง</div>
                                 <div>✓ ตรวจสอบความชัดเจนของสลิป</div>
+                                <div>✓ ใช้การตรวจสอบอัตโนมัติเป็นข้อมูลเสริม</div>
                               </div>
                             </div>
                           </div>
