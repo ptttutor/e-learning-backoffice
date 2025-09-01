@@ -458,7 +458,7 @@ export default function EbooksPage() {
         footer={null}
         width={900}
         style={{ top: 20 }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form 
           form={form} 
