@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import {
-  verifySlipWithEasySlip,
+  verifySlipWithSlipOK,
   parseSlipResult,
   validateSlipData,
 } from "@/lib/easyslip";
@@ -216,8 +216,8 @@ export async function POST(request) {
     let slipValidation = null;
 
     try {
-      console.log("Starting EasySlip verification...");
-      const easySlipResult = await verifySlipWithEasySlip(payment.slipUrl);
+      console.log("Starting SlipOK verification...");
+      const easySlipResult = await verifySlipWithSlipOK(payment.slipUrl);
       slipVerification = parseSlipResult(easySlipResult);
 
       if (slipVerification.success) {
