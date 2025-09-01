@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import Link from "next/link";
 
-export default function PurchasePage() {
+function PurchasePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -1132,5 +1132,26 @@ function UploadSlipStep({ onBack }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PurchasePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
+          <div style={{ fontSize: '18px', color: '#6c757d' }}>กำลังโหลดข้อมูล...</div>
+        </div>
+      </div>
+    }>
+      <PurchasePageContent />
+    </Suspense>
   );
 }
