@@ -258,7 +258,7 @@ export default function AdminChaptersPage() {
         footer={null}
         width={500}
         style={{ top: 20 }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}

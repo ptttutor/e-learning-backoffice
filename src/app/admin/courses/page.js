@@ -434,7 +434,7 @@ export default function CoursesPage() {
         footer={null}
         width={600}
         style={{ top: 20 }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
