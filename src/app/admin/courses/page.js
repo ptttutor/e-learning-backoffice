@@ -10,7 +10,6 @@ import {
   InputNumber,
   Select,
   message,
-  Spin,
   Card,
   Typography,
   Tag,
@@ -45,14 +44,21 @@ export default function CoursesPage() {
   const [instLoading, setInstLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  // Fetch courses
+  // Fetch courses (exclude deleted courses)
   const fetchCourses = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/courses");
       const data = await res.json();
-      setCourses(data.data || []);
+      // Filter out deleted courses
+      const activeCourses = (data.data || []).filter(
+        (course) => course.status !== "DELETED"
+      );
+      setCourses(activeCourses);
     } catch (e) {
       message.error("โหลดข้อมูลคอร์สไม่สำเร็จ");
     }
@@ -107,9 +113,9 @@ export default function CoursesPage() {
       const result = await response.json();
       if (result.success) {
         setCoverImageUrl(result.url);
-        form.setFieldsValue({ 
+        form.setFieldsValue({
           coverImageUrl: result.url,
-          coverPublicId: result.public_id // Store Cloudinary public_id for future deletion
+          coverPublicId: result.public_id,
         });
         message.success("อัพโหลดรูปปกสำเร็จ");
       } else {
@@ -119,15 +125,15 @@ export default function CoursesPage() {
       message.error("เกิดข้อผิดพลาดในการอัพโหลด");
     }
     setUploading(false);
-    return false; // Prevent default upload behavior
+    return false;
   };
 
   // Handle cover image removal
   const handleRemoveCover = () => {
     setCoverImageUrl("");
-    form.setFieldsValue({ 
+    form.setFieldsValue({
       coverImageUrl: "",
-      coverPublicId: ""
+      coverPublicId: "",
     });
     message.success("ลบรูปปกสำเร็จ");
   };
@@ -136,10 +142,10 @@ export default function CoursesPage() {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      // Include cover image URL in the data
       const courseData = {
         ...values,
         coverImageUrl: coverImageUrl || values.coverImageUrl,
+        price: parseFloat(values.price) || 0,
       };
 
       let res;
@@ -156,7 +162,9 @@ export default function CoursesPage() {
           body: JSON.stringify(courseData),
         });
       }
+
       const data = await res.json();
+
       if (data.success) {
         message.success(editing ? "แก้ไขคอร์สสำเร็จ" : "สร้างคอร์สสำเร็จ");
         setModalOpen(false);
@@ -168,36 +176,102 @@ export default function CoursesPage() {
         message.error(data.error || "เกิดข้อผิดพลาด");
       }
     } catch (e) {
-      // validation error
+      message.error("กรุณากรอกข้อมูลให้ครบถ้วน");
     }
   };
 
-  // Delete course
-  const handleDelete = async (id) => {
-    Modal.confirm({
-      title: "ยืนยันการลบคอร์ส?",
-      onOk: async () => {
-        const res = await fetch(`/api/admin/courses/${id}`, {
-          method: "DELETE",
-        });
-        const data = await res.json();
-        if (data.success) {
-          message.success("ลบคอร์สสำเร็จ");
-          fetchCourses();
-        } else {
-          message.error(data.error || "เกิดข้อผิดพลาด");
-        }
-      },
-    });
+  // Enhanced delete function with better error handling
+  const handleDelete = (record) => {
+    console.log("handleDelete called with record:", record);
+    setCourseToDelete(record);
+    setDeleteModalOpen(true);
+  };
+
+  // Confirm soft delete function
+  const confirmDelete = async () => {
+    if (!courseToDelete?.id) {
+      message.error("ไม่พบ ID ของคอร์ส");
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      console.log("Soft deleting course with ID:", courseToDelete.id);
+
+      // Use PUT method to update status instead of DELETE
+      const response = await fetch(`/api/admin/courses/${courseToDelete.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...courseToDelete,
+          status: "DELETED", // Set status to DELETED for soft delete
+          deletedAt: new Date().toISOString(),
+        }),
+      });
+
+      console.log("Soft delete response status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Soft delete response data:", data);
+
+      if (data.success) {
+        message.success("ลบคอร์สสำเร็จ");
+        setDeleteModalOpen(false);
+        setCourseToDelete(null);
+        await fetchCourses(); // Refresh the course list
+      } else {
+        message.error(data.error || "เกิดข้อผิดพลาดในการลบคอร์ส");
+      }
+    } catch (error) {
+      console.error("Soft delete course error:", error);
+      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Cancel delete function
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setCourseToDelete(null);
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setEditing(null);
+    form.resetFields();
+    setCoverImageUrl("");
   };
 
   // Open modal for create/edit
   const openModal = (record) => {
     setEditing(record || null);
     setModalOpen(true);
+
     if (record) {
-      form.setFieldsValue(record);
-      setCoverImageUrl(record.coverImageUrl || "");
+      const formData = {
+        title: record.title,
+        description: record.description,
+        price: record.price,
+        status: record.status,
+        instructorId: record.instructorId,
+        categoryId: record.categoryId,
+        coverImageUrl: record.coverImageUrl,
+        coverPublicId: record.coverPublicId,
+      };
+
+      setTimeout(() => {
+        form.setFieldsValue(formData);
+        setCoverImageUrl(record.coverImageUrl || "");
+      }, 100);
     } else {
       form.resetFields();
       setCoverImageUrl("");
@@ -212,6 +286,8 @@ export default function CoursesPage() {
         return "success";
       case "CLOSED":
         return "error";
+      case "DELETED":
+        return "red";
       default:
         return "default";
     }
@@ -225,6 +301,8 @@ export default function CoursesPage() {
         return "เผยแพร่";
       case "CLOSED":
         return "ปิด";
+      case "DELETED":
+        return "ถูกลบ";
       default:
         return status;
     }
@@ -346,7 +424,11 @@ export default function CoursesPage() {
             icon={<DeleteOutlined />}
             size="small"
             danger
-            onClick={() => handleDelete(record.id)}
+            onClick={() => {
+              console.log("Delete button clicked for record:", record);
+              console.log("Record ID:", record.id);
+              handleDelete(record);
+            }}
             style={{ borderRadius: "6px" }}
           >
             ลบ
@@ -425,12 +507,7 @@ export default function CoursesPage() {
           </Space>
         }
         open={modalOpen}
-        onCancel={() => {
-          setModalOpen(false);
-          setEditing(null);
-          form.resetFields();
-          setCoverImageUrl("");
-        }}
+        onCancel={handleModalClose}
         footer={null}
         width={600}
         style={{ top: 20 }}
@@ -531,6 +608,11 @@ export default function CoursesPage() {
                   <Tag color="error">ปิด</Tag>
                 </Space>
               </Option>
+              <Option value="DELETED">
+                <Space>
+                  <Tag color="red">ถูกลบ</Tag>
+                </Space>
+              </Option>
             </Select>
           </Form.Item>
 
@@ -587,12 +669,7 @@ export default function CoursesPage() {
                 {editing ? "อัพเดท" : "สร้าง"}
               </Button>
               <Button
-                onClick={() => {
-                  setModalOpen(false);
-                  setEditing(null);
-                  form.resetFields();
-                  setCoverImageUrl("");
-                }}
+                onClick={handleModalClose}
                 style={{ borderRadius: "6px" }}
               >
                 ยกเลิก
@@ -600,6 +677,61 @@ export default function CoursesPage() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title={
+          <Space>
+            <DeleteOutlined style={{ color: "#ff4d4f" }} />
+            <Text strong>ยืนยันการลบคอร์ส</Text>
+          </Space>
+        }
+        open={deleteModalOpen}
+        onCancel={cancelDelete}
+        footer={[
+          <Button key="cancel" onClick={cancelDelete}>
+            ยกเลิก
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={deleting}
+            onClick={confirmDelete}
+          >
+            ลบคอร์ส
+          </Button>,
+        ]}
+        width={500}
+      >
+        {courseToDelete && (
+          <div>
+            <p>คุณแน่ใจหรือไม่ที่จะลบคอร์สนี้?</p>
+            <div
+              style={{
+                padding: "12px",
+                backgroundColor: "#f5f5f5",
+                borderRadius: "6px",
+                marginTop: "12px",
+              }}
+            >
+              <Text strong>ชื่อคอร์ส: </Text>
+              <Text>{courseToDelete.title}</Text>
+              <br />
+              <Text strong>ราคา: </Text>
+              <Text>
+                {new Intl.NumberFormat("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                }).format(courseToDelete.price || 0)}
+              </Text>
+            </div>
+            <p style={{ color: "#ff4d4f", marginTop: "12px", marginBottom: 0 }}>
+              ⚠️ การดำเนินการนี้ไม่สามารถยกเลิกได้
+            </p>
+          </div>
+        )}
       </Modal>
     </div>
   );
