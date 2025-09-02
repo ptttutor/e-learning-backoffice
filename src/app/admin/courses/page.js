@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Table,
   Button,
@@ -48,21 +48,93 @@ export default function CoursesPage() {
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch courses (exclude deleted courses)
-  const fetchCourses = async () => {
+  // Server-side filtering and pagination states
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "ALL",
+    instructorId: "",
+    categoryId: "",
+    minPrice: "",
+    maxPrice: "",
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+  const [searchInput, setSearchInput] = useState(""); // Separate state for search input
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0,
+  });
+
+  // Fetch courses with server-side filtering and pagination
+  const fetchCourses = async (customFilters = {}, customPagination = {}) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/courses");
+      const currentFilters = { ...filters, ...customFilters };
+      const currentPagination = { ...pagination, ...customPagination };
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: currentPagination.page.toString(),
+        pageSize: currentPagination.pageSize.toString(),
+        search: currentFilters.search,
+        status: currentFilters.status,
+        instructorId: currentFilters.instructorId,
+        categoryId: currentFilters.categoryId,
+        sortBy: currentFilters.sortBy,
+        sortOrder: currentFilters.sortOrder,
+      });
+
+      // Add price filters if they exist
+      if (currentFilters.minPrice)
+        params.append("minPrice", currentFilters.minPrice);
+      if (currentFilters.maxPrice)
+        params.append("maxPrice", currentFilters.maxPrice);
+
+      const res = await fetch(`/api/admin/courses?${params}`);
       const data = await res.json();
-      // Filter out deleted courses
-      const activeCourses = (data.data || []).filter(
-        (course) => course.status !== "DELETED"
-      );
-      setCourses(activeCourses);
+
+      if (data.success) {
+        setCourses(data.data || []);
+        setPagination(data.pagination);
+        setFilters(currentFilters);
+      } else {
+        message.error(data.error || "โหลดข้อมูลคอร์สไม่สำเร็จ");
+      }
     } catch (e) {
+      console.error("Fetch courses error:", e);
       message.error("โหลดข้อมูลคอร์สไม่สำเร็จ");
     }
     setLoading(false);
+  };
+
+  // Handle filter change
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value };
+    fetchCourses(newFilters, { page: 1 }); // Reset to first page when filtering
+  };
+
+  // Handle pagination change
+  const handlePaginationChange = (page, pageSize) => {
+    fetchCourses({}, { page, pageSize });
+  };
+
+  // Handle table change (sorting, pagination)
+  const handleTableChange = (paginationInfo, filtersInfo, sorter) => {
+    const newFilters = { ...filters };
+    const newPagination = {
+      page: paginationInfo.current,
+      pageSize: paginationInfo.pageSize,
+    };
+
+    // Handle sorting
+    if (sorter.field) {
+      newFilters.sortBy = sorter.field;
+      newFilters.sortOrder = sorter.order === "ascend" ? "asc" : "desc";
+    }
+
+    fetchCourses(newFilters, newPagination);
   };
 
   // Fetch categories
@@ -91,11 +163,27 @@ export default function CoursesPage() {
     setInstLoading(false);
   };
 
+  // Initial load only
   useEffect(() => {
-    fetchCourses();
-    fetchCategories();
-    fetchInstructors();
-  }, []);
+    const loadInitialData = async () => {
+      await fetchCategories();
+      await fetchInstructors();
+      await fetchCourses({}, { page: 1, pageSize: 10 });
+    };
+    loadInitialData();
+  }, []); // Empty dependency array for initial load only
+
+  // Debounce search - separate effect for search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Update filters with search term and trigger fetch
+      const newFilters = { ...filters, search: searchInput };
+      setFilters(newFilters);
+      fetchCourses(newFilters, { page: 1 });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]); // Only depend on search input
 
   // Handle cover image upload
   const handleCoverUpload = async (file) => {
@@ -349,6 +437,13 @@ export default function CoursesPage() {
       title: "ชื่อคอร์ส",
       dataIndex: "title",
       key: "title",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "title"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
       render: (title) => (
         <Space>
           <BookOutlined style={{ color: "#1890ff" }} />
@@ -361,6 +456,13 @@ export default function CoursesPage() {
       title: "ราคา",
       dataIndex: "price",
       key: "price",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "price"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
       render: (price) => (
         <Space>
           <DollarOutlined style={{ color: "#52c41a" }} />
@@ -378,6 +480,13 @@ export default function CoursesPage() {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "status"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
       render: (status) => (
         <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
       ),
@@ -387,6 +496,13 @@ export default function CoursesPage() {
       title: "ผู้สอน",
       dataIndex: ["instructor", "name"],
       key: "instructor",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "instructor"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
       render: (name) => (
         <Space>
           <UserOutlined style={{ color: "#8c8c8c" }} />
@@ -399,6 +515,13 @@ export default function CoursesPage() {
       title: "หมวดหมู่",
       dataIndex: ["category", "name"],
       key: "category",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "category"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
       render: (name) => (
         <Space>
           <TagOutlined style={{ color: "#8c8c8c" }} />
@@ -469,7 +592,8 @@ export default function CoursesPage() {
         </Space>
       </Card>
 
-      <Card>
+      {/* Filter Section */}
+      <Card style={{ marginBottom: "16px" }}>
         <div style={{ marginBottom: "16px" }}>
           <Button
             type="primary"
@@ -481,18 +605,165 @@ export default function CoursesPage() {
           </Button>
         </div>
 
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "12px",
+            alignItems: "end",
+          }}
+        >
+          {/* Search */}
+          <div style={{ minWidth: "200px" }}>
+            <Text strong>ค้นหา:</Text>
+            <Input
+              placeholder="ค้นหาชื่อคอร์สหรือรายละเอียด"
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+              allowClear
+              style={{ marginTop: "4px" }}
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div style={{ minWidth: "150px" }}>
+            <Text strong>สถานะ:</Text>
+            <Select
+              value={filters.status}
+              onChange={(value) => handleFilterChange("status", value)}
+              style={{ width: "100%", marginTop: "4px" }}
+              placeholder="เลือกสถานะ"
+            >
+              <Option value="ALL">ทั้งหมด</Option>
+              <Option value="ACTIVE">ใช้งานอยู่</Option>
+              <Option value="DRAFT">ฉบับร่าง</Option>
+              <Option value="PUBLISHED">เผยแพร่</Option>
+              <Option value="CLOSED">ปิด</Option>
+              <Option value="DELETED">ถูกลบ</Option>
+            </Select>
+          </div>
+
+          {/* Instructor Filter */}
+          <div style={{ minWidth: "180px" }}>
+            <Text strong>ผู้สอน:</Text>
+            <Select
+              value={filters.instructorId}
+              onChange={(value) => handleFilterChange("instructorId", value)}
+              style={{ width: "100%", marginTop: "4px" }}
+              placeholder="เลือกผู้สอน"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+            >
+              {instructors.map((instructor) => (
+                <Option key={instructor.id} value={instructor.id}>
+                  {instructor.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Category Filter */}
+          <div style={{ minWidth: "150px" }}>
+            <Text strong>หมวดหมู่:</Text>
+            <Select
+              value={filters.categoryId}
+              onChange={(value) => handleFilterChange("categoryId", value)}
+              style={{ width: "100%", marginTop: "4px" }}
+              placeholder="เลือกหมวดหมู่"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+            >
+              {categories.map((category) => (
+                <Option key={category.id} value={category.id}>
+                  {category.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Price Range */}
+          <div style={{ minWidth: "120px" }}>
+            <Text strong>ราคาต่ำสุด:</Text>
+            <InputNumber
+              value={filters.minPrice}
+              onChange={(value) => handleFilterChange("minPrice", value || "")}
+              style={{ width: "100%", marginTop: "4px" }}
+              placeholder="0"
+              min={0}
+              formatter={(value) =>
+                value ? `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""
+              }
+              parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
+            />
+          </div>
+
+          <div style={{ minWidth: "120px" }}>
+            <Text strong>ราคาสูงสุด:</Text>
+            <InputNumber
+              value={filters.maxPrice}
+              onChange={(value) => handleFilterChange("maxPrice", value || "")}
+              style={{ width: "100%", marginTop: "4px" }}
+              placeholder="ไม่จำกัด"
+              min={0}
+              formatter={(value) =>
+                value ? `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""
+              }
+              parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
+            />
+          </div>
+
+          {/* Clear Filters */}
+          <div>
+            <Button
+              onClick={() => {
+                const resetFilters = {
+                  search: "",
+                  status: "ALL",
+                  instructorId: "",
+                  categoryId: "",
+                  minPrice: "",
+                  maxPrice: "",
+                  sortBy: "createdAt",
+                  sortOrder: "desc",
+                };
+                fetchCourses(resetFilters, { page: 1 });
+              }}
+              style={{ borderRadius: "6px" }}
+            >
+              ล้างตัวกรอง
+            </Button>
+          </div>
+        </div>
+
+        <div style={{ marginTop: "12px", textAlign: "right" }}>
+          <Text type="secondary">
+            แสดง {courses.length} จาก {pagination.totalCount} รายการ
+          </Text>
+        </div>
+      </Card>
+
+      <Card>
         <Table
           columns={columns}
           dataSource={courses}
           rowKey="id"
           loading={loading}
           scroll={{ x: 1200 }}
+          rowClassName={(record) =>
+            record.status === "DELETED" ? "deleted-row" : ""
+          }
+          onChange={handleTableChange}
           pagination={{
-            pageSize: 10,
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.totalCount,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} จาก ${total} รายการ`,
+            pageSizeOptions: ["10", "20", "50", "100"],
           }}
           size="middle"
         />
