@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Form,
@@ -12,6 +12,11 @@ import {
   DatePicker,
   Image,
   Card,
+  Upload,
+  message,
+  Row,
+  Col,
+  Divider,
 } from "antd";
 import {
   FileTextOutlined,
@@ -23,6 +28,9 @@ import {
   DesktopOutlined,
   MobileOutlined,
   PictureOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import dayjs from 'dayjs';
 
@@ -38,6 +46,8 @@ export default function PostModal({
   onSubmit,
 }) {
   const [form] = Form.useForm();
+  const [uploading, setUploading] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -66,6 +76,98 @@ export default function PostModal({
       title,
       slug: generateSlug(title)
     });
+  };
+
+  // Upload image to Cloudinary
+  const uploadImage = async (file, isMobile = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'post-image');
+    formData.append('isMobile', isMobile.toString());
+
+    try {
+      if (isMobile) setUploadingMobile(true);
+      else setUploading(true);
+
+      const response = await fetch('/api/upload/post-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
+        form.setFieldsValue({
+          [fieldName]: data.url
+        });
+        message.success(`อัพโหลดรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
+        return data.url;
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      message.error(`เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ: ${error.message}`);
+    } finally {
+      if (isMobile) setUploadingMobile(false);
+      else setUploading(false);
+    }
+  };
+
+  // Handle file upload
+  const handleUpload = (info, isMobile = false) => {
+    const { file } = info;
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      message.error('รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP)');
+      return false;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error('ขนาดไฟล์ต้องไม่เกิน 5MB');
+      return false;
+    }
+
+    uploadImage(file, isMobile);
+    return false; // Prevent default upload
+  };
+
+  // Delete image from Cloudinary
+  const deleteImage = async (imageUrl, isMobile = false) => {
+    try {
+      const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
+      
+      // Extract public_id from URL
+      const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.\w+$/);
+      if (publicIdMatch) {
+        const publicId = publicIdMatch[1];
+        
+        const response = await fetch(`/api/upload/delete?publicId=${encodeURIComponent(publicId)}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          form.setFieldsValue({
+            [fieldName]: ''
+          });
+          message.success(`ลบรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
+        }
+      } else {
+        // If can't extract public_id, just clear the field
+        form.setFieldsValue({
+          [fieldName]: ''
+        });
+        message.success('ลบรูปภาพสำเร็จ');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      message.error('เกิดข้อผิดพลาดในการลบรูปภาพ');
+    }
   };
 
   const handleSubmit = async (values) => {
@@ -212,12 +314,9 @@ export default function PostModal({
             label={
               <Space size={6}>
                 <DesktopOutlined style={{ color: "#8c8c8c" }} />
-                <Text>URL รูปภาพ (Desktop)</Text>
+                <Text>รูปภาพเดสก์ท็อป</Text>
               </Space>
             }
-            rules={[
-              { type: 'url', message: "กรุณาใส่ URL ที่ถูกต้อง" }
-            ]}
           >
             <Input 
               placeholder="https://example.com/image.jpg"
@@ -230,12 +329,9 @@ export default function PostModal({
             label={
               <Space size={6}>
                 <MobileOutlined style={{ color: "#8c8c8c" }} />
-                <Text>URL รูปภาพ (Mobile)</Text>
+                <Text>รูปภาพมือถือ</Text>
               </Space>
             }
-            rules={[
-              { type: 'url', message: "กรุณาใส่ URL ที่ถูกต้อง" }
-            ]}
           >
             <Input 
               placeholder="https://example.com/mobile-image.jpg"
@@ -243,6 +339,121 @@ export default function PostModal({
             />
           </Form.Item>
         </div>
+
+        {/* Image Upload Section */}
+        <Card 
+          title={
+            <Space>
+              <PictureOutlined style={{ color: "#1890ff" }} />
+              <Text strong>อัพโหลดรูปภาพ</Text>
+            </Space>
+          }
+          size="small" 
+          style={{ marginBottom: "16px" }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <div style={{ textAlign: 'center' }}>
+                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                  <DesktopOutlined /> รูปภาพเดสก์ท็อป
+                </Text>
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.imageUrl !== curr.imageUrl}>
+                  {({ getFieldValue }) => {
+                    const imageUrl = getFieldValue('imageUrl');
+                    return imageUrl ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <Image 
+                          src={imageUrl} 
+                          alt="Desktop preview"
+                          width={200}
+                          height={120}
+                          style={{ objectFit: 'cover', borderRadius: '6px' }}
+                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                        />
+                        <div style={{ marginTop: '8px' }}>
+                          <Button 
+                            size="small" 
+                            danger 
+                            icon={<DeleteOutlined />}
+                            onClick={() => deleteImage(imageUrl, false)}
+                          >
+                            ลบรูป
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null;
+                  }}
+                </Form.Item>
+                <Upload
+                  beforeUpload={(file) => handleUpload({ file }, false)}
+                  showUploadList={false}
+                  accept="image/*"
+                >
+                  <Button 
+                    icon={uploading ? <LoadingOutlined /> : <UploadOutlined />}
+                    loading={uploading}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    {uploading ? 'กำลังอัพโหลด...' : 'เลือกรูปภาพ'}
+                  </Button>
+                </Upload>
+              </div>
+            </Col>
+            
+            <Col span={12}>
+              <div style={{ textAlign: 'center' }}>
+                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                  <MobileOutlined /> รูปภาพมือถือ
+                </Text>
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.imageUrlMobileMode !== curr.imageUrlMobileMode}>
+                  {({ getFieldValue }) => {
+                    const mobileImageUrl = getFieldValue('imageUrlMobileMode');
+                    return mobileImageUrl ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <Image 
+                          src={mobileImageUrl} 
+                          alt="Mobile preview"
+                          width={120}
+                          height={120}
+                          style={{ objectFit: 'cover', borderRadius: '6px' }}
+                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                        />
+                        <div style={{ marginTop: '8px' }}>
+                          <Button 
+                            size="small" 
+                            danger 
+                            icon={<DeleteOutlined />}
+                            onClick={() => deleteImage(mobileImageUrl, true)}
+                          >
+                            ลบรูป
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null;
+                  }}
+                </Form.Item>
+                <Upload
+                  beforeUpload={(file) => handleUpload({ file }, true)}
+                  showUploadList={false}
+                  accept="image/*"
+                >
+                  <Button 
+                    icon={uploadingMobile ? <LoadingOutlined /> : <UploadOutlined />}
+                    loading={uploadingMobile}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    {uploadingMobile ? 'กำลังอัพโหลด...' : 'เลือกรูปภาพ'}
+                  </Button>
+                </Upload>
+              </div>
+            </Col>
+          </Row>
+          
+          <Divider style={{ margin: '12px 0' }} />
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            <PictureOutlined /> รองรับไฟล์: JPG, PNG, WebP (สูงสุด 5MB)
+          </Text>
+        </Card>
 
         <Form.Item
           name="publishedAt"
@@ -269,63 +480,6 @@ export default function PostModal({
             <Checkbox>โพสต์แนะนำ</Checkbox>
           </Form.Item>
         </div>
-
-        {/* Image Preview */}
-        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => 
-          prevValues.imageUrl !== currentValues.imageUrl || 
-          prevValues.imageUrlMobileMode !== currentValues.imageUrlMobileMode
-        }>
-          {({ getFieldValue }) => {
-            const imageUrl = getFieldValue('imageUrl');
-            const mobileImageUrl = getFieldValue('imageUrlMobileMode');
-            
-            return (imageUrl || mobileImageUrl) ? (
-              <Card 
-                title={
-                  <Space>
-                    <PictureOutlined style={{ color: "#1890ff" }} />
-                    <Text strong>ตัวอย่างรูปภาพ</Text>
-                  </Space>
-                }
-                size="small" 
-                style={{ marginBottom: "16px" }}
-              >
-                <Space size={16}>
-                  {imageUrl && (
-                    <div>
-                      <Text type="secondary" style={{ fontSize: "12px" }}>Desktop</Text>
-                      <div>
-                        <Image 
-                          src={imageUrl} 
-                          alt="Desktop preview"
-                          width={120}
-                          height={80}
-                          style={{ objectFit: 'cover', borderRadius: '4px' }}
-                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {mobileImageUrl && (
-                    <div>
-                      <Text type="secondary" style={{ fontSize: "12px" }}>Mobile</Text>
-                      <div>
-                        <Image 
-                          src={mobileImageUrl} 
-                          alt="Mobile preview"
-                          width={80}
-                          height={80}
-                          style={{ objectFit: 'cover', borderRadius: '4px' }}
-                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </Space>
-              </Card>
-            ) : null;
-          }}
-        </Form.Item>
 
         <Form.Item>
           <Space>

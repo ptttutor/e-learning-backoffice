@@ -20,14 +20,25 @@ export const uploadToCloudinary = async (buffer, folder = 'payment-slips', publi
       const uploadOptions = {
         folder: folder,
         resource_type: 'image',
-        format: 'jpg',
         quality: 'auto:good',
         fetch_format: 'auto',
-        transformation: [
+      };
+
+      // Set different transformations based on folder type
+      if (folder.includes('posts')) {
+        uploadOptions.transformation = [
+          { width: 1200, height: 800, crop: 'limit' },
+          { quality: 'auto:good' },
+          { format: 'auto' }
+        ];
+      } else {
+        // Default transformation for payment slips
+        uploadOptions.format = 'jpg';
+        uploadOptions.transformation = [
           { width: 800, height: 1200, crop: 'limit' },
           { quality: 'auto:good' }
-        ]
-      };
+        ];
+      }
 
       if (publicId) {
         uploadOptions.public_id = publicId;

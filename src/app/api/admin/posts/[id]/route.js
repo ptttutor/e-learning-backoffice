@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function PUT(request, { params }) {
   try {
@@ -46,22 +44,56 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
+    console.log('🗑️ Attempting to delete post with ID:', id);
 
-    // ลบ PostTag relationships ก่อน
-    await prisma.postTag.deleteMany({
-      where: { postId: id }
+    // ตรวจสอบว่า Post มีอยู่หรือไม่
+    const existingPost = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: { name: true }
+        },
+        postType: {
+          select: { name: true }
+        }
+      }
     });
 
-    // ลบ Post
+    if (!existingPost) {
+      console.log('❌ Post not found with ID:', id);
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+
+    console.log('📝 Found post to delete:', existingPost.title);
+
+    // ลบ Post โดยตรง
     await prisma.post.delete({
       where: { id }
     });
 
-    return NextResponse.json({ success: true });
+    console.log('✅ Post deleted successfully:', id);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Post deleted successfully' 
+    });
   } catch (error) {
-    console.error('Error deleting post:', error);
+    console.error('❌ Error deleting post:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to delete post' },
+      { 
+        error: 'Failed to delete post', 
+        details: error.message,
+        code: error.code 
+      },
       { status: 500 }
     );
   }
