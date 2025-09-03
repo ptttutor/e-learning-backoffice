@@ -1,73 +1,74 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
-  Table,
   Button,
   Space,
-  Modal,
   Form,
-  Input,
-  InputNumber,
   message,
   Card,
   Typography,
-  Tag,
 } from "antd";
 import {
   BookOutlined,
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  FileTextOutlined,
-  OrderedListOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 import { useParams, useRouter } from "next/navigation";
+
+// Components
+import ChapterTable from "@/components/admin/chapters/ChapterTable";
+import ChapterModal from "@/components/admin/chapters/ChapterModal";
+import DeleteModal from "@/components/admin/chapters/DeleteModal";
+import OrderActions from "@/components/admin/chapters/OrderActions";
+
+// Hooks
+import { useChapters } from "@/hooks/useChapters";
 
 const { Title, Text } = Typography;
 
 export default function AdminChaptersPage() {
   const { courseId } = useParams();
   const router = useRouter();
-  const [chapters, setChapters] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [chapterToDelete, setChapterToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [form] = Form.useForm();
 
-  // Fetch chapters
-  const fetchChapters = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/chapters?courseId=${courseId}`);
-      const data = await res.json();
-      setChapters(data.data || []);
-    } catch (e) {
-      message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
-    }
-    setLoading(false);
-  }, [courseId]);
-
-  useEffect(() => {
-    if (courseId) fetchChapters();
-  }, [courseId, fetchChapters]);
+  // Use custom hook for chapters data
+  const {
+    chapters,
+    loading,
+    activeId,
+    hasUnsavedChanges,
+    savingOrder,
+    sensors,
+    initialOrder,
+    fetchChapters,
+    saveOrderChanges,
+    cancelOrderChanges,
+    resetOrder,
+    handleDragStart,
+    handleDragEnd,
+    handleDragCancel,
+  } = useChapters(courseId);
 
   // Create or update chapter
-  const handleOk = async () => {
+  const handleSubmitChapter = async (chapterData) => {
     try {
-      const values = await form.validateFields();
       let res;
       if (editing) {
         res = await fetch(`/api/admin/chapters/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
+          body: JSON.stringify(chapterData),
         });
       } else {
         res = await fetch(`/api/admin/chapters`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...values, courseId }),
+          body: JSON.stringify({ ...chapterData, courseId }),
         });
       }
       const data = await res.json();
@@ -83,27 +84,56 @@ export default function AdminChaptersPage() {
         message.error(data.error || "เกิดข้อผิดพลาด");
       }
     } catch (e) {
-      // validation error
+      message.error("เกิดข้อผิดพลาด");
     }
   };
 
-  // Delete chapter
-  const handleDelete = async (id) => {
-    Modal.confirm({
-      title: "ยืนยันการลบ chapter?",
-      onOk: async () => {
-        const res = await fetch(`/api/admin/chapters/${id}`, {
-          method: "DELETE",
-        });
-        const data = await res.json();
-        if (data.success) {
-          message.success("ลบ chapter สำเร็จ");
-          fetchChapters();
-        } else {
-          message.error(data.error || "เกิดข้อผิดพลาด");
-        }
-      },
-    });
+  // Handle delete
+  const handleDelete = (record) => {
+    setChapterToDelete(record);
+    setDeleteModalOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!chapterToDelete?.id) {
+      message.error("ไม่พบ ID ของ chapter");
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      const response = await fetch(`/api/admin/chapters/${chapterToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        message.success("ลบ chapter สำเร็จ");
+        setDeleteModalOpen(false);
+        setChapterToDelete(null);
+        await fetchChapters();
+      } else {
+        message.error(data.error || "เกิดข้อผิดพลาดในการลบ chapter");
+      }
+    } catch (error) {
+      console.error("Delete chapter error:", error);
+      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setChapterToDelete(null);
   };
 
   // Open modal for create/edit
@@ -114,74 +144,24 @@ export default function AdminChaptersPage() {
       form.setFieldsValue(record);
     } else {
       form.resetFields();
+      // ตั้งค่า order เป็นลำดับถัดไป
+      const nextOrder =
+        chapters.length > 0 ? Math.max(...chapters.map((c) => c.order)) + 1 : 1;
+      form.setFieldsValue({ order: nextOrder });
     }
   };
 
-  const columns = [
-    {
-      title: "ชื่อ Chapter",
-      dataIndex: "title",
-      key: "title",
-      render: (title) => (
-        <Space>
-          <BookOutlined style={{ color: "#1890ff" }} />
-          <Text strong>{title}</Text>
-        </Space>
-      ),
-      width: 300,
-    },
-    {
-      title: "ลำดับ",
-      dataIndex: "order",
-      key: "order",
-      render: (order) => (
-        <Space>
-          <OrderedListOutlined style={{ color: "#8c8c8c" }} />
-          <Tag color="blue">{order}</Tag>
-        </Space>
-      ),
-      width: 120,
-      sorter: (a, b) => a.order - b.order,
-    },
-    {
-      title: "การจัดการ",
-      key: "actions",
-      render: (_, record) => (
-        <Space size={8} wrap>
-          <Button
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => openModal(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            icon={<DeleteOutlined />}
-            size="small"
-            danger
-            onClick={() => handleDelete(record.id)}
-            style={{ borderRadius: "6px" }}
-          >
-            ลบ
-          </Button>
-          <Button
-            icon={<FileTextOutlined />}
-            size="small"
-            type="link"
-            onClick={() =>
-              (window.location.href = `/admin/courses/content/${record.id}`)
-            }
-            style={{ borderRadius: "6px" }}
-          >
-            จัดการเนื้อหา
-          </Button>
-        </Space>
-      ),
-      width: 280,
-      fixed: "right",
-    },
-  ];
+  // Close modal
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditing(null);
+    form.resetFields();
+  };
+
+  // Handle manage content
+  const handleManageContent = (record) => {
+    router.push(`/admin/courses/content/${record.id}`);
+  };
 
   return (
     <div
@@ -212,107 +192,58 @@ export default function AdminChaptersPage() {
 
       <Card>
         <div style={{ marginBottom: "16px" }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => openModal(null)}
-            style={{ borderRadius: "6px" }}
-          >
-            สร้าง Chapter ใหม่
-          </Button>
+          <Space wrap>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => openModal(null)}
+              style={{ borderRadius: "6px" }}
+            >
+              สร้าง Chapter ใหม่
+            </Button>
+
+            <OrderActions
+              hasUnsavedChanges={hasUnsavedChanges}
+              savingOrder={savingOrder}
+              initialOrderLength={initialOrder.length}
+              onSaveOrder={saveOrderChanges}
+              onCancelOrder={cancelOrderChanges}
+              onResetOrder={resetOrder}
+            />
+          </Space>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={chapters}
-          rowKey="id"
+        <ChapterTable
+          chapters={chapters}
           loading={loading}
-          scroll={{ x: 800 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} จาก ${total} รายการ`,
-          }}
-          size="middle"
+          activeId={activeId}
+          sensors={sensors}
+          onEdit={openModal}
+          onDelete={handleDelete}
+          onManageContent={handleManageContent}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         />
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal
-        title={
-          <Space>
-            {editing ? <EditOutlined /> : <PlusOutlined />}
-            <Text strong>
-              {editing ? "แก้ไข Chapter" : "สร้าง Chapter ใหม่"}
-            </Text>
-          </Space>
-        }
+      <ChapterModal
         open={modalOpen}
-        onCancel={() => {
-          setModalOpen(false);
-          setEditing(null);
-          form.resetFields();
-        }}
-        footer={null}
-        width={500}
-        style={{ top: 20 }}
-        destroyOnHidden
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleOk}
-          preserve={false}
-        >
-          <Form.Item
-            name="title"
-            label="ชื่อ Chapter"
-            rules={[{ required: true, message: "กรุณากรอกชื่อ Chapter" }]}
-          >
-            <Input placeholder="ใส่ชื่อ Chapter" />
-          </Form.Item>
+        editing={editing}
+        form={form}
+        onCancel={closeModal}
+        onSubmit={handleSubmitChapter}
+      />
 
-          <Form.Item
-            name="order"
-            label="ลำดับ"
-            rules={[
-              { required: true, message: "กรุณากรอกลำดับ" },
-              { type: "number", min: 1, message: "ลำดับต้องมากกว่า 0" },
-            ]}
-          >
-            <InputNumber
-              min={1}
-              style={{ width: "100%" }}
-              placeholder="ลำดับของ Chapter"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={editing ? <EditOutlined /> : <PlusOutlined />}
-                style={{ borderRadius: "6px" }}
-              >
-                {editing ? "อัพเดท" : "สร้าง"}
-              </Button>
-              <Button
-                onClick={() => {
-                  setModalOpen(false);
-                  setEditing(null);
-                  form.resetFields();
-                }}
-                style={{ borderRadius: "6px" }}
-              >
-                ยกเลิก
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        open={deleteModalOpen}
+        chapter={chapterToDelete}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
