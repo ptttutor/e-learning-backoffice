@@ -13,12 +13,30 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 
 export const useContents = (chapterId) => {
-  const [contents, setContents] = useState([]);
+  const [contents, setContents] = useState([]); // filtered contents สำหรับแสดงผล
+  const [allContents, setAllContents] = useState([]); // contents ทั้งหมดสำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeId, setActiveId] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
+
+  // Filter states
+  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState({
+    contentType: "",
+    sortBy: "order_asc",
+  });
+
+  // Pagination states
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
 
   // ปรับปรุง sensors สำหรับการลากที่ดีขึ้น
   const sensors = useSensors(
@@ -32,38 +50,124 @@ export const useContents = (chapterId) => {
     })
   );
 
-  // Fetch contents
+  // Handle filter change
+  const handleFilterChange = useCallback((key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+  }, []);
+
+  // Handle table change (pagination)
+  const handleTableChange = useCallback((paginationConfig) => {
+    setPagination(prev => ({
+      ...prev,
+      page: paginationConfig.current || 1,
+      pageSize: paginationConfig.pageSize || 10,
+    }));
+  }, []);
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchInput("");
+    setFilters({
+      contentType: "",
+      sortBy: "order_asc",
+    });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  // Fetch contents with server-side filtering and pagination
   const fetchContents = useCallback(async () => {
     if (!chapterId) return;
     
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/contents?chapterId=${chapterId}`);
-      const data = await res.json();
-      // เรียงลำดับตาม order
-      const sortedContents = (data.data || []).sort(
-        (a, b) => a.order - b.order
-      );
-      setContents(sortedContents);
+      // Build query parameters
+      const params = new URLSearchParams({
+        chapterId,
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+        sortBy: filters.sortBy,
+      });
 
-      // เก็บ initial order เมื่อโหลดครั้งแรก
-      const initOrder = sortedContents.map((item) => ({
-        id: item.id,
-        order: item.order,
-      }));
-      setInitialOrder(initOrder);
-      setHasUnsavedChanges(false); // รีเซ็ตสถานะการเปลี่ยนแปลง
+      if (searchInput.trim()) {
+        params.append('search', searchInput.trim());
+      }
+      if (filters.contentType) {
+        params.append('contentType', filters.contentType);
+      }
+
+      const res = await fetch(`/api/admin/contents?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setContents(data.data || []);
+        setPagination(prev => ({
+          ...prev,
+          ...data.pagination
+        }));
+      } else {
+        message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
+      }
     } catch (e) {
       message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
     }
     setLoading(false);
+  }, [chapterId, searchInput, filters, pagination.page, pagination.pageSize]);
+
+  // Fetch all contents for drag & drop operations
+  const fetchAllContents = useCallback(async () => {
+    if (!chapterId) return;
+    
+    try {
+      const res = await fetch(`/api/admin/contents?chapterId=${chapterId}&pageSize=1000&sortBy=order_asc`);
+      const data = await res.json();
+      
+      if (data.success) {
+        const sortedContents = (data.data || []).sort((a, b) => a.order - b.order);
+        setAllContents(sortedContents);
+
+        // เก็บ initial order เมื่อโหลดครั้งแรก
+        const initOrder = sortedContents.map((item) => ({
+          id: item.id,
+          order: item.order,
+        }));
+        setInitialOrder(initOrder);
+        setHasUnsavedChanges(false);
+      }
+    } catch (e) {
+      message.error("โหลดข้อมูลเนื้อหาไม่สำเร็จ");
+    }
+  }, [chapterId]);
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchInput !== undefined) {
+        fetchContents();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  // Fetch when filters or pagination change
+  useEffect(() => {
+    fetchContents();
+  }, [filters, pagination.page, pagination.pageSize]);
+
+  // Fetch all contents when chapter changes
+  useEffect(() => {
+    if (chapterId) {
+      fetchAllContents();
+      fetchContents();
+    }
   }, [chapterId]);
 
   // บันทึกการเปลี่ยนแปลงลำดับ
   const saveOrderChanges = async () => {
     setSavingOrder(true);
     try {
-      const updatePromises = contents.map((content) =>
+      const updatePromises = allContents.map((content) =>
         fetch(`/api/admin/contents/${content.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -79,7 +183,7 @@ export const useContents = (chapterId) => {
       await Promise.all(updatePromises);
 
       // อัพเดต initial order ให้เป็นลำดับปัจจุบัน
-      const newInitOrder = contents.map((item) => ({
+      const newInitOrder = allContents.map((item) => ({
         id: item.id,
         order: item.order,
       }));
@@ -87,6 +191,9 @@ export const useContents = (chapterId) => {
       setHasUnsavedChanges(false);
 
       message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
+      
+      // Refresh filtered contents
+      fetchContents();
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการบันทึกลำดับ");
     }
@@ -97,8 +204,8 @@ export const useContents = (chapterId) => {
   const cancelOrderChanges = () => {
     if (initialOrder.length === 0) return;
 
-    // เรียงลำดับ contents ตาม initial order
-    const resetContents = [...contents]
+    // เรียงลำดับ allContents ตาม initial order
+    const resetContents = [...allContents]
       .sort((a, b) => {
         const aInitOrder =
           initialOrder.find((item) => item.id === a.id)?.order || 0;
@@ -113,9 +220,12 @@ export const useContents = (chapterId) => {
         return { ...content, order: originalOrder };
       });
 
-    setContents(resetContents);
+    setAllContents(resetContents);
     setHasUnsavedChanges(false);
     message.info("ยกเลิกการเปลี่ยนแปลงลำดับ");
+    
+    // Refresh filtered contents
+    fetchContents();
   };
 
   // Reset order กลับไปเป็นค่าเริ่มต้น
@@ -123,8 +233,8 @@ export const useContents = (chapterId) => {
     if (initialOrder.length === 0) return;
 
     try {
-      // เรียงลำดับ contents ตาม initial order
-      const resetContents = [...contents].sort((a, b) => {
+      // เรียงลำดับ allContents ตาม initial order
+      const resetContents = [...allContents].sort((a, b) => {
         const aInitOrder =
           initialOrder.find((item) => item.id === a.id)?.order || 0;
         const bInitOrder =
@@ -132,11 +242,11 @@ export const useContents = (chapterId) => {
         return aInitOrder - bInitOrder;
       });
 
-      setContents(resetContents);
+      setAllContents(resetContents);
 
       // อัพเดทในฐานข้อมูล
       const updatePromises = initialOrder.map((item) => {
-        const content = contents.find((c) => c.id === item.id);
+        const content = allContents.find((c) => c.id === item.id);
         return fetch(`/api/admin/contents/${item.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -152,9 +262,12 @@ export const useContents = (chapterId) => {
       await Promise.all(updatePromises);
       setHasUnsavedChanges(false);
       message.success("รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ");
+      
+      // Refresh filtered contents
+      fetchContents();
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการรีเซ็ตลำดับ");
-      fetchContents(); // Reload data on error
+      fetchAllContents(); // Reload data on error
     }
   };
 
@@ -172,22 +285,22 @@ export const useContents = (chapterId) => {
       return;
     }
 
-    const oldIndex = contents.findIndex((item) => item.id === active.id);
-    const newIndex = contents.findIndex((item) => item.id === over.id);
+    const oldIndex = allContents.findIndex((item) => item.id === active.id);
+    const newIndex = allContents.findIndex((item) => item.id === over.id);
 
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
 
-    // อัพเดท state ทันที พร้อมกับอัพเดตเลขลำดับในตาราง
-    const newContents = arrayMove(contents, oldIndex, newIndex).map(
+    // อัพเดท allContents state ทันที พร้อมกับอัพเดตเลขลำดับในตาราง
+    const newContents = arrayMove(allContents, oldIndex, newIndex).map(
       (content, index) => ({
         ...content,
         order: index + 1, // อัพเดตเลขลำดับให้ตรงกับตำแหน่งใหม่
       })
     );
 
-    setContents(newContents);
+    setAllContents(newContents);
     setHasUnsavedChanges(true); // แสดงว่ามีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
   };
 
@@ -196,18 +309,29 @@ export const useContents = (chapterId) => {
     setActiveId(null);
   };
 
-  useEffect(() => {
-    if (chapterId) fetchContents();
-  }, [chapterId, fetchContents]);
+  // Page change handler
+  const handlePageChange = useCallback((page, pageSize) => {
+    setPagination(prev => ({ ...prev, page, pageSize }));
+  }, []);
+
+  // Page size change handler  
+  const handlePageSizeChange = useCallback((current, size) => {
+    setPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+  }, []);
 
   return {
-    contents,
+    contents, // filtered contents สำหรับแสดงผล
+    allContents, // contents ทั้งหมดสำหรับ drag & drop
     initialOrder,
     loading,
     activeId,
     hasUnsavedChanges,
     savingOrder,
     sensors,
+    searchInput,
+    setSearchInput,
+    filters,
+    pagination,
     fetchContents,
     saveOrderChanges,
     cancelOrderChanges,
@@ -215,5 +339,10 @@ export const useContents = (chapterId) => {
     handleDragStart,
     handleDragEnd,
     handleDragCancel,
+    handleFilterChange,
+    handleTableChange,
+    handlePageChange,
+    handlePageSizeChange,
+    resetFilters,
   };
 };

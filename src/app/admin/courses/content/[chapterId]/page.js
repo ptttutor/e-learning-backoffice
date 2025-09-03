@@ -20,6 +20,7 @@ import ContentTable from "@/components/admin/contents/ContentTable";
 import ContentModal from "@/components/admin/contents/ContentModal";
 import DeleteModal from "@/components/admin/contents/DeleteModal";
 import OrderActions from "@/components/admin/contents/OrderActions";
+import ContentFilters from "@/components/admin/contents/ContentFilters";
 
 // Hooks
 import { useContents } from "@/hooks/useContents";
@@ -39,12 +40,17 @@ export default function AdminContentPage() {
   // Use custom hook for contents data
   const {
     contents,
+    allContents,
     loading,
     activeId,
     hasUnsavedChanges,
     savingOrder,
     sensors,
     initialOrder,
+    searchInput,
+    setSearchInput,
+    filters,
+    pagination,
     fetchContents,
     saveOrderChanges,
     cancelOrderChanges,
@@ -52,6 +58,10 @@ export default function AdminContentPage() {
     handleDragStart,
     handleDragEnd,
     handleDragCancel,
+    handleFilterChange,
+    handlePageChange,
+    handlePageSizeChange,
+    resetFilters,
   } = useContents(chapterId);
 
   // Create or update content
@@ -183,31 +193,46 @@ export default function AdminContentPage() {
         </Space>
       </Card>
 
+      {/* Filter Section */}
+      <Card style={{ marginBottom: "16px" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => openModal(null)}
+            style={{ borderRadius: "6px" }}
+          >
+            สร้างเนื้อหาใหม่
+          </Button>
+        </div>
+
+        <ContentFilters
+          filters={filters}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          onFilterChange={handleFilterChange}
+          onReset={resetFilters}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </Card>
+
       <Card>
         <div style={{ marginBottom: "16px" }}>
-          <Space wrap>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => openModal(null)}
-              style={{ borderRadius: "6px" }}
-            >
-              สร้างเนื้อหาใหม่
-            </Button>
-
-            <OrderActions
-              hasUnsavedChanges={hasUnsavedChanges}
-              savingOrder={savingOrder}
-              initialOrderLength={initialOrder.length}
-              onSaveOrder={saveOrderChanges}
-              onCancelOrder={cancelOrderChanges}
-              onResetOrder={resetOrder}
-            />
-          </Space>
+          <OrderActions
+            hasUnsavedChanges={hasUnsavedChanges}
+            savingOrder={savingOrder}
+            initialOrderLength={initialOrder.length}
+            onSaveOrder={saveOrderChanges}
+            onCancelOrder={cancelOrderChanges}
+            onResetOrder={resetOrder}
+          />
         </div>
 
         <ContentTable
           contents={contents}
+          allContents={allContents}
           loading={loading}
           activeId={activeId}
           sensors={sensors}

@@ -166,7 +166,8 @@ const DragOverlayRow = ({ item }) => (
 );
 
 export default function ContentTable({
-  contents,
+  contents, // filtered contents for display
+  allContents, // all contents for drag & drop
   loading,
   activeId,
   sensors,
@@ -322,7 +323,7 @@ export default function ContentTable({
     },
   ];
 
-  const activeItem = contents.find((item) => item.id === activeId);
+  const activeItem = allContents.find((item) => item.id === activeId);
 
   return (
     <DndContext
@@ -333,7 +334,7 @@ export default function ContentTable({
       onDragCancel={onDragCancel}
     >
       <SortableContext
-        items={contents.map((item) => item.id)}
+        items={allContents.map((item) => item.id)}
         strategy={verticalListSortingStrategy}
       >
         <Table
