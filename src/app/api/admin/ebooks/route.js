@@ -3,19 +3,103 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// GET - ดึงรายการ ebooks ทั้งหมด
-export async function GET() {
+// GET - ดึงรายการ ebooks ทั้งหมด พร้อม filtering และ pagination
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    
+    // Get pagination parameters
+    const page = parseInt(searchParams.get('page')) || 1;
+    const pageSize = parseInt(searchParams.get('pageSize')) || 10;
+    const skip = (page - 1) * pageSize;
+
+    // Get filter parameters
+    const search = searchParams.get('search') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const status = searchParams.get('status') || 'ALL';
+    const format = searchParams.get('format') || '';
+    const featured = searchParams.get('featured') || 'ALL';
+    const physical = searchParams.get('physical') || 'ALL';
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+
+    // Build where clause
+    const where = {};
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { author: { contains: search, mode: 'insensitive' } },
+        { isbn: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Category filter
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    // Status filter
+    if (status !== 'ALL') {
+      where.isActive = status === 'ACTIVE';
+    }
+
+    // Format filter
+    if (format) {
+      where.format = format;
+    }
+
+    // Featured filter
+    if (featured !== 'ALL') {
+      where.isFeatured = featured === 'FEATURED';
+    }
+
+    // Physical filter
+    if (physical !== 'ALL') {
+      where.isPhysical = physical === 'PHYSICAL';
+    }
+
+    // Build orderBy clause
+    const orderBy = {};
+    if (sortBy === 'title') {
+      orderBy.title = sortOrder;
+    } else if (sortBy === 'price') {
+      orderBy.price = sortOrder;
+    } else if (sortBy === 'author') {
+      orderBy.author = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
+
+    // Get total count for pagination
+    const totalCount = await prisma.ebook.count({ where });
+
+    // Get ebooks with filters
     const ebooks = await prisma.ebook.findMany({
+      where,
       include: {
         category: true
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy,
+      skip,
+      take: pageSize,
     });
 
-    return NextResponse.json(ebooks);
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    return NextResponse.json({
+      success: true,
+      data: ebooks,
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages,
+      },
+    });
   } catch (error) {
     console.error('Error fetching ebooks:', error);
     return NextResponse.json(
