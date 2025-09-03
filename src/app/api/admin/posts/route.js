@@ -3,9 +3,102 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    
+    // Extract query parameters for filtering and pagination
+    const search = searchParams.get('search') || '';
+    const postTypeId = searchParams.get('postTypeId') || '';
+    const authorId = searchParams.get('authorId') || '';
+    const dateFrom = searchParams.get('dateFrom') || '';
+    const dateTo = searchParams.get('dateTo') || '';
+    const sortBy = searchParams.get('sortBy') || 'created_desc';
+    const page = parseInt(searchParams.get('page')) || 1;
+    const pageSize = parseInt(searchParams.get('pageSize')) || 10;
+
+    // Build where clause
+    const where = {
+      ...(search && {
+        OR: [
+          {
+            title: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          },
+          {
+            content: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          },
+          {
+            excerpt: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        ]
+      }),
+      ...(postTypeId && {
+        postTypeId: postTypeId
+      }),
+      ...(authorId && {
+        authorId: authorId
+      }),
+      ...(dateFrom || dateTo) && {
+        createdAt: {
+          ...(dateFrom && { gte: new Date(dateFrom) }),
+          ...(dateTo && { lte: new Date(dateTo + 'T23:59:59.999Z') })
+        }
+      }
+    };
+
+    // Build orderBy clause
+    let orderBy = { createdAt: 'desc' }; // default
+    switch (sortBy) {
+      case 'created_asc':
+        orderBy = { createdAt: 'asc' };
+        break;
+      case 'title_asc':
+        orderBy = { title: 'asc' };
+        break;
+      case 'title_desc':
+        orderBy = { title: 'desc' };
+        break;
+      case 'author_asc':
+        orderBy = { author: { name: 'asc' } };
+        break;
+      case 'author_desc':
+        orderBy = { author: { name: 'desc' } };
+        break;
+      case 'type_asc':
+        orderBy = { postType: { name: 'asc' } };
+        break;
+      case 'type_desc':
+        orderBy = { postType: { name: 'desc' } };
+        break;
+      case 'published_desc':
+        orderBy = { publishedAt: 'desc' };
+        break;
+      case 'published_asc':
+        orderBy = { publishedAt: 'asc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * pageSize;
+    
+    // Get total count for pagination
+    const totalCount = await prisma.post.count({ where });
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // Get filtered and paginated posts
     const posts = await prisma.post.findMany({
+      where,
       include: {
         author: {
           select: {
@@ -19,19 +112,40 @@ export async function GET() {
             id: true,
             name: true
           }
-        },
-
+        }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy,
+      skip,
+      take: pageSize
     });
 
-    return NextResponse.json(posts);
+    // Pagination metadata
+    const pagination = {
+      page,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: posts,
+      pagination,
+      filters: {
+        search,
+        postTypeId,
+        authorId,
+        dateFrom,
+        dateTo,
+        sortBy
+      }
+    });
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error('GET /api/admin/posts error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch posts' },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
