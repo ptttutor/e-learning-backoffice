@@ -163,6 +163,7 @@ const DragOverlayRow = ({ item }) => (
 
 export default function ChapterTable({
   chapters,
+  allChapters, // สำหรับ drag & drop
   loading,
   activeId,
   sensors,
@@ -243,7 +244,7 @@ export default function ChapterTable({
     },
   ];
 
-  const activeItem = chapters.find((item) => item.id === activeId);
+  const activeItem = (allChapters || chapters).find((item) => item.id === activeId);
 
   return (
     <DndContext
@@ -254,7 +255,7 @@ export default function ChapterTable({
       onDragCancel={onDragCancel}
     >
       <SortableContext
-        items={chapters.map((item) => item.id)}
+        items={(allChapters || chapters).map((item) => item.id)}
         strategy={verticalListSortingStrategy}
       >
         <Table
@@ -275,6 +276,11 @@ export default function ChapterTable({
             body: {
               row: SortableRow,
             },
+          }}
+          locale={{
+            emptyText: allChapters && allChapters.length > 0 && chapters.length === 0 
+              ? "ไม่พบ Chapter ที่ตรงกับเงื่อนไขการค้นหา" 
+              : "ยังไม่มี Chapter ในคอร์สนี้",
           }}
         />
       </SortableContext>

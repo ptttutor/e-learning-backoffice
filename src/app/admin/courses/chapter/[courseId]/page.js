@@ -20,6 +20,7 @@ import ChapterTable from "@/components/admin/chapters/ChapterTable";
 import ChapterModal from "@/components/admin/chapters/ChapterModal";
 import DeleteModal from "@/components/admin/chapters/DeleteModal";
 import OrderActions from "@/components/admin/chapters/OrderActions";
+import ChapterFilters from "@/components/admin/chapters/ChapterFilters";
 
 // Hooks
 import { useChapters } from "@/hooks/useChapters";
@@ -39,12 +40,17 @@ export default function AdminChaptersPage() {
   // Use custom hook for chapters data
   const {
     chapters,
+    allChapters,
     loading,
     activeId,
     hasUnsavedChanges,
     savingOrder,
     sensors,
     initialOrder,
+    searchInput,
+    setSearchInput,
+    filters,
+    pagination,
     fetchChapters,
     saveOrderChanges,
     cancelOrderChanges,
@@ -52,6 +58,10 @@ export default function AdminChaptersPage() {
     handleDragStart,
     handleDragEnd,
     handleDragCancel,
+    handleFilterChange,
+    handlePageChange,
+    handlePageSizeChange,
+    resetFilters,
   } = useChapters(courseId);
 
   // Create or update chapter
@@ -144,9 +154,9 @@ export default function AdminChaptersPage() {
       form.setFieldsValue(record);
     } else {
       form.resetFields();
-      // ตั้งค่า order เป็นลำดับถัดไป
+      // ตั้งค่า order เป็นลำดับถัดไป (ใช้ allChapters)
       const nextOrder =
-        chapters.length > 0 ? Math.max(...chapters.map((c) => c.order)) + 1 : 1;
+        allChapters.length > 0 ? Math.max(...allChapters.map((c) => c.order)) + 1 : 1;
       form.setFieldsValue({ order: nextOrder });
     }
   };
@@ -190,31 +200,46 @@ export default function AdminChaptersPage() {
         </Space>
       </Card>
 
+      {/* Filter Section */}
+      <Card style={{ marginBottom: "16px" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => openModal(null)}
+            style={{ borderRadius: "6px" }}
+          >
+            สร้าง Chapter ใหม่
+          </Button>
+        </div>
+
+        <ChapterFilters
+          filters={filters}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          onFilterChange={handleFilterChange}
+          onReset={resetFilters}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </Card>
+
       <Card>
         <div style={{ marginBottom: "16px" }}>
-          <Space wrap>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => openModal(null)}
-              style={{ borderRadius: "6px" }}
-            >
-              สร้าง Chapter ใหม่
-            </Button>
-
-            <OrderActions
-              hasUnsavedChanges={hasUnsavedChanges}
-              savingOrder={savingOrder}
-              initialOrderLength={initialOrder.length}
-              onSaveOrder={saveOrderChanges}
-              onCancelOrder={cancelOrderChanges}
-              onResetOrder={resetOrder}
-            />
-          </Space>
+          <OrderActions
+            hasUnsavedChanges={hasUnsavedChanges}
+            savingOrder={savingOrder}
+            initialOrderLength={initialOrder.length}
+            onSaveOrder={saveOrderChanges}
+            onCancelOrder={cancelOrderChanges}
+            onResetOrder={resetOrder}
+          />
         </div>
 
         <ChapterTable
           chapters={chapters}
+          allChapters={allChapters}
           loading={loading}
           activeId={activeId}
           sensors={sensors}

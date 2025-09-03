@@ -14,11 +14,29 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 export const useChapters = (courseId) => {
   const [chapters, setChapters] = useState([]);
+  const [allChapters, setAllChapters] = useState([]); // สำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeId, setActiveId] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
+
+  // Filter states
+  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState({
+    minOrder: "",
+    sortBy: "order_asc",
+  });
+
+  // Pagination states
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
 
   // ปรับปรุง sensors สำหรับการลากที่ดีขึ้น
   const sensors = useSensors(
@@ -32,39 +50,113 @@ export const useChapters = (courseId) => {
     })
   );
 
-  // Fetch chapters
+  // Debounced search function
+  const debouncedFetchChapters = useCallback(
+    debounce(() => {
+      fetchChapters();
+    }, 500),
+    [courseId, searchInput, filters, pagination.page, pagination.pageSize]
+  );
+
+  // Apply filters และ search (ใช้ server-side)
+  useEffect(() => {
+    if (courseId) {
+      debouncedFetchChapters();
+    }
+  }, [courseId, searchInput, filters, pagination.page, pagination.pageSize, debouncedFetchChapters]);
+
+  // Fetch all chapters for drag & drop (without filters)
+  const fetchAllChapters = useCallback(async () => {
+    if (!courseId) return;
+    
+    try {
+      const res = await fetch(`/api/admin/chapters?courseId=${courseId}&pageSize=1000&sortBy=order_asc`);
+      const data = await res.json();
+      if (data.success) {
+        setAllChapters(data.data || []);
+        
+        // เก็บ initial order เมื่อโหลดครั้งแรก
+        const initOrder = (data.data || []).map((item) => ({
+          id: item.id,
+          order: item.order,
+        }));
+        setInitialOrder(initOrder);
+      }
+    } catch (e) {
+      console.error("Error fetching all chapters:", e);
+    }
+  }, [courseId]);
+
+  // Handle filter change
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 })); // Reset to first page
+  };
+
+  // Handle table change (pagination, sorting)
+  const handleTableChange = (paginationConfig, filtersConfig, sorter) => {
+    setPagination((prev) => ({
+      ...prev,
+      page: paginationConfig.current || 1,
+      pageSize: paginationConfig.pageSize || 10,
+    }));
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchInput("");
+    setFilters({
+      minOrder: "",
+      sortBy: "order_asc",
+    });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  // Fetch chapters with server-side filtering and pagination
   const fetchChapters = useCallback(async () => {
     if (!courseId) return;
     
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/chapters?courseId=${courseId}`);
+      // Build query parameters
+      const params = new URLSearchParams({
+        courseId,
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+        sortBy: filters.sortBy,
+      });
+
+      if (searchInput.trim()) {
+        params.append('search', searchInput.trim());
+      }
+      if (filters.minOrder) {
+        params.append('minOrder', filters.minOrder.toString());
+      }
+
+      const res = await fetch(`/api/admin/chapters?${params.toString()}`);
       const data = await res.json();
       
-      // เรียงลำดับตาม order
-      const sortedChapters = (data.data || []).sort(
-        (a, b) => a.order - b.order
-      );
-      setChapters(sortedChapters);
-
-      // เก็บ initial order เมื่อโหลดครั้งแรก
-      const initOrder = sortedChapters.map((item) => ({
-        id: item.id,
-        order: item.order,
-      }));
-      setInitialOrder(initOrder);
-      setHasUnsavedChanges(false); // รีเซ็ตสถานะการเปลี่ยนแปลง
+      if (data.success) {
+        setChapters(data.data || []);
+        setPagination(prev => ({
+          ...prev,
+          ...data.pagination
+        }));
+      } else {
+        message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
+      }
     } catch (e) {
+      console.error("Error fetching chapters:", e);
       message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
     }
     setLoading(false);
-  }, [courseId]);
+  }, [courseId, searchInput, filters, pagination.page, pagination.pageSize]);
 
   // บันทึกการเปลี่ยนแปลงลำดับ
   const saveOrderChanges = async () => {
     setSavingOrder(true);
     try {
-      const updatePromises = chapters.map((chapter) =>
+      const updatePromises = allChapters.map((chapter) =>
         fetch(`/api/admin/chapters/${chapter.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -78,15 +170,20 @@ export const useChapters = (courseId) => {
       await Promise.all(updatePromises);
 
       // อัพเดต initial order ให้เป็นลำดับปัจจุบัน
-      const newInitOrder = chapters.map((item) => ({
+      const newInitOrder = allChapters.map((item) => ({
         id: item.id,
         order: item.order,
       }));
       setInitialOrder(newInitOrder);
       setHasUnsavedChanges(false);
 
+      // Refresh data
+      await fetchChapters();
+      await fetchAllChapters();
+
       message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
     } catch (error) {
+      console.error("Error saving order changes:", error);
       message.error("เกิดข้อผิดพลาดในการบันทึกลำดับ");
     }
     setSavingOrder(false);
@@ -96,8 +193,8 @@ export const useChapters = (courseId) => {
   const cancelOrderChanges = () => {
     if (initialOrder.length === 0) return;
 
-    // เรียงลำดับ chapters ตาม initial order
-    const resetChapters = [...chapters]
+    // เรียงลำดับ allChapters ตาม initial order
+    const resetChapters = [...allChapters]
       .sort((a, b) => {
         const aInitOrder =
           initialOrder.find((item) => item.id === a.id)?.order || 0;
@@ -112,7 +209,7 @@ export const useChapters = (courseId) => {
         return { ...chapter, order: originalOrder };
       });
 
-    setChapters(resetChapters);
+    setAllChapters(resetChapters);
     setHasUnsavedChanges(false);
     message.info("ยกเลิกการเปลี่ยนแปลงลำดับ");
   };
@@ -122,8 +219,8 @@ export const useChapters = (courseId) => {
     if (initialOrder.length === 0) return;
 
     try {
-      // เรียงลำดับ chapters ตาม initial order
-      const resetChapters = [...chapters].sort((a, b) => {
+      // เรียงลำดับ allChapters ตาม initial order
+      const resetChapters = [...allChapters].sort((a, b) => {
         const aInitOrder =
           initialOrder.find((item) => item.id === a.id)?.order || 0;
         const bInitOrder =
@@ -131,11 +228,11 @@ export const useChapters = (courseId) => {
         return aInitOrder - bInitOrder;
       });
 
-      setChapters(resetChapters);
+      setAllChapters(resetChapters);
 
       // อัพเดทในฐานข้อมูล
       const updatePromises = initialOrder.map((item) => {
-        const chapter = chapters.find((c) => c.id === item.id);
+        const chapter = allChapters.find((c) => c.id === item.id);
         return fetch(`/api/admin/chapters/${item.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -148,10 +245,15 @@ export const useChapters = (courseId) => {
 
       await Promise.all(updatePromises);
       setHasUnsavedChanges(false);
+      
+      // Refresh data
+      await fetchChapters();
+      await fetchAllChapters();
+      
       message.success("รีเซ็ตลำดับกลับไปเป็นค่าเริ่มต้นสำเร็จ");
     } catch (error) {
+      console.error("Error resetting order:", error);
       message.error("เกิดข้อผิดพลาดในการรีเซ็ตลำดับ");
-      fetchChapters(); // Reload data on error
     }
   };
 
@@ -169,22 +271,23 @@ export const useChapters = (courseId) => {
       return;
     }
 
-    const oldIndex = chapters.findIndex((item) => item.id === active.id);
-    const newIndex = chapters.findIndex((item) => item.id === over.id);
+    // ใช้ allChapters สำหรับ drag & drop
+    const oldIndex = allChapters.findIndex((item) => item.id === active.id);
+    const newIndex = allChapters.findIndex((item) => item.id === over.id);
 
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
 
     // อัพเดท state ทันที พร้อมกับอัพเดตเลขลำดับในตาราง
-    const newChapters = arrayMove(chapters, oldIndex, newIndex).map(
+    const newChapters = arrayMove(allChapters, oldIndex, newIndex).map(
       (chapter, index) => ({
         ...chapter,
         order: index + 1, // อัพเดตเลขลำดับให้ตรงกับตำแหน่งใหม่
       })
     );
 
-    setChapters(newChapters);
+    setAllChapters(newChapters);
     setHasUnsavedChanges(true); // แสดงว่ามีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
   };
 
@@ -194,17 +297,34 @@ export const useChapters = (courseId) => {
   };
 
   useEffect(() => {
-    if (courseId) fetchChapters();
-  }, [courseId, fetchChapters]);
+    if (courseId) {
+      fetchAllChapters(); // Load all chapters for drag & drop
+    }
+  }, [courseId, fetchAllChapters]);
+
+  // Page change handler
+  const handlePageChange = useCallback((page, pageSize) => {
+    setPagination(prev => ({ ...prev, page, pageSize }));
+  }, []);
+
+  // Page size change handler  
+  const handlePageSizeChange = useCallback((current, size) => {
+    setPagination(prev => ({ ...prev, page: 1, pageSize: size }));
+  }, []);
 
   return {
-    chapters,
+    chapters, // filtered chapters สำหรับแสดงผล
+    allChapters, // chapters ทั้งหมดสำหรับ drag & drop
     initialOrder,
     loading,
     activeId,
     hasUnsavedChanges,
     savingOrder,
     sensors,
+    searchInput,
+    setSearchInput,
+    filters,
+    pagination,
     fetchChapters,
     saveOrderChanges,
     cancelOrderChanges,
@@ -212,5 +332,23 @@ export const useChapters = (courseId) => {
     handleDragStart,
     handleDragEnd,
     handleDragCancel,
+    handleFilterChange,
+    handleTableChange,
+    handlePageChange,
+    handlePageSizeChange,
+    resetFilters,
   };
 };
+
+// Debounce utility function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
