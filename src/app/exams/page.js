@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Link from 'next/link';
 
@@ -14,13 +14,13 @@ export default function ExamsPage() {
   useEffect(() => {
     fetchCategories();
     fetchExams();
-  }, []);
+  }, [fetchCategories, fetchExams]);
 
   useEffect(() => {
     fetchExams();
-  }, [selectedCategory, searchTerm, fetchExams]);
+  }, [fetchExams]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/exam-categories');
       const result = await response.json();
@@ -31,9 +31,9 @@ export default function ExamsPage() {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
 
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -51,7 +51,7 @@ export default function ExamsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchTerm]);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';

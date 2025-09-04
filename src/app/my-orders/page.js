@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -20,9 +20,10 @@ export default function MyOrdersPage() {
     if (user) {
       fetchOrders();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, fetchOrders]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    if (!user?.id) return;
     try {
       const response = await fetch(`/api/orders?userId=${user.id}`);
       const result = await response.json();
@@ -38,7 +39,7 @@ export default function MyOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {

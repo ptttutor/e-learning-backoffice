@@ -107,7 +107,7 @@ export const usePosts = () => {
   }, [searchInput, filters, pagination.page, pagination.pageSize]);
 
   // Fetch post types
-  const fetchPostTypes = async () => {
+  const fetchPostTypes = useCallback(async () => {
     try {
       setPostTypesLoading(true);
       const response = await fetch('/api/admin/post-types');
@@ -121,10 +121,10 @@ export const usePosts = () => {
     } finally {
       setPostTypesLoading(false);
     }
-  };
+  }, []);
 
   // Fetch authors
-  const fetchAuthors = async () => {
+  const fetchAuthors = useCallback(async () => {
     try {
       setAuthorsLoading(true);
       const response = await fetch('/api/admin/users');
@@ -137,7 +137,7 @@ export const usePosts = () => {
     } finally {
       setAuthorsLoading(false);
     }
-  };
+  }, []);
 
   // Create or update post
   const savePost = async (postData, editingPost) => {
@@ -209,19 +209,19 @@ export const usePosts = () => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput]);
+  }, [searchInput, fetchPosts]);
 
   // Fetch when filters or pagination change
   useEffect(() => {
     fetchPosts();
-  }, [filters, pagination.page, pagination.pageSize]);
+  }, [fetchPosts]);
 
   // Initialize data
   useEffect(() => {
     fetchPostTypes();
     fetchAuthors();
     fetchPosts();
-  }, []);
+  }, [fetchPostTypes, fetchAuthors, fetchPosts]);
 
   return {
     posts,

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { message } from 'antd';
 
 export function useEbooks() {
@@ -27,7 +27,7 @@ export function useEbooks() {
   });
 
   // Fetch ebooks with filtering
-  const fetchEbooks = async (customFilters = {}, customPagination = {}) => {
+  const fetchEbooks = useCallback(async (customFilters = {}, customPagination = {}) => {
     setLoading(true);
     try {
       const currentFilters = { ...filters, ...customFilters };
@@ -72,10 +72,10 @@ export function useEbooks() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, pagination]);
 
   // Fetch categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/ebook-categories');
       const data = await response.json();
@@ -84,7 +84,7 @@ export function useEbooks() {
       console.error('Error fetching categories:', error);
       message.error('เกิดข้อผิดพลาดในการโหลดหมวดหมู่');
     }
-  };
+  }, []);
 
   // Handle filter change
   const handleFilterChange = (key, value) => {
@@ -200,7 +200,7 @@ export function useEbooks() {
       await fetchEbooks({}, { page: 1, pageSize: 10 });
     };
     loadInitialData();
-  }, []); // Empty dependency array for initial load only
+  }, [fetchCategories, fetchEbooks]); // Empty dependency array for initial load only
 
   // Debounce search - separate effect for search input
   useEffect(() => {
@@ -212,7 +212,7 @@ export function useEbooks() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput]); // Only depend on search input
+  }, [searchInput, filters, fetchEbooks]); // Only depend on search input
 
   return {
     ebooks,

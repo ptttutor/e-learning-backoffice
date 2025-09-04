@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 export default function EbooksPage() {
@@ -16,13 +16,13 @@ export default function EbooksPage() {
   useEffect(() => {
     fetchCategories();
     fetchEbooks();
-  }, []);
+  }, [fetchCategories, fetchEbooks]);
 
   useEffect(() => {
     fetchEbooks();
-  }, [selectedCategory, selectedFormat, searchTerm, showFeatured, currentPage]);
+  }, [fetchEbooks]);
 
-  const fetchEbooks = async () => {
+  const fetchEbooks = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -45,9 +45,9 @@ export default function EbooksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, selectedFormat, searchTerm, showFeatured, currentPage]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/ebook-categories');
       const result = await response.json();
@@ -57,7 +57,7 @@ export default function EbooksPage() {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();

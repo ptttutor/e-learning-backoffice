@@ -7,6 +7,7 @@ import {
   Typography,
   Space,
   Badge,
+  Pagination,
 } from "antd";
 import {
   SearchOutlined,
@@ -113,7 +114,7 @@ export default function ChapterFilters({
             <BookOutlined style={{ color: "#1890ff" }} />
             {searchInput && (
               <Text type="secondary">
-                🔍 ค้นหา: "<strong>{searchInput}</strong>"
+                🔍 ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
               </Text>
             )}
             {filters.minOrder && (

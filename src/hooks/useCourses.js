@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 
 export function useCourses() {
@@ -30,7 +30,7 @@ export function useCourses() {
   });
 
   // Fetch courses with server-side filtering and pagination
-  const fetchCourses = async (customFilters = {}, customPagination = {}) => {
+  const fetchCourses = useCallback(async (customFilters = {}, customPagination = {}) => {
     setLoading(true);
     try {
       const currentFilters = { ...filters, ...customFilters };
@@ -69,10 +69,10 @@ export function useCourses() {
       message.error("โหลดข้อมูลคอร์สไม่สำเร็จ");
     }
     setLoading(false);
-  };
+  }, [filters, pagination]);
 
   // Fetch categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setCatLoading(true);
     try {
       const res = await fetch("/api/admin/categories");
@@ -82,10 +82,10 @@ export function useCourses() {
       message.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
     }
     setCatLoading(false);
-  };
+  }, []);
 
   // Fetch instructors
-  const fetchInstructors = async () => {
+  const fetchInstructors = useCallback(async () => {
     setInstLoading(true);
     try {
       const res = await fetch("/api/admin/users?role=INSTRUCTOR");
@@ -95,7 +95,7 @@ export function useCourses() {
       message.error("โหลดข้อมูลผู้สอนไม่สำเร็จ");
     }
     setInstLoading(false);
-  };
+  }, []);
 
   // Handle filter change
   const handleFilterChange = (key, value) => {
@@ -145,7 +145,7 @@ export function useCourses() {
       await fetchCourses({}, { page: 1, pageSize: 10 });
     };
     loadInitialData();
-  }, []);
+  }, [fetchCategories, fetchInstructors, fetchCourses]);
 
   // Debounce search
   useEffect(() => {
@@ -156,7 +156,7 @@ export function useCourses() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput]);
+  }, [searchInput, filters, fetchCourses]);
 
   return {
     courses,

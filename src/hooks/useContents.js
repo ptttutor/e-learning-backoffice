@@ -153,7 +153,7 @@ export const useContents = (chapterId) => {
   // Fetch when filters or pagination change
   useEffect(() => {
     fetchContents();
-  }, [filters, pagination.page, pagination.pageSize]);
+  }, [fetchContents]);
 
   // Fetch all contents when chapter changes
   useEffect(() => {
@@ -161,7 +161,7 @@ export const useContents = (chapterId) => {
       fetchAllContents();
       fetchContents();
     }
-  }, [chapterId]);
+  }, [chapterId, fetchAllContents, fetchContents]);
 
   // บันทึกการเปลี่ยนแปลงลำดับ
   const saveOrderChanges = async () => {

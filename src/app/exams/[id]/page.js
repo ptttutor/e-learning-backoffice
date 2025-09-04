@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -13,7 +13,8 @@ export default function ExamDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchExam = async () => {
+  const fetchExam = useCallback(async () => {
+    if (!params.id) return;
     try {
       const response = await fetch(`/api/exams/${params.id}`);
       const result = await response.json();
@@ -30,7 +31,7 @@ export default function ExamDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {

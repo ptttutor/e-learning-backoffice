@@ -136,7 +136,7 @@ export default function ContentFilters({
             <FileTextOutlined style={{ color: "#1890ff" }} />
             {searchInput && (
               <Text type="secondary">
-                🔍 ค้นหา: "<strong>{searchInput}</strong>"
+                🔍 ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
               </Text>
             )}
             {filters.contentType && (

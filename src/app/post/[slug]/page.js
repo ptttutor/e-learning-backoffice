@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
   Typography,
@@ -31,9 +31,10 @@ export default function PostDetailPage() {
     if (params.slug) {
       fetchPost();
     }
-  }, [params.slug]);
+  }, [params.slug, fetchPost]);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
+    if (!params.slug) return;
     try {
       const response = await fetch(`/api/posts/${params.slug}`);
       const result = await response.json();
@@ -48,7 +49,7 @@ export default function PostDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.slug]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("th-TH", {

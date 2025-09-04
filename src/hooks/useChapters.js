@@ -53,9 +53,11 @@ export const useChapters = (courseId) => {
   // Debounced search function
   const debouncedFetchChapters = useCallback(
     debounce(() => {
-      fetchChapters();
+      if (courseId) {
+        fetchChapters();
+      }
     }, 500),
-    [courseId, searchInput, filters, pagination.page, pagination.pageSize]
+    [fetchChapters]
   );
 
   // Apply filters และ search (ใช้ server-side)

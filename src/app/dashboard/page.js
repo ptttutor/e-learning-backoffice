@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -27,9 +27,10 @@ export default function DashboardPage() {
       fetchUserStats();
       fetchRecentOrders();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, fetchUserStats, fetchRecentOrders]);
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = useCallback(async () => {
+    if (!user?.email) return;
     try {
       const response = await fetch(`/api/user/stats?email=${encodeURIComponent(user.email)}`);
       const result = await response.json();
@@ -40,9 +41,10 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
-  };
+  }, [user?.email]);
 
-  const fetchRecentOrders = async () => {
+  const fetchRecentOrders = useCallback(async () => {
+    if (!user?.email) return;
     try {
       const response = await fetch(`/api/orders?email=${encodeURIComponent(user.email)}&limit=5`);
       const result = await response.json();
@@ -55,7 +57,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email]);
 
   const handleLogout = () => {
     logout();

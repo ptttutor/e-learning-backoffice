@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import Link from "next/link";
@@ -56,7 +56,8 @@ function PurchasePageContent() {
     }
   }, [user]);
 
-  const fetchItem = async () => {
+  const fetchItem = useCallback(async () => {
+    if (!itemId || !itemType) return;
     try {
       const endpoint =
         itemType === "course"
@@ -76,7 +77,7 @@ function PurchasePageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemId, itemType]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("th-TH", {

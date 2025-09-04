@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -17,9 +17,10 @@ function OrderSuccessContent() {
     }
 
     fetchOrderDetails();
-  }, [orderId, router]);
+  }, [orderId, router, fetchOrderDetails]);
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
+    if (!orderId) return;
     try {
       const response = await fetch(`/api/orders/${orderId}`);
       const result = await response.json();
@@ -34,7 +35,7 @@ function OrderSuccessContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('th-TH', {
