@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, loginWithLine, isAuthenticated } = useAuth();
+  const { login, loginWithLine, isAuthenticated, user } = useAuth();
   const router = useRouter();
 
   // Redirect if already authenticated
@@ -23,9 +23,17 @@ export default function LoginPage() {
       const redirect = new URLSearchParams(window.location.search).get(
         "redirect"
       );
-      router.push(redirect || "/dashboard");
+      
+      // ถ้าเป็น admin และมี redirect ไป admin
+      if (user?.role === 'ADMIN' && redirect && redirect.includes('/admin')) {
+        router.push(redirect);
+      } else if (user?.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push(redirect || "/dashboard");
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleChange = (e) => {
     setFormData({
@@ -46,7 +54,15 @@ export default function LoginPage() {
       const redirect = new URLSearchParams(window.location.search).get(
         "redirect"
       );
-      router.push(redirect || "/dashboard");
+      
+      // ตรวจสอบว่าเป็น admin และมี redirect ไป admin หรือไม่
+      if (result.data?.role === 'ADMIN' && redirect && redirect.includes('/admin')) {
+        router.push(redirect);
+      } else if (result.data?.role === 'ADMIN') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push(redirect || "/dashboard");
+      }
     } else {
       setError(result.error);
     }

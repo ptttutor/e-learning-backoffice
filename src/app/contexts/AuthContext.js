@@ -10,24 +10,32 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthContext effect:', { status, session: !!session, hasLocalStorage: !!localStorage.getItem("user") });
+    
     if (status === "loading") {
       setLoading(true);
       return;
     }
 
     if (session?.user) {
+      console.log('Setting user from session:', session.user);
       setUser(session.user);
       setLoading(false);
     } else {
       // Check if user is logged in from localStorage (legacy support)
       const savedUser = localStorage.getItem("user");
+      
       if (savedUser) {
         try {
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          console.log('Setting user from localStorage:', parsedUser);
+          setUser(parsedUser);
         } catch (error) {
           console.error("Error parsing saved user:", error);
           localStorage.removeItem("user");
         }
+      } else {
+        console.log('No user found in session or localStorage');
       }
       setLoading(false);
     }

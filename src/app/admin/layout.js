@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../contexts/AuthContext";
+import { Spin, Result, Button, Avatar, Dropdown } from "antd";
 import {
   DashboardOutlined,
   ShoppingCartOutlined,
@@ -16,6 +19,9 @@ import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  LockOutlined,
+  LogoutOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 
 const menuItems = [
@@ -95,7 +101,99 @@ const menuItems = [
 
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const sidebarWidth = collapsed ? "80px" : "220px";
+  
+  const { user, isAuthenticated, loading, logout } = useAuth();
+  const router = useRouter();
+
+  // ตรวจสอบการล็อกอินและสิทธิ์ admin
+  useEffect(() => {
+    console.log('Admin Layout Check:', { 
+      loading, 
+      user: user ? { id: user.id, email: user.email, role: user.role } : null, 
+      isAuthenticated, 
+      userRole: user?.role 
+    });
+    
+    // Set timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.log('Auth check timeout, forcing redirect to login');
+        setAuthChecking(false);
+        router.push('/login?redirect=' + encodeURIComponent('/admin/dashboard'));
+      }
+    }, 5000);
+    
+    if (loading) return () => clearTimeout(timeout);
+    
+    clearTimeout(timeout);
+    
+    if (!user || !isAuthenticated) {
+      console.log('No user or not authenticated, redirecting to login');
+      setAuthChecking(false);
+      router.push('/login?redirect=' + encodeURIComponent('/admin/dashboard'));
+      return;
+    }
+    
+    if (user.role !== 'ADMIN') {
+      console.log('User is not admin, redirecting to dashboard');
+      setAuthChecking(false);
+      router.push('/dashboard');
+      return;
+    }
+    
+    console.log('Auth check passed, setting authChecking to false');
+    setAuthChecking(false);
+  }, [user, isAuthenticated, loading, router]);
+
+  // แสดง loading ขณะตรวจสอบ auth
+  if (loading || authChecking) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px', fontSize: '16px', color: '#666' }}>
+            กำลังตรวจสอบสิทธิ์...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ถ้าไม่ใช่ admin แสดงหน้า access denied
+  if (!user || user.role !== 'ADMIN') {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <Result
+          status="403"
+          title="403"
+          subTitle="ขออภัย คุณไม่มีสิทธิ์เข้าถึงหน้านี้"
+          icon={<LockOutlined style={{ color: '#ff4d4f' }} />}
+          extra={
+            <Button 
+              type="primary" 
+              onClick={() => router.push('/dashboard')}
+            >
+              กลับไปหน้าหลัก
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
 
   const toggleSidebar = (e) => {
     e.preventDefault();
@@ -103,6 +201,38 @@ export default function AdminLayout({ children }) {
     console.log("Toggle clicked, current state:", collapsed);
     setCollapsed((prev) => !prev);
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Dropdown menu items สำหรับ user profile
+  const userMenuItems = [
+    {
+      key: 'profile',
+      label: 'ข้อมูลส่วนตัว',
+      icon: <UserOutlined />,
+    },
+    {
+      key: 'settings',
+      label: 'การตั้งค่า',
+      icon: <SettingOutlined />,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      label: 'ออกจากระบบ',
+      icon: <LogoutOutlined />,
+      onClick: handleLogout,
+    },
+  ];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -117,6 +247,8 @@ export default function AdminLayout({ children }) {
           overflowY: "auto",
           transition: "width 0.3s ease",
           zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {/* Header with toggle button */}
@@ -167,7 +299,11 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
 
-        <nav style={{ padding: "16px 0" }}>
+        <nav style={{ 
+          padding: "16px 0",
+          flex: '1',
+          paddingBottom: '80px' // เว้นที่สำหรับ user info section
+        }}>
           {menuItems.map((item) => (
             <a
               key={item.key}
@@ -197,6 +333,86 @@ export default function AdminLayout({ children }) {
             </a>
           ))}
         </nav>
+
+        {/* User Info Section */}
+        <div style={{
+          position: 'absolute',
+          bottom: '0',
+          left: '0',
+          right: '0',
+          borderTop: '1px solid #333',
+          padding: '16px',
+          backgroundColor: '#1a1a1a'
+        }}>
+          {collapsed ? (
+            <Dropdown menu={{ items: userMenuItems }} placement="topLeft">
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '6px',
+                transition: 'background-color 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Avatar 
+                  size="small"
+                  style={{ backgroundColor: '#52c41a' }}
+                  icon={<UserOutlined />}
+                />
+              </div>
+            </Dropdown>
+          ) : (
+            <Dropdown menu={{ items: userMenuItems }} placement="topLeft">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '6px',
+                transition: 'background-color 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#333'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <Avatar 
+                  size="small"
+                  style={{ backgroundColor: '#52c41a' }}
+                  icon={<UserOutlined />}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '500',
+                    color: '#fff',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {user?.name || 'Admin User'}
+                  </div>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#888',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    ผู้ดูแลระบบ
+                  </div>
+                </div>
+                <LogoutOutlined style={{ 
+                  fontSize: '14px', 
+                  color: '#888',
+                  opacity: 0.7
+                }} />
+              </div>
+            </Dropdown>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
