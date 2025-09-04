@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
     const { id } = params;
     
     const category = await prisma.ebookCategory.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: id }, // ใช้ String ID
       include: {
         ebooks: {
           select: {
@@ -51,12 +51,19 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const data = await request.json();
     
+    // Validate required fields
+    if (!data.name) {
+      return NextResponse.json(
+        { error: 'Name is required' },
+        { status: 400 }
+      );
+    }
+    
     const category = await prisma.ebookCategory.update({
-      where: { id: parseInt(id) },
+      where: { id: id }, // ใช้ String ID
       data: {
         name: data.name,
         description: data.description,
-        slug: data.slug,
         isActive: data.isActive,
         updatedAt: new Date()
       }
@@ -65,6 +72,15 @@ export async function PUT(request, { params }) {
     return NextResponse.json(category);
   } catch (error) {
     console.error('Error updating category:', error);
+    
+    // Handle unique constraint error
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Category name already exists' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update category' },
       { status: 500 }
@@ -79,7 +95,7 @@ export async function DELETE(request, { params }) {
     
     // ตรวจสอบว่ามี ebooks ที่เชื่อมโยงอยู่หรือไม่
     const ebookCount = await prisma.ebook.count({
-      where: { categoryId: parseInt(id) }
+      where: { categoryId: id } // ใช้ String ID
     });
 
     if (ebookCount > 0) {
@@ -90,7 +106,7 @@ export async function DELETE(request, { params }) {
     }
 
     await prisma.ebookCategory.delete({
-      where: { id: parseInt(id) }
+      where: { id: id } // ใช้ String ID
     });
 
     return NextResponse.json({ message: 'Category deleted successfully' });

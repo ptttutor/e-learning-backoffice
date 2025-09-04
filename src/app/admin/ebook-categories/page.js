@@ -176,20 +176,6 @@ export default function EbookCategoriesPage() {
       width: 300,
     },
     {
-      title: "Slug",
-      dataIndex: "slug",
-      key: "slug",
-      render: (slug) => (
-        <Space size={8}>
-          <LinkOutlined style={{ color: "#8c8c8c" }} />
-          <Text code style={{ fontSize: "12px" }}>
-            {slug}
-          </Text>
-        </Space>
-      ),
-      width: 200,
-    },
-    {
       title: "จำนวน eBook",
       key: "ebookCount",
       render: (_, record) => (
