@@ -25,6 +25,11 @@ export default function AdminExamBankPage() {
   const [fileModalOpen, setFileModalOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examFiles, setExamFiles] = useState([]);
+  
+  // File delete modal states
+  const [fileDeleteModalOpen, setFileDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [deletingFile, setDeletingFile] = useState(false);
 
   // Use custom hook for exam bank data
   const {
@@ -124,7 +129,7 @@ export default function AdminExamBankPage() {
     }
 
     try {
-      const success = await uploadExamFile(file, selectedExam.id);
+      const success = await uploadExamFile(selectedExam.id, file);
       if (success) {
         onSuccess();
         // Refresh files list
@@ -140,25 +145,59 @@ export default function AdminExamBankPage() {
 
   // Handle file delete
   const handleDeleteFile = async (fileId, fileName) => {
-    Modal.confirm({
-      title: "ยืนยันการลบไฟล์?",
-      content: `คุณต้องการลบไฟล์ "${fileName}" ใช่หรือไม่?`,
-      okText: "ลบ",
-      cancelText: "ยกเลิก",
-      okType: "danger",
-      onOk: async () => {
-        try {
-          const success = await deleteExamFile(fileId);
-          if (success && selectedExam) {
-            // Refresh files list
-            const files = await fetchExamFiles(selectedExam.id);
-            setExamFiles(files);
-          }
-        } catch (error) {
-          console.error("Error deleting file:", error);
+    console.log('handleDeleteFile called with:', { fileId, fileName });
+    
+    // เปิด modal ยืนยันการลบ
+    setFileToDelete({ id: fileId, name: fileName });
+    setFileDeleteModalOpen(true);
+  };
+
+  // ยืนยันการลบไฟล์
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete?.id) {
+      message.error("ไม่พบไฟล์ที่จะลบ");
+      return;
+    }
+
+    setDeletingFile(true);
+    try {
+      console.log('Starting delete process...');
+      
+      const response = await fetch(`/api/admin/exam-files/${fileToDelete.id}`, {
+        method: 'DELETE'
+      });
+      
+      console.log('Response status:', response.status);
+      
+      const result = await response.json();
+      console.log('Delete result:', result);
+      
+      if (result.success) {
+        message.success("ลบไฟล์สำเร็จ");
+        setFileDeleteModalOpen(false);
+        setFileToDelete(null);
+        
+        // Refresh files list
+        if (selectedExam) {
+          const files = await fetchExamFiles(selectedExam.id);
+          setExamFiles(files);
+          console.log('Files refreshed:', files.length, 'files');
         }
-      },
-    });
+      } else {
+        message.error(result.error || "ลบไฟล์ไม่สำเร็จ");
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      message.error("เกิดข้อผิดพลาดในการลบไฟล์");
+    } finally {
+      setDeletingFile(false);
+    }
+  };
+
+  // ยกเลิกการลบไฟล์
+  const cancelDeleteFile = () => {
+    setFileDeleteModalOpen(false);
+    setFileToDelete(null);
   };
 
   // Close file modal
@@ -252,6 +291,24 @@ export default function AdminExamBankPage() {
         onFileUpload={handleFileUpload}
         onDeleteFile={handleDeleteFile}
       />
+
+      {/* File Delete Confirmation Modal */}
+      <Modal
+        title="ยืนยันการลบไฟล์"
+        open={fileDeleteModalOpen}
+        onOk={confirmDeleteFile}
+        onCancel={cancelDeleteFile}
+        okText="ลบ"
+        cancelText="ยกเลิก"
+        okType="danger"
+        confirmLoading={deletingFile}
+        centered
+      >
+        <p>คุณต้องการลบไฟล์ "{fileToDelete?.name}" ใช่หรือไม่?</p>
+        <p style={{ color: '#ff4d4f', fontSize: '14px' }}>
+          การดำเนินการนี้ไม่สามารถย้อนกลับได้
+        </p>
+      </Modal>
     </div>
   );
 }

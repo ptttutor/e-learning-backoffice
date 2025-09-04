@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
+    console.log('🗑️ DELETE request for file ID:', id);
 
     // ตรวจสอบว่าไฟล์มีอยู่หรือไม่
     const examFile = await prisma.examFile.findUnique({
@@ -17,16 +18,29 @@ export async function DELETE(request, { params }) {
     });
 
     if (!examFile) {
+      console.log('❌ File not found:', id);
       return NextResponse.json(
         { success: false, error: 'ไม่พบไฟล์ที่ระบุ' },
         { status: 404 }
       );
     }
 
+    console.log('📄 Found file to delete:', examFile.fileName);
+
     // ลบไฟล์จากระบบไฟล์
-    const fullPath = join(process.cwd(), 'public', examFile.filePath);
-    if (existsSync(fullPath)) {
-      await unlink(fullPath);
+    try {
+      const fullPath = join(process.cwd(), 'public', examFile.filePath);
+      console.log('🔍 Attempting to delete file at:', fullPath);
+      
+      if (existsSync(fullPath)) {
+        await unlink(fullPath);
+        console.log('✅ Physical file deleted successfully');
+      } else {
+        console.log('⚠️ Physical file not found, continuing with database deletion');
+      }
+    } catch (fileError) {
+      console.log('⚠️ Error deleting physical file:', fileError.message);
+      // Continue with database deletion even if physical file deletion fails
     }
 
     // ลบข้อมูลไฟล์จากฐานข้อมูล
@@ -34,17 +48,21 @@ export async function DELETE(request, { params }) {
       where: { id }
     });
 
+    console.log('✅ File deleted from database successfully');
+
     return NextResponse.json({
       success: true,
       message: 'ลบไฟล์สำเร็จ'
     });
 
   } catch (error) {
-    console.error('Error deleting exam file:', error);
+    console.error('❌ Error deleting exam file:', error);
     return NextResponse.json(
-      { success: false, error: 'เกิดข้อผิดพลาดในการลบไฟล์' },
+      { success: false, error: 'เกิดข้อผิดพลาดในการลบไฟล์: ' + error.message },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

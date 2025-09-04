@@ -203,12 +203,16 @@ export function useExamBank() {
   };
 
   // Upload exam file
-  const uploadExamFile = async (examId, fileData) => {
+  const uploadExamFile = async (examId, file) => {
     try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('examId', examId);
+
       const response = await fetch("/api/admin/exam-files", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ examId, ...fileData }),
+        body: formData, // Use FormData instead of JSON
       });
 
       const result = await response.json();
@@ -229,12 +233,14 @@ export function useExamBank() {
 
   // Delete exam file
   const deleteExamFile = async (fileId) => {
+    console.log('Attempting to delete file with ID:', fileId);
     try {
       const response = await fetch(`/api/admin/exam-files/${fileId}`, {
         method: "DELETE",
       });
 
       const result = await response.json();
+      console.log('Delete response:', result);
 
       if (result.success) {
         message.success("ลบไฟล์สำเร็จ");
