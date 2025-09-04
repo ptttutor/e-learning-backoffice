@@ -38,6 +38,8 @@ export default function EbookFileManagementModal({
   onCancel,
   onFileUpload,
   onDeleteFile,
+  loadingFiles = false,
+  uploadingFile = false,
 }) {
   console.log('EbookFileManagementModal rendered with:', { 
     open, 
@@ -107,7 +109,12 @@ export default function EbookFileManagementModal({
       title={
         <Space>
           <CloudUploadOutlined />
-          <Text strong>จัดการไฟล์ eBook: {ebook?.title}</Text>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <Text strong>จัดการไฟล์เนื้อหา: {ebook?.title}</Text>
+            <Text type="secondary" style={{ fontSize: '12px', fontWeight: 'normal' }}>
+              ไฟล์สำหรับลูกค้าดาวน์โหลดหลังจากซื้อ
+            </Text>
+          </div>
         </Space>
       }
       open={open}
@@ -184,20 +191,41 @@ export default function EbookFileManagementModal({
           title={
             <Space>
               <UploadOutlined />
-              <Text strong>อัปโหลดไฟล์ eBook</Text>
+              <Text strong>อัปโหลดไฟล์เนื้อหา eBook</Text>
             </Space>
           }
           style={{ marginBottom: "24px" }}
+          extra={
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              สำหรับไฟล์เนื้อหาที่ลูกค้าจะดาวน์โหลด
+            </Text>
+          }
         >
-          <Dragger {...uploadProps}>
+          <div style={{ 
+            backgroundColor: '#fff7e6', 
+            border: '1px solid #ffd591', 
+            borderRadius: '6px', 
+            padding: '12px',
+            marginBottom: '16px'
+          }}>
+            <Text style={{ color: '#fa8c16', fontSize: '14px' }}>
+              ⚠️ <strong>ข้อควรระวัง:</strong> ไฟล์ที่อัปโหลดที่นี่จะเป็นไฟล์สำหรับลูกค้าดาวน์โหลด กรุณาตรวจสอบคุณภาพและความถูกต้อง
+            </Text>
+          </div>
+          
+          <Dragger {...uploadProps} disabled={uploadingFile || loadingFiles}>
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">
-              คลิกหรือลากไฟล์มาที่นี่เพื่ออัปโหลด
+              {uploadingFile ? "กำลังอัปโหลด..." : "คลิกหรือลากไฟล์เนื้อหา eBook มาที่นี่เพื่ออัปโหลด"}
             </p>
             <p className="ant-upload-hint">
               รองรับไฟล์ PDF, EPUB, MOBI, DOC, DOCX (ไม่เกิน 50MB)
+              <br />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                ไฟล์นี้จะถูกใช้สำหรับให้ลูกค้าดาวน์โหลดหลังจากซื้อ
+              </Text>
             </p>
           </Dragger>
         </Card>
@@ -207,16 +235,39 @@ export default function EbookFileManagementModal({
           title={
             <Space>
               <FileOutlined />
-              <Text strong>ไฟล์ eBook</Text>
+              <Text strong>ไฟล์เนื้อหาสำหรับลูกค้า</Text>
               {ebookFile && ebookFile.length > 0 && (
                 <Badge count={ebookFile.length} style={{ backgroundColor: "#52c41a" }} />
               )}
             </Space>
           }
+          extra={
+            ebookFile && ebookFile.length > 0 && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                ลูกค้าสามารถดาวน์โหลดไฟล์เหล่านี้ได้
+              </Text>
+            )
+          }
         >
-          {!ebookFile || ebookFile.length === 0 ? (
+          {loadingFiles ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px',
+              color: '#8c8c8c' 
+            }}>
+              <Text>กำลังโหลดไฟล์...</Text>
+            </div>
+          ) : (!ebookFile || ebookFile.length === 0 ? (
             <Empty
-              description="ยังไม่มีไฟล์ eBook"
+              description={
+                <div>
+                  <Text>ยังไม่มีไฟล์เนื้อหาสำหรับลูกค้า</Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    อัปโหลดไฟล์เนื้อหาเพื่อให้ลูกค้าสามารถดาวน์โหลดได้
+                  </Text>
+                </div>
+              }
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           ) : (
@@ -401,7 +452,7 @@ export default function EbookFileManagementModal({
                 </Card>
               ))}
             </div>
-          )}
+          ))}
         </Card>
       </div>
     </Modal>

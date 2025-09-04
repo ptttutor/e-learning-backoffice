@@ -27,6 +27,7 @@ export default function EbookTable({
   onDelete,
   onManageFiles,
   onTableChange,
+  actionLoading = {}, // { [ebookId]: { editing: boolean, deleting: boolean, managingFiles: boolean } }
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -220,37 +221,46 @@ export default function EbookTable({
     {
       title: "การดำเนินการ",
       key: "actions",
-      render: (_, record) => (
-        <Space size={8} wrap>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => onEdit(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            type="default"
-            icon={<CloudUploadOutlined />}
-            size="small"
-            onClick={() => onManageFiles(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            จัดการไฟล์
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => onDelete(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            ลบ
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => {
+        const recordLoading = actionLoading[record.id] || {};
+        return (
+          <Space size={8} wrap>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => onEdit(record)}
+              style={{ borderRadius: "6px" }}
+              loading={recordLoading.editing}
+              disabled={recordLoading.editing || recordLoading.deleting || recordLoading.managingFiles}
+            >
+              แก้ไข
+            </Button>
+            <Button
+              type="default"
+              icon={<CloudUploadOutlined />}
+              size="small"
+              onClick={() => onManageFiles(record)}
+              style={{ borderRadius: "6px" }}
+              loading={recordLoading.managingFiles}
+              disabled={recordLoading.editing || recordLoading.deleting || recordLoading.managingFiles}
+            >
+              จัดการไฟล์
+            </Button>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              onClick={() => onDelete(record)}
+              style={{ borderRadius: "6px" }}
+              loading={recordLoading.deleting}
+              disabled={recordLoading.editing || recordLoading.deleting || recordLoading.managingFiles}
+            >
+              ลบ
+            </Button>
+          </Space>
+        );
+      },
       width: 200,
       fixed: "right",
     },

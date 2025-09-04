@@ -31,6 +31,12 @@ export default function EbooksPage() {
   const [fileToDelete, setFileToDelete] = useState(null);
   const [deletingFile, setDeletingFile] = useState(false);
 
+  // Loading states for different operations
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [actionLoading, setActionLoading] = useState({}); // { [ebookId]: { editing, deleting, managingFiles } }
+
   // Use custom hook for ebooks data
   const {
     ebooks,
@@ -52,17 +58,37 @@ export default function EbooksPage() {
 
   // Handle submit ebook
   const handleSubmit = async (values) => {
-    const success = await submitEbook(values, editingEbook);
-    if (success) {
-      setModalVisible(false);
-      setEditingEbook(null);
+    setSubmitting(true);
+    try {
+      const success = await submitEbook(values, editingEbook);
+      if (success) {
+        setModalVisible(false);
+        setEditingEbook(null);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   // Open modal for create/edit
   const openModal = (ebook = null) => {
+    if (ebook) {
+      setActionLoading(prev => ({
+        ...prev,
+        [ebook.id]: { ...prev[ebook.id], editing: true }
+      }));
+    }
     setEditingEbook(ebook);
     setModalVisible(true);
+    if (ebook) {
+      // Clear loading state after modal opens
+      setTimeout(() => {
+        setActionLoading(prev => ({
+          ...prev,
+          [ebook.id]: { ...prev[ebook.id], editing: false }
+        }));
+      }, 100);
+    }
   };
 
   // Close modal
@@ -73,8 +99,19 @@ export default function EbooksPage() {
 
   // Handle delete
   const handleDelete = (ebook) => {
+    setActionLoading(prev => ({
+      ...prev,
+      [ebook.id]: { ...prev[ebook.id], deleting: true }
+    }));
     setEbookToDelete(ebook);
     setDeleteModalOpen(true);
+    // Clear loading state after modal opens
+    setTimeout(() => {
+      setActionLoading(prev => ({
+        ...prev,
+        [ebook.id]: { ...prev[ebook.id], deleting: false }
+      }));
+    }, 100);
   };
 
   // Confirm delete
@@ -102,12 +139,25 @@ export default function EbooksPage() {
   // Handle manage files
   const handleManageFiles = async (ebook) => {
     console.log('handleManageFiles called with ebook:', ebook);
+    setActionLoading(prev => ({
+      ...prev,
+      [ebook.id]: { ...prev[ebook.id], managingFiles: true }
+    }));
     setSelectedEbook(ebook);
     setFileModalOpen(true);
-    // Fetch existing file for this ebook
-    const files = await fetchEbookFile(ebook.id);
-    console.log('Fetched files:', files);
-    setEbookFiles(files);
+    setLoadingFiles(true);
+    try {
+      // Fetch existing file for this ebook
+      const files = await fetchEbookFile(ebook.id);
+      console.log('Fetched files:', files);
+      setEbookFiles(files);
+    } finally {
+      setLoadingFiles(false);
+      setActionLoading(prev => ({
+        ...prev,
+        [ebook.id]: { ...prev[ebook.id], managingFiles: false }
+      }));
+    }
   };
 
   // Handle file upload
@@ -119,11 +169,13 @@ export default function EbooksPage() {
       return;
     }
 
+    setUploadingFile(true);
     try {
       const success = await uploadEbookFile(selectedEbook.id, file);
       if (success) {
         onSuccess();
         // Refresh files list
+        setLoadingFiles(true);
         const files = await fetchEbookFile(selectedEbook.id);
         setEbookFiles(files);
       } else {
@@ -131,6 +183,9 @@ export default function EbooksPage() {
       }
     } catch (error) {
       onError(error);
+    } finally {
+      setUploadingFile(false);
+      setLoadingFiles(false);
     }
   };
 
@@ -158,8 +213,10 @@ export default function EbooksPage() {
         
         // Refresh files list
         if (selectedEbook) {
+          setLoadingFiles(true);
           const files = await fetchEbookFile(selectedEbook.id);
           setEbookFiles(files);
+          setLoadingFiles(false);
         }
       }
     } catch (error) {
@@ -181,6 +238,8 @@ export default function EbooksPage() {
     setFileModalOpen(false);
     setSelectedEbook(null);
     setEbookFiles([]);
+    setLoadingFiles(false);
+    setUploadingFile(false);
   };
 
   if (loading) {
@@ -255,6 +314,7 @@ export default function EbooksPage() {
           onDelete={handleDelete}
           onManageFiles={handleManageFiles}
           onTableChange={handleTableChange}
+          actionLoading={actionLoading}
         />
       </Card>
 
@@ -265,6 +325,7 @@ export default function EbooksPage() {
         onCancel={closeModal}
         onSubmit={handleSubmit}
         categories={categories}
+        submitting={submitting}
       />
 
       {/* Delete Confirmation Modal */}
@@ -284,6 +345,8 @@ export default function EbooksPage() {
         onCancel={closeFileModal}
         onFileUpload={handleFileUpload}
         onDeleteFile={handleDeleteFile}
+        loadingFiles={loadingFiles}
+        uploadingFile={uploadingFile}
       />
 
       {/* File Delete Confirmation Modal */}

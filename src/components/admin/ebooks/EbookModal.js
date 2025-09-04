@@ -13,6 +13,7 @@ import {
   InputNumber,
   Checkbox,
   message,
+  Popconfirm,
 } from "antd";
 import {
   PlusOutlined,
@@ -23,6 +24,8 @@ import {
   DollarOutlined,
   TagOutlined,
   UploadOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -35,10 +38,62 @@ export default function EbookModal({
   onCancel,
   onSubmit,
   categories,
+  submitting = false,
 }) {
   const [form] = Form.useForm();
-  const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  // Handle file upload with confirmation
+  const handleFileUploadWithConfirmation = async (file, type) => {
+    const currentValue = form.getFieldValue(
+      type === 'cover' ? 'coverImageUrl' : 'fileUrl'
+    );
+    
+    if (currentValue && currentValue.trim()) {
+      // แสดง confirm dialog ถ้ามีไฟล์เดิมอยู่แล้ว
+      Modal.confirm({
+        title: 'ยืนยันการแทนที่ไฟล์',
+        content: (
+          <div>
+            <p>มีไฟล์{type === 'cover' ? 'รูปปก' : ''}อยู่แล้ว คุณต้องการแทนที่ด้วยไฟล์ใหม่หรือไม่?</p>
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              ไฟล์ปัจจุบัน: <strong>{currentValue.split('/').pop()}</strong>
+            </p>
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              ไฟล์ใหม่: <strong>{file.name}</strong>
+            </p>
+          </div>
+        ),
+        okText: 'แทนที่',
+        cancelText: 'ยกเลิก',
+        okType: 'primary',
+        onOk: () => handleFileUpload(file, type),
+        onCancel: () => {
+          message.info('ยกเลิกการอัปโหลดไฟล์');
+        }
+      });
+    } else {
+      // ถ้าไม่มีไฟล์เดิม ให้อัปโหลดเลย
+      await handleFileUpload(file, type);
+    }
+  };
+
+  // Handle file removal
+  const handleFileRemoval = (type) => {
+    Modal.confirm({
+      title: 'ยืนยันการลบไฟล์',
+      content: `คุณต้องการลบไฟล์${type === 'cover' ? 'รูปปก' : ''}นี้หรือไม่?`,
+      okText: 'ลบ',
+      cancelText: 'ยกเลิก',
+      okType: 'danger',
+      onOk: () => {
+        if (type === 'cover') {
+          form.setFieldsValue({ coverImageUrl: '' });
+        }
+        message.success(`ลบไฟล์${type === 'cover' ? 'รูปปก' : ''}สำเร็จ`);
+      }
+    });
+  };
 
   // Handle file upload
   const handleFileUpload = async (file, type) => {
@@ -49,9 +104,7 @@ export default function EbookModal({
     uploadData.append('type', type);
 
     try {
-      if (type === 'ebook') {
-        setUploadingFile(true);
-      } else if (type === 'cover') {
+      if (type === 'cover') {
         setUploadingCover(true);
       }
 
@@ -63,13 +116,7 @@ export default function EbookModal({
       const result = await response.json();
       
       if (result.success) {
-        if (type === 'ebook') {
-          form.setFieldsValue({
-            fileUrl: result.url,
-            fileSize: file.size
-          });
-          message.success('อัปโหลดไฟล์ eBook สำเร็จ');
-        } else if (type === 'cover') {
+        if (type === 'cover') {
           form.setFieldsValue({
             coverImageUrl: result.url
           });
@@ -82,9 +129,7 @@ export default function EbookModal({
       console.error('Error uploading file:', error);
       message.error('เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
     } finally {
-      if (type === 'ebook') {
-        setUploadingFile(false);
-      } else if (type === 'cover') {
+      if (type === 'cover') {
         setUploadingCover(false);
       }
     }
@@ -282,71 +327,116 @@ export default function EbookModal({
           </Form.Item>
         </div>
 
-        {/* File Upload Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <Form.Item
-            name="fileUrl"
-            label="ไฟล์ eBook"
-          >
-            <div>
-              <Upload
-                accept=".pdf,.epub,.mobi"
-                beforeUpload={(file) => {
-                  handleFileUpload(file, 'ebook');
-                  return false;
-                }}
-                showUploadList={false}
-                disabled={uploadingFile}
+        {/* Cover Image Upload Section */}
+        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.coverImageUrl !== currentValues.coverImageUrl}>
+          {({ getFieldValue }) => (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+              <Form.Item
+                name="coverImageUrl"
+                label="รูปปก"
               >
-                <Button 
-                  icon={<UploadOutlined />} 
-                  loading={uploadingFile}
-                  style={{ width: '100%' }}
-                >
-                  {uploadingFile ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์ eBook'}
-                </Button>
-              </Upload>
-              <Form.Item name="fileSize" hidden>
-                <Input />
+                <div>
+                  {/* Current file status */}
+                  {getFieldValue('coverImageUrl') ? (
+                    <div style={{
+                      backgroundColor: '#f6ffed',
+                      border: '1px solid #b7eb8f',
+                      borderRadius: '6px',
+                      padding: '12px',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                        <div>
+                          <Text strong style={{ fontSize: '14px' }}>มีรูปปกแล้ว</Text>
+                          <br />
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            {getFieldValue('coverImageUrl').split('/').pop()}
+                          </Text>
+                        </div>
+                      </div>
+                      <Button 
+                        type="text" 
+                        danger 
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleFileRemoval('cover')}
+                        style={{ borderRadius: '4px' }}
+                      >
+                        ลบ
+                      </Button>
+                    </div>
+                  ) : (
+                    <div style={{
+                      backgroundColor: '#fafafa',
+                      border: '1px dashed #d9d9d9',
+                      borderRadius: '6px',
+                      padding: '12px',
+                      marginBottom: '12px',
+                      textAlign: 'center'
+                    }}>
+                      <Text type="secondary" style={{ fontSize: '14px' }}>
+                        ยังไม่มีรูปปก
+                      </Text>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <Upload
+                    accept="image/*"
+                    beforeUpload={(file) => {
+                      handleFileUploadWithConfirmation(file, 'cover');
+                      return false;
+                    }}
+                    showUploadList={false}
+                    disabled={uploadingCover}
+                  >
+                    <Button 
+                      icon={<UploadOutlined />} 
+                      loading={uploadingCover}
+                      style={{ width: '100%' }}
+                      type={getFieldValue('coverImageUrl') ? 'default' : 'dashed'}
+                    >
+                      {uploadingCover ? 'กำลังอัปโหลด...' : 
+                       getFieldValue('coverImageUrl') ? 'เปลี่ยนรูปปก' : 'อัปโหลดรูปปก'}
+                    </Button>
+                  </Upload>
+                  
+                  {/* Image preview */}
+                  {getFieldValue('coverImageUrl') && (
+                    <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                      <Text style={{ fontSize: '12px', color: '#666', marginBottom: '8px', display: 'block' }}>
+                        ตัวอย่างรูปปก
+                      </Text>
+                      <Image 
+                        src={getFieldValue('coverImageUrl')} 
+                        alt="Cover preview"
+                        width={80}
+                        height={100}
+                        style={{ objectFit: 'cover', borderRadius: '6px', border: '1px solid #d9d9d9' }}
+                      />
+                    </div>
+                  )}
+                </div>
               </Form.Item>
             </div>
-          </Form.Item>
+          )}
+        </Form.Item>
 
-          <Form.Item
-            name="coverImageUrl"
-            label="รูปปก"
-          >
-            <div>
-              <Upload
-                accept="image/*"
-                beforeUpload={(file) => {
-                  handleFileUpload(file, 'cover');
-                  return false;
-                }}
-                showUploadList={false}
-                disabled={uploadingCover}
-              >
-                <Button 
-                  icon={<UploadOutlined />} 
-                  loading={uploadingCover}
-                  style={{ width: '100%' }}
-                >
-                  {uploadingCover ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปปก'}
-                </Button>
-              </Upload>
-              {form.getFieldValue('coverImageUrl') && (
-                <div style={{ marginTop: '8px' }}>
-                  <Image 
-                    src={form.getFieldValue('coverImageUrl')} 
-                    alt="Cover preview"
-                    width={60}
-                    height={80}
-                    style={{ objectFit: 'cover', borderRadius: '4px' }}
-                  />
-                </div>
-              )}
-            </div>
-          </Form.Item>
+        {/* File Upload Note */}
+        <div style={{ 
+          backgroundColor: '#f6f8fa', 
+          border: '1px solid #e1e4e8', 
+          borderRadius: '8px', 
+          padding: '12px 16px',
+          marginBottom: '16px'
+        }}>
+          <Text type="secondary" style={{ fontSize: '14px' }}>
+            💡 <strong>หมายเหตุ:</strong> หลังจากสร้าง eBook แล้ว สามารถอัปโหลดไฟล์เนื้อหาได้ที่ปุ่ม "จัดการไฟล์" ในตาราง
+          </Text>
         </div>
 
         <div style={{ display: 'flex', gap: '24px', marginBottom: '16px' }}>
@@ -395,12 +485,18 @@ export default function EbookModal({
               htmlType="submit"
               icon={editing ? <EditOutlined /> : <PlusOutlined />}
               style={{ borderRadius: "6px" }}
+              loading={submitting}
+              disabled={submitting}
             >
-              {editing ? "อัพเดท" : "สร้าง"}
+              {submitting ? 
+                (editing ? "กำลังอัพเดท..." : "กำลังสร้าง...") : 
+                (editing ? "อัพเดท" : "สร้าง")
+              }
             </Button>
             <Button
               onClick={handleCancel}
               style={{ borderRadius: "6px" }}
+              disabled={submitting}
             >
               ยกเลิก
             </Button>
