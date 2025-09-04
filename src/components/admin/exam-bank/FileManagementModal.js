@@ -21,6 +21,7 @@ import {
   InboxOutlined,
   EyeOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
 
@@ -238,10 +239,106 @@ export default function FileManagementModal({
                         type="primary"
                         size="small"
                         icon={<EyeOutlined />}
-                        onClick={() => window.open(file.filePath, "_blank")}
+                        onClick={() => {
+                          const fileType = file.fileType || file.fileName.split('.').pop().toLowerCase();
+                          let viewUrl = file.filePath;
+                          
+                          // เช็คประเภทไฟล์เพื่อเลือกวิธีการแสดงผล
+                          if (fileType.includes('pdf') || file.fileName.toLowerCase().endsWith('.pdf')) {
+                            // สำหรับ PDF ใช้ Google Drive Viewer
+                            viewUrl = `https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(file.filePath)}`;
+                          } else if (fileType.includes('word') || fileType.includes('document') || 
+                                   file.fileName.toLowerCase().endsWith('.doc') || 
+                                   file.fileName.toLowerCase().endsWith('.docx')) {
+                            // สำหรับ Word Document ใช้ Office Online Viewer
+                            viewUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file.filePath)}`;
+                          } else if (fileType.includes('image') || 
+                                   ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(file.fileName.split('.').pop().toLowerCase())) {
+                            // สำหรับรูปภาพแสดงโดยตรง
+                            viewUrl = file.filePath;
+                          } else {
+                            // สำหรับไฟล์อื่นๆ ใช้ Google Drive Viewer
+                            viewUrl = `https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(file.filePath)}`;
+                          }
+                          
+                          window.open(viewUrl, "_blank");
+                        }}
                         style={{ borderRadius: "6px" }}
                       >
                         ดู
+                      </Button>
+                      <Button
+                        type="default"
+                        size="small"
+                        icon={<DownloadOutlined />}
+                        onClick={async () => {
+                          try {
+                            // ตรวจสอบประเภทไฟล์
+                            const fileType = file.fileType || '';
+                            let downloadFileName = file.fileName;
+                            
+                            // กำหนดนามสกุลไฟล์
+                            let extension = '';
+                            if (fileType.includes('pdf')) {
+                              extension = '.pdf';
+                            } else if (fileType.includes('word') || fileType.includes('document')) {
+                              extension = '.docx';
+                            } else if (fileType.includes('image')) {
+                              if (fileType.includes('jpeg') || fileType.includes('jpg')) {
+                                extension = '.jpg';
+                              } else if (fileType.includes('png')) {
+                                extension = '.png';
+                              } else if (fileType.includes('gif')) {
+                                extension = '.gif';
+                              }
+                            }
+                            
+                            // ตรวจสอบว่าชื่อไฟล์มีนามสกุลหรือไม่
+                            if (!downloadFileName.includes('.') && extension) {
+                              downloadFileName += extension;
+                            }
+                            
+                            // ดาวน์โหลดไฟล์ผ่าน fetch
+                            const response = await fetch(file.filePath, {
+                              mode: 'cors',
+                              headers: {
+                                'Accept': '*/*',
+                              }
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error('Failed to download file');
+                            }
+                            
+                            const blob = await response.blob();
+                            
+                            // สร้าง URL object และดาวน์โหลด
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = downloadFileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // ทำความสะอาด URL object
+                            window.URL.revokeObjectURL(url);
+                            
+                          } catch (error) {
+                            console.error('Download error:', error);
+                            // Fallback ไปใช้วิธีเดิม
+                            const link = document.createElement('a');
+                            link.href = file.filePath;
+                            link.download = file.fileName;
+                            link.target = '_blank';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }
+                        }}
+                        style={{ borderRadius: "6px" }}
+                      >
+                        ดาวน์โหลด
                       </Button>
                       <Button
                         danger

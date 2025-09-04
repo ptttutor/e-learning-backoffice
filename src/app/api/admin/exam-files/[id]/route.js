@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// ตั้งค่า Cloudinary จาก ENV
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // DELETE - ลบไฟล์ข้อสอบ
 export async function DELETE(request, { params }) {
@@ -27,20 +32,26 @@ export async function DELETE(request, { params }) {
 
     console.log('📄 Found file to delete:', examFile.fileName);
 
-    // ลบไฟล์จากระบบไฟล์
+    // ลบไฟล์จาก Cloudinary
     try {
-      const fullPath = join(process.cwd(), 'public', examFile.filePath);
-      console.log('🔍 Attempting to delete file at:', fullPath);
-      
-      if (existsSync(fullPath)) {
-        await unlink(fullPath);
-        console.log('✅ Physical file deleted successfully');
+      // เลือก method ของการลบตาม URL
+      if (examFile.filePath.includes('cloudinary.com')) {
+        // ดึง public_id จาก URL
+        const urlParts = examFile.filePath.split('/');
+        const publicIdWithExt = urlParts[urlParts.length - 1];
+        const publicId = publicIdWithExt.split('.')[0];
+        const fullPublicId = `exams/${publicId}`;
+        
+        console.log('🔍 Attempting to delete from Cloudinary:', fullPublicId);
+        
+        await cloudinary.uploader.destroy(fullPublicId, { resource_type: 'raw' });
+        console.log('✅ Cloudinary file deleted successfully');
       } else {
-        console.log('⚠️ Physical file not found, continuing with database deletion');
+        console.log('⚠️ File appears to be local, skipping Cloudinary deletion');
       }
-    } catch (fileError) {
-      console.log('⚠️ Error deleting physical file:', fileError.message);
-      // Continue with database deletion even if physical file deletion fails
+    } catch (cloudError) {
+      console.log('⚠️ Error deleting from Cloudinary:', cloudError.message);
+      // Continue with database deletion even if Cloudinary deletion fails
     }
 
     // ลบข้อมูลไฟล์จากฐานข้อมูล

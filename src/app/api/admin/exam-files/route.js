@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// ตั้งค่า Cloudinary จาก ENV
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // POST - อัพโหลดไฟล์ข้อสอบ
 export async function POST(request) {
@@ -52,28 +57,32 @@ export async function POST(request) {
 
     // สร้างชื่อไฟล์ใหม่
     const timestamp = Date.now();
-    const originalName = file.name;
-    const extension = originalName.split('.').pop();
-    const newFileName = `${examId}_${timestamp}.${extension}`;
+    const fileExtension = file.name.split('.').pop();
+    const filename = `${examId}_${timestamp}.${fileExtension}`;
 
-    // สร้างโฟลเดอร์สำหรับเก็บไฟล์
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'exams');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // บันทึกไฟล์
-    const filePath = join(uploadDir, newFileName);
+    // แปลงไฟล์เป็น buffer และสร้าง data URL
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    
+    // สร้าง data URL จาก buffer
+    const base64 = buffer.toString('base64');
+    const dataURI = `data:${file.type};base64,${base64}`;
 
-    // บันทึกข้อมูลไฟล์ในฐานข้อมูล
+    // อัพโหลดไปยัง Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(dataURI, {
+      folder: "exams",
+      use_filename: true,
+      unique_filename: false,
+      public_id: `${examId}_${timestamp}`,
+      resource_type: 'raw' // สำหรับไฟล์ที่ไม่ใช่รูปภาพ
+    });
+
+    // บันทึกข้อมูลลงฐานข้อมูล
     const examFile = await prisma.examFile.create({
       data: {
-        examId,
-        fileName: originalName,
-        filePath: `/uploads/exams/${newFileName}`,
+        examId: examId,
+        fileName: file.name,
+        filePath: uploadResult.secure_url, // URL จาก Cloudinary
         fileType: file.type,
         fileSize: file.size
       }
@@ -86,7 +95,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error uploading exam file:', error);
+    console.error('Error uploading file:', error);
     return NextResponse.json(
       { success: false, error: 'เกิดข้อผิดพลาดในการอัพโหลดไฟล์' },
       { status: 500 }
