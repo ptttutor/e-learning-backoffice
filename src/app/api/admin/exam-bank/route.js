@@ -8,20 +8,54 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 20;
+    const pageSize = parseInt(searchParams.get('pageSize')) || 10;
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('categoryId');
+    const minFiles = searchParams.get('minFiles');
+    const maxFiles = searchParams.get('maxFiles');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
+    // Build where conditions
     const where = {
       ...(search && {
-        title: {
-          contains: search,
-          mode: 'insensitive'
-        }
+        OR: [
+          {
+            title: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          },
+          {
+            description: {
+              contains: search,
+              mode: 'insensitive'
+            }
+          }
+        ]
       }),
       ...(categoryId && { categoryId })
     };
 
+    // Build orderBy
+    const orderBy = {};
+    if (sortBy === 'fileCount') {
+      // Handle special case for file count sorting
+      orderBy.files = {
+        _count: sortOrder
+      };
+    } else if (sortBy === 'categoryId') {
+      orderBy.category = {
+        name: sortOrder
+      };
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+
+    // Get total count
+    const totalCount = await prisma.examBank.count({ where });
+
+    // Get exams with includes
     const exams = await prisma.examBank.findMany({
       where,
       include: {
@@ -44,21 +78,40 @@ export async function GET(request) {
           select: { files: true }
         }
       },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize
     });
 
-    const totalCount = await prisma.examBank.count({ where });
+    // Add fileCount to each exam and filter by file count if needed
+    let filteredExams = exams.map(exam => ({
+      ...exam,
+      fileCount: exam._count.files
+    }));
+
+    // Apply file count filters if specified
+    if (minFiles !== null) {
+      const minFilesNum = parseInt(minFiles);
+      filteredExams = filteredExams.filter(exam => exam.fileCount >= minFilesNum);
+    }
+    
+    if (maxFiles !== null) {
+      const maxFilesNum = parseInt(maxFiles);
+      filteredExams = filteredExams.filter(exam => exam.fileCount <= maxFilesNum);
+    }
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     return NextResponse.json({
       success: true,
-      data: exams,
+      data: filteredExams,
       pagination: {
         page,
-        limit,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limit)
+        pageSize,
+        totalCount,
       }
     });
 

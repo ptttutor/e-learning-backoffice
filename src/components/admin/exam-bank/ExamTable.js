@@ -16,9 +16,12 @@ const { Text } = Typography;
 export default function ExamTable({
   exams,
   loading,
+  filters,
+  pagination,
   onEdit,
   onDelete,
   onManageFiles,
+  onTableChange,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -57,92 +60,102 @@ export default function ExamTable({
     },
     {
       title: "หมวดหมู่",
+      dataIndex: ["examCategory", "name"],
       key: "category",
-      render: (_, record) => (
-        <Space size={8}>
-          <FolderOutlined style={{ color: "#8c8c8c" }} />
-          {record.category ? (
-            <Tag color="blue">{record.category.name}</Tag>
-          ) : (
-            <Tag color="default">ไม่ระบุ</Tag>
-          )}
-        </Space>
+      render: (categoryName) => (
+        <Tag color="blue" icon={<FolderOutlined />}>
+          {categoryName || "ไม่ระบุ"}
+        </Tag>
       ),
       width: 150,
+      sorter: true,
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: "จำนวนไฟล์",
+      dataIndex: "fileCount",
       key: "fileCount",
-      render: (_, record) => (
+      render: (fileCount) => (
         <Badge
-          count={record._count?.files || 0}
-          style={{ backgroundColor: "#52c41a" }}
+          count={fileCount || 0}
+          style={{ backgroundColor: fileCount > 0 ? "#52c41a" : "#d9d9d9" }}
           showZero
         />
       ),
       width: 120,
       align: "center",
+      sorter: true,
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: "สถานะ",
       dataIndex: "isActive",
-      key: "status",
+      key: "isActive",
       render: (isActive) => (
         <Tag
-          color={isActive ? "success" : "error"}
           icon={isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+          color={isActive ? "success" : "error"}
         >
           {isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
         </Tag>
       ),
       width: 120,
+      align: "center",
+      filters: [
+        { text: "เปิดใช้งาน", value: true },
+        { text: "ปิดใช้งาน", value: false },
+      ],
     },
     {
       title: "วันที่สร้าง",
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date) => (
-        <Space size={8}>
-          <CalendarOutlined style={{ color: "#8c8c8c" }} />
-          <Text style={{ fontSize: "13px" }}>{formatDate(date)}</Text>
+        <Space size={4}>
+          <CalendarOutlined style={{ color: "#666" }} />
+          <Text style={{ fontSize: "12px" }}>{formatDate(date)}</Text>
         </Space>
       ),
-      width: 150,
+      width: 180,
+      sorter: true,
+      sortDirections: ['ascend', 'descend'],
     },
     {
-      title: "การดำเนินการ",
+      title: "การจัดการ",
       key: "actions",
       render: (_, record) => (
-        <Space size={8} wrap>
+        <Space size={8}>
           <Button
+            type="primary"
             icon={<CloudUploadOutlined />}
             size="small"
             onClick={() => onManageFiles(record)}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: "4px" }}
           >
             จัดการไฟล์
           </Button>
           <Button
-            type="primary"
+            type="default"
             icon={<EditOutlined />}
             size="small"
             onClick={() => onEdit(record)}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: "4px" }}
           >
             แก้ไข
           </Button>
           <Button
+            type="primary"
             danger
             icon={<DeleteOutlined />}
             size="small"
-            onClick={() => onDelete(record.id, record.title)}
-            style={{ borderRadius: "6px" }}
+            onClick={() => onDelete(record)}
+            style={{ borderRadius: "4px" }}
           >
             ลบ
           </Button>
         </Space>
       ),
-      width: 200,
+      width: 300,
       fixed: "right",
     },
   ];
@@ -155,12 +168,16 @@ export default function ExamTable({
       loading={loading}
       scroll={{ x: 1200 }}
       pagination={{
-        pageSize: 10,
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.totalCount,
         showSizeChanger: true,
         showQuickJumper: true,
         showTotal: (total, range) =>
           `${range[0]}-${range[1]} จาก ${total} รายการ`,
+        pageSizeOptions: ['10', '20', '50', '100'],
       }}
+      onChange={onTableChange}
       size="middle"
     />
   );

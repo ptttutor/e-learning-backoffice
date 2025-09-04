@@ -1,16 +1,17 @@
 "use client";
 import { useState } from "react";
-import { Button, Card, Typography, Space, Modal } from "antd";
+import { Button, Card, Typography, Space, message, Modal } from "antd";
 import { BookOutlined, PlusOutlined } from "@ant-design/icons";
 
 // Components
+import ExamBankFilters from "@/components/admin/exam-bank/ExamBankFilters";
 import ExamTable from "@/components/admin/exam-bank/ExamTable";
 import ExamModal from "@/components/admin/exam-bank/ExamModal";
 import DeleteModal from "@/components/admin/exam-bank/DeleteModal";
 import FileManagementModal from "@/components/admin/exam-bank/FileManagementModal";
 
 // Hooks
-import { useExams } from "@/hooks/useExams";
+import { useExamBank } from "@/hooks/useExamBank";
 
 const { Title, Text } = Typography;
 
@@ -25,17 +26,26 @@ export default function AdminExamBankPage() {
   const [selectedExam, setSelectedExam] = useState(null);
   const [examFiles, setExamFiles] = useState([]);
 
-  // Use custom hook for exams data
+  // Use custom hook for exam bank data
   const {
     exams,
-    categories,
     loading,
+    categories,
+    catLoading,
+    filters,
+    searchInput,
+    setSearchInput,
+    pagination,
+    fetchExams,
+    handleFilterChange,
+    handleTableChange,
+    resetFilters,
     saveExam,
     deleteExam,
-    fetchExamFiles: fetchExamFilesFromHook,
+    fetchExamFiles,
     uploadExamFile,
     deleteExamFile,
-  } = useExams();
+  } = useExamBank();
 
   // Create or update exam
   const handleSubmitExam = async (examData) => {
@@ -51,14 +61,17 @@ export default function AdminExamBankPage() {
   };
 
   // Handle delete
-  const handleDelete = (exam) => {
-    setExamToDelete(exam);
+  const handleDelete = (record) => {
+    setExamToDelete(record);
     setDeleteModalOpen(true);
   };
 
   // Confirm delete
   const confirmDelete = async () => {
-    if (!examToDelete?.id) return;
+    if (!examToDelete?.id) {
+      message.error("ไม่พบ ID ของข้อสอบ");
+      return;
+    }
 
     setDeleting(true);
     try {
@@ -68,7 +81,7 @@ export default function AdminExamBankPage() {
         setExamToDelete(null);
       }
     } catch (error) {
-      console.error("Delete exam error:", error);
+      console.error("Error deleting exam:", error);
     } finally {
       setDeleting(false);
     }
@@ -97,7 +110,7 @@ export default function AdminExamBankPage() {
     setSelectedExam(exam);
     setFileModalOpen(true);
     // Fetch existing files for this exam
-    const files = await fetchExamFilesFromHook(exam.id);
+    const files = await fetchExamFiles(exam.id);
     setExamFiles(files);
   };
 
@@ -115,7 +128,7 @@ export default function AdminExamBankPage() {
       if (success) {
         onSuccess();
         // Refresh files list
-        const files = await fetchExamFilesFromHook(selectedExam.id);
+        const files = await fetchExamFiles(selectedExam.id);
         setExamFiles(files);
       } else {
         onError("Upload failed");
@@ -138,7 +151,7 @@ export default function AdminExamBankPage() {
           const success = await deleteExamFile(fileId);
           if (success && selectedExam) {
             // Refresh files list
-            const files = await fetchExamFilesFromHook(selectedExam.id);
+            const files = await fetchExamFiles(selectedExam.id);
             setExamFiles(files);
           }
         } catch (error) {
@@ -173,25 +186,42 @@ export default function AdminExamBankPage() {
         </Space>
       </Card>
 
-      <Card>
+      {/* Filter Section */}
+      <Card style={{ marginBottom: "16px" }}>
         <div style={{ marginBottom: "16px" }}>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => openModal(null)}
             style={{ borderRadius: "6px" }}
-            size="middle"
           >
-            เพิ่มข้อสอบใหม่
+            สร้างข้อสอบใหม่
           </Button>
         </div>
 
+        <ExamBankFilters
+          filters={filters}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          onFilterChange={handleFilterChange}
+          onReset={resetFilters}
+          categories={categories}
+          totalCount={pagination.totalCount}
+          currentCount={exams.length}
+          pagination={pagination}
+        />
+      </Card>
+
+      <Card>
         <ExamTable
           exams={exams}
           loading={loading}
+          filters={filters}
+          pagination={pagination}
           onEdit={openModal}
           onDelete={handleDelete}
           onManageFiles={handleManageFiles}
+          onTableChange={handleTableChange}
         />
       </Card>
 
