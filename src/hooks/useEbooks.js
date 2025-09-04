@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { message } from 'antd';
 
 export function useEbooks() {
@@ -26,25 +26,52 @@ export function useEbooks() {
     totalPages: 0,
   });
 
-  // Fetch ebooks with filtering
-  const fetchEbooks = useCallback(async (customFilters = {}, customPagination = {}) => {
+  // Refs to track current values
+  const filtersRef = useRef(filters);
+  const paginationRef = useRef(pagination);
+
+  // Update refs when state changes
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
+
+  // Fetch ebooks with filtering  
+  const fetchEbooks = useCallback(async (customFilters, customPagination) => {
     setLoading(true);
     try {
-      const currentFilters = { ...filters, ...customFilters };
-      const currentPagination = { ...pagination, ...customPagination };
+      // Use default values if no custom parameters provided
+      const defaultFilters = {
+        search: "",
+        categoryId: "",
+        status: "ALL",
+        format: "",
+        featured: "ALL",
+        physical: "ALL",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      };
+      const defaultPagination = { page: 1, pageSize: 10 };
+      
+      // Use provided values or current ref values or defaults
+      const filtersToUse = customFilters || filtersRef.current || defaultFilters;
+      const paginationToUse = customPagination || paginationRef.current || defaultPagination;
 
       // Build query parameters
       const params = new URLSearchParams({
-        page: currentPagination.page.toString(),
-        pageSize: currentPagination.pageSize.toString(),
-        search: currentFilters.search,
-        categoryId: currentFilters.categoryId,
-        status: currentFilters.status,
-        format: currentFilters.format,
-        featured: currentFilters.featured,
-        physical: currentFilters.physical,
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
+        page: paginationToUse.page?.toString() || '1',
+        pageSize: paginationToUse.pageSize?.toString() || '10',
+        search: filtersToUse.search || '',
+        categoryId: filtersToUse.categoryId || '',
+        status: filtersToUse.status || 'ALL',
+        format: filtersToUse.format || '',
+        featured: filtersToUse.featured || 'ALL',
+        physical: filtersToUse.physical || 'ALL',
+        sortBy: filtersToUse.sortBy || 'createdAt',
+        sortOrder: filtersToUse.sortOrder || 'desc',
       });
 
       const response = await fetch(`/api/admin/ebooks?${params}`);
@@ -59,12 +86,18 @@ export function useEbooks() {
       if (data.success) {
         setEbooks(data.data || []);
         setPagination(data.pagination);
-        setFilters(currentFilters);
+        // Only update filters if custom filters were provided
+        if (customFilters) {
+          setFilters(customFilters);
+        }
       } else {
         setEbooks(data || []);
         // For backward compatibility if API doesn't return pagination
         setPagination(prev => ({ ...prev, totalCount: data.length }));
-        setFilters(currentFilters);
+        // Only update filters if custom filters were provided
+        if (customFilters) {
+          setFilters(customFilters);
+        }
       }
     } catch (error) {
       console.error('Error fetching ebooks:', error);
@@ -72,7 +105,7 @@ export function useEbooks() {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination]);
+  }, []); // Remove dependencies to prevent infinite loop
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -84,17 +117,23 @@ export function useEbooks() {
       console.error('Error fetching categories:', error);
       message.error('เกิดข้อผิดพลาดในการโหลดหมวดหมู่');
     }
-  }, []);
+  }, []); // Remove dependency to prevent infinite loop
 
   // Handle filter change
-  const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
-    fetchEbooks(newFilters, { page: 1 });
-  };
+  const handleFilterChange = useCallback((key, value) => {
+    const currentFilters = filtersRef.current;
+    const currentPagination = paginationRef.current;
+    const newFilters = { ...currentFilters, [key]: value };
+    const newPagination = { page: 1, pageSize: currentPagination.pageSize || 10 };
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchEbooks(newFilters, newPagination);
+  }, []);
 
   // Handle table change (sorting, pagination)
-  const handleTableChange = (paginationInfo, filtersInfo, sorter) => {
-    const newFilters = { ...filters };
+  const handleTableChange = useCallback((paginationInfo, filtersInfo, sorter) => {
+    const currentFilters = filtersRef.current;
+    const newFilters = { ...currentFilters };
     const newPagination = {
       page: paginationInfo.current,
       pageSize: paginationInfo.pageSize,
@@ -106,11 +145,13 @@ export function useEbooks() {
       newFilters.sortOrder = sorter.order === "ascend" ? "asc" : "desc";
     }
 
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, ...newPagination }));
     fetchEbooks(newFilters, newPagination);
-  };
+  }, []);
 
   // Reset filters
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     const resetFilters = {
       search: "",
       categoryId: "",
@@ -121,10 +162,12 @@ export function useEbooks() {
       sortBy: "createdAt",
       sortOrder: "desc",
     };
+    const resetPagination = { page: 1, pageSize: 10 };
     setSearchInput("");
     setFilters(resetFilters);
-    fetchEbooks(resetFilters, { page: 1 });
-  };
+    setPagination(prev => ({ ...prev, ...resetPagination }));
+    fetchEbooks(resetFilters, resetPagination);
+  }, []);
 
   // Submit ebook (create or update)
   const submitEbook = async (values, editingEbook) => {
@@ -142,7 +185,8 @@ export function useEbooks() {
 
       if (response.ok) {
         message.success(editingEbook ? 'อัพเดท eBook สำเร็จ' : 'สร้าง eBook สำเร็จ');
-        await fetchEbooks();
+        // Refresh with current filters and pagination - use explicit values  
+        fetchEbooks();
         return true;
       } else {
         const errorData = await response.json();
@@ -180,7 +224,8 @@ export function useEbooks() {
 
       if (data.success !== false) {
         message.success('ลบ eBook สำเร็จ');
-        await fetchEbooks();
+        // Refresh with current filters and pagination - use explicit values
+        fetchEbooks();
         return true;
       } else {
         message.error(data.error || 'เกิดข้อผิดพลาดในการลบ');
@@ -197,22 +242,50 @@ export function useEbooks() {
   useEffect(() => {
     const loadInitialData = async () => {
       await fetchCategories();
-      await fetchEbooks({}, { page: 1, pageSize: 10 });
+      const initialFilters = {
+        search: "",
+        categoryId: "",
+        status: "ALL",
+        format: "",
+        featured: "ALL", 
+        physical: "ALL",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      };
+      const initialPagination = { page: 1, pageSize: 10 };
+      await fetchEbooks(initialFilters, initialPagination);
     };
     loadInitialData();
-  }, [fetchCategories, fetchEbooks]); // Empty dependency array for initial load only
+  }, []); // Empty dependency array for initial load only
 
   // Debounce search - separate effect for search input
   useEffect(() => {
+    if (!searchInput.trim()) {
+      return; // Don't search for empty string
+    }
+    
     const timeoutId = setTimeout(() => {
       // Update filters with search term and trigger fetch
-      const newFilters = { ...filters, search: searchInput };
-      setFilters(newFilters);
-      fetchEbooks(newFilters, { page: 1 });
+      const currentFilters = filtersRef.current;
+      const currentPagination = paginationRef.current;
+      const newFilters = { ...currentFilters, search: searchInput };
+      const newPagination = { page: 1, pageSize: currentPagination.pageSize };
+      fetchEbooks(newFilters, newPagination);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput, filters, fetchEbooks]); // Only depend on search input
+  }, [searchInput]); // Only depend on search input
+
+  // Clean search when input is empty
+  useEffect(() => {
+    if (!searchInput.trim() && filtersRef.current.search) {
+      const currentFilters = filtersRef.current;
+      const currentPagination = paginationRef.current;
+      const newFilters = { ...currentFilters, search: "" };
+      setFilters(newFilters);
+      fetchEbooks(newFilters, currentPagination);
+    }
+  }, [searchInput]); // Only depend on search input
 
   return {
     ebooks,
