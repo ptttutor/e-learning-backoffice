@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Button, Card, Typography, Space, Spin } from "antd";
+import { Button, Card, Typography, Space, Spin, Modal, message } from "antd";
 import { BookOutlined, PlusOutlined } from "@ant-design/icons";
 
 // Components
@@ -8,6 +8,7 @@ import EbookFilters from "@/components/admin/ebooks/EbookFilters";
 import EbookTable from "@/components/admin/ebooks/EbookTable";
 import EbookModal from "@/components/admin/ebooks/EbookModal";
 import DeleteModal from "@/components/admin/ebooks/DeleteModal";
+import EbookFileManagementModal from "@/components/admin/ebooks/EbookFileManagementModal";
 
 // Hooks
 import { useEbooks } from "@/hooks/useEbooks";
@@ -21,6 +22,14 @@ export default function EbooksPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [ebookToDelete, setEbookToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  
+  // File management states
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [selectedEbook, setSelectedEbook] = useState(null);
+  const [ebookFiles, setEbookFiles] = useState([]);
+  const [fileDeleteModalOpen, setFileDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [deletingFile, setDeletingFile] = useState(false);
 
   // Use custom hook for ebooks data
   const {
@@ -36,6 +45,9 @@ export default function EbooksPage() {
     resetFilters,
     submitEbook,
     deleteEbook,
+    fetchEbookFile,
+    uploadEbookFile,
+    deleteEbookFile,
   } = useEbooks();
 
   // Handle submit ebook
@@ -85,6 +97,90 @@ export default function EbooksPage() {
   const cancelDelete = () => {
     setDeleteModalOpen(false);
     setEbookToDelete(null);
+  };
+
+  // Handle manage files
+  const handleManageFiles = async (ebook) => {
+    console.log('handleManageFiles called with ebook:', ebook);
+    setSelectedEbook(ebook);
+    setFileModalOpen(true);
+    // Fetch existing file for this ebook
+    const files = await fetchEbookFile(ebook.id);
+    console.log('Fetched files:', files);
+    setEbookFiles(files);
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (options) => {
+    const { file, onSuccess, onError } = options;
+
+    if (!selectedEbook) {
+      onError("ไม่พบข้อมูล eBook");
+      return;
+    }
+
+    try {
+      const success = await uploadEbookFile(selectedEbook.id, file);
+      if (success) {
+        onSuccess();
+        // Refresh files list
+        const files = await fetchEbookFile(selectedEbook.id);
+        setEbookFiles(files);
+      } else {
+        onError("Upload failed");
+      }
+    } catch (error) {
+      onError(error);
+    }
+  };
+
+  // Handle file delete
+  const handleDeleteFile = async (ebookId, fileName) => {
+    // เปิด modal ยืนยันการลบ
+    setFileToDelete({ id: ebookId, name: fileName });
+    setFileDeleteModalOpen(true);
+  };
+
+  // ยืนยันการลบไฟล์
+  const confirmDeleteFile = async () => {
+    if (!fileToDelete?.id) {
+      message.error("ไม่พบไฟล์ที่จะลบ");
+      return;
+    }
+
+    setDeletingFile(true);
+    try {
+      const success = await deleteEbookFile(fileToDelete.id);
+      if (success) {
+        message.success("ลบไฟล์สำเร็จ");
+        setFileDeleteModalOpen(false);
+        setFileToDelete(null);
+        
+        // Refresh files list
+        if (selectedEbook) {
+          const files = await fetchEbookFile(selectedEbook.id);
+          setEbookFiles(files);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      message.error("เกิดข้อผิดพลาดในการลบไฟล์");
+    } finally {
+      setDeletingFile(false);
+    }
+  };
+
+  // ยกเลิกการลบไฟล์
+  const cancelDeleteFile = () => {
+    setFileDeleteModalOpen(false);
+    setFileToDelete(null);
+  };
+
+  // Close file modal
+  const closeFileModal = () => {
+    setFileModalOpen(false);
+    setSelectedEbook(null);
+    setEbookFiles([]);
   };
 
   if (loading) {
@@ -157,6 +253,7 @@ export default function EbooksPage() {
           pagination={pagination}
           onEdit={openModal}
           onDelete={handleDelete}
+          onManageFiles={handleManageFiles}
           onTableChange={handleTableChange}
         />
       </Card>
@@ -178,6 +275,34 @@ export default function EbooksPage() {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
+
+      {/* File Management Modal */}
+      <EbookFileManagementModal
+        open={fileModalOpen}
+        ebook={selectedEbook}
+        ebookFile={ebookFiles}
+        onCancel={closeFileModal}
+        onFileUpload={handleFileUpload}
+        onDeleteFile={handleDeleteFile}
+      />
+
+      {/* File Delete Confirmation Modal */}
+      <Modal
+        title="ยืนยันการลบไฟล์"
+        open={fileDeleteModalOpen}
+        onOk={confirmDeleteFile}
+        onCancel={cancelDeleteFile}
+        okText="ลบ"
+        cancelText="ยกเลิก"
+        okType="danger"
+        confirmLoading={deletingFile}
+        centered
+      >
+        <p>คุณต้องการลบไฟล์ "{fileToDelete?.name}" ใช่หรือไม่?</p>
+        <p style={{ color: '#ff4d4f', fontSize: '14px' }}>
+          การดำเนินการนี้ไม่สามารถย้อนกลับได้
+        </p>
+      </Modal>
     </div>
   );
 }

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // GET - ดึงข้อมูล ebook ตาม ID
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const ebook = await prisma.ebook.findUnique({
       where: { id: id },
@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
 // PUT - อัปเดต ebook
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     
     const ebook = await prisma.ebook.update({
@@ -109,7 +109,7 @@ export async function PUT(request, { params }) {
 // DELETE - ลบ ebook
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('DELETE API called with ID:', id);
     
     // ตรวจสอบว่ามี orders ที่เชื่อมโยงอยู่หรือไม่

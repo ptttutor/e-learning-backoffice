@@ -287,6 +287,90 @@ export function useEbooks() {
     }
   }, [searchInput]); // Only depend on search input
 
+  // Fetch ebook files (for the single fileUrl)
+  const fetchEbookFile = useCallback(async (ebookId) => {
+    try {
+      console.log('fetchEbookFile called with ebookId:', ebookId);
+      const response = await fetch(`/api/admin/ebooks/${ebookId}`);
+      const result = await response.json();
+      console.log('fetchEbookFile response:', response.ok, result);
+      
+      if (response.ok && result.fileUrl) {
+        const files = [{
+          id: `${ebookId}_file`,
+          fileName: result.title + '.' + (result.format || 'pdf').toLowerCase(),
+          filePath: result.fileUrl,
+          fileSize: result.fileSize || 0,
+          uploadedAt: result.updatedAt,
+        }];
+        console.log('Returning files:', files);
+        return files;
+      }
+      console.log('No fileUrl found or response not ok');
+      return [];
+    } catch (error) {
+      console.error("Error fetching ebook file:", error);
+      message.error("เกิดข้อผิดพลาดในการโหลดไฟล์");
+      return [];
+    }
+  }, []);
+
+  // Upload ebook file
+  const uploadEbookFile = useCallback(async (ebookId, file) => {
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('ebookId', ebookId);
+
+      const response = await fetch("/api/admin/ebook-files", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        message.success("อัปโหลดไฟล์สำเร็จ");
+        // Refresh ebooks to get updated fileUrl
+        fetchEbooks();
+        return result.data;
+      } else {
+        message.error(result.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      message.error("เกิดข้อผิดพลาดในการอัปโหลด");
+      return null;
+    }
+  }, []);
+
+  // Delete ebook file
+  const deleteEbookFile = useCallback(async (ebookId) => {
+    try {
+      const response = await fetch(`/api/admin/ebook-files/${ebookId}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        message.success("ลบไฟล์สำเร็จ");
+        // Refresh ebooks to get updated fileUrl
+        fetchEbooks();
+        return true;
+      } else {
+        message.error(result.error || "ลบไฟล์ไม่สำเร็จ");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      message.error("เกิดข้อผิดพลาดในการลบไฟล์");
+      return false;
+    }
+  }, []);
+
   return {
     ebooks,
     categories,
@@ -301,5 +385,8 @@ export function useEbooks() {
     resetFilters,
     submitEbook,
     deleteEbook,
+    fetchEbookFile,
+    uploadEbookFile,
+    deleteEbookFile,
   };
 }

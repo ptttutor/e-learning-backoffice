@@ -10,6 +10,9 @@ import {
   StarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CloudUploadOutlined,
+  FileOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -22,6 +25,7 @@ export default function EbookTable({
   pagination,
   onEdit,
   onDelete,
+  onManageFiles,
   onTableChange,
 }) {
   const formatDate = (dateString) => {
@@ -33,6 +37,14 @@ export default function EbookTable({
       style: "currency",
       currency: "THB",
     }).format(price);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const columns = [
@@ -162,6 +174,31 @@ export default function EbookTable({
       width: 120,
     },
     {
+      title: "ไฟล์",
+      key: "fileStatus",
+      render: (_, record) => (
+        <Space direction="vertical" size={4}>
+          {record.fileUrl ? (
+            <>
+              <Tag color="success" icon={<FilePdfOutlined />}>
+                มีไฟล์
+              </Tag>
+              {record.fileSize && (
+                <Text type="secondary" style={{ fontSize: "11px" }}>
+                  {formatFileSize(record.fileSize)}
+                </Text>
+              )}
+            </>
+          ) : (
+            <Tag color="default" icon={<FileOutlined />}>
+              ไม่มีไฟล์
+            </Tag>
+          )}
+        </Space>
+      ),
+      width: 100,
+    },
+    {
       title: "วันที่สร้าง",
       dataIndex: "createdAt",
       key: "createdAt",
@@ -195,6 +232,15 @@ export default function EbookTable({
             แก้ไข
           </Button>
           <Button
+            type="default"
+            icon={<CloudUploadOutlined />}
+            size="small"
+            onClick={() => onManageFiles(record)}
+            style={{ borderRadius: "6px" }}
+          >
+            จัดการไฟล์
+          </Button>
+          <Button
             danger
             icon={<DeleteOutlined />}
             size="small"
@@ -205,7 +251,7 @@ export default function EbookTable({
           </Button>
         </Space>
       ),
-      width: 150,
+      width: 200,
       fixed: "right",
     },
   ];
@@ -216,7 +262,7 @@ export default function EbookTable({
       dataSource={ebooks}
       rowKey="id"
       loading={loading}
-      scroll={{ x: 1200 }}
+      scroll={{ x: 1400 }}
       onChange={onTableChange}
       pagination={{
         current: pagination.page,

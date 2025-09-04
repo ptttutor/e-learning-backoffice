@@ -209,6 +209,8 @@ async function main() {
       language: 'th',
       format: 'PDF',
       isActive: true,
+      fileUrl: 'https://res.cloudinary.com/demo/image/upload/sample.pdf',
+      fileSize: 1024000,
       categoryId: ebookCategory1.id
     }
   });
