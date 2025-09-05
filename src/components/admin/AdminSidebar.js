@@ -13,6 +13,7 @@ import {
   BankOutlined,
   EditOutlined,
   TagOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 
@@ -28,6 +29,11 @@ const menuItems = [
     key: "/admin/orders",
     label: "คำสั่งซื้อ",
     icon: <ShoppingCartOutlined />,
+  },
+  {
+    key: "/admin/coupons",
+    label: "คูปอง",
+    icon: <TagsOutlined />,
   },
   {
     key: "/admin/shipping",
