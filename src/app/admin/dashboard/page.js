@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   Row,
@@ -46,11 +46,7 @@ export default function AdminDashboardPage() {
   });
   const [period, setPeriod] = useState('month');
 
-  useEffect(() => {
-    fetchSalesData();
-  }, [period]);
-
-  const fetchSalesData = async () => {
+  const fetchSalesData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/dashboard/sales?period=${period}`);
@@ -67,7 +63,11 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchSalesData();
+  }, [fetchSalesData]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("th-TH", {

@@ -304,7 +304,7 @@ export default function AdminExamBankPage() {
         confirmLoading={deletingFile}
         centered
       >
-        <p>คุณต้องการลบไฟล์ "{fileToDelete?.name}" ใช่หรือไม่?</p>
+        <p>คุณต้องการลบไฟล์ &quot;{fileToDelete?.name}&quot; ใช่หรือไม่?</p>
         <p style={{ color: '#ff4d4f', fontSize: '14px' }}>
           การดำเนินการนี้ไม่สามารถย้อนกลับได้
         </p>
