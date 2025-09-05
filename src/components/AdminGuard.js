@@ -134,7 +134,5 @@ export default function AdminGuard({ children }) {
       </div>
     );
   }
-
-  // ถ้าเป็น admin ให้แสดง children
   return children;
 }
