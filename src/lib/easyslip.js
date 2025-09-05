@@ -1,11 +1,77 @@
 /**
- * SlipOK API Integration - Fixed Version
+ * EasySlip & SlipOK API Integration
  * ใช้สำหรับตรวจสอบสลิปการโอนเงิน
  */
 
 import FormData from "form-data";
 
 const SLIPOK_API_URL = "https://api.slipok.com/v1/verify";
+const EASYSLIP_API_URL = "https://developer.easyslip.com/api/v1/verify";
+
+/**
+ * Verify slip using EasySlip API with file URL
+ * @param {string} slipUrl - URL ของไฟล์ slip image
+ * @returns {Promise<Object>} Verification result
+ */
+export const verifySlipWithEasySlip = async (slipUrl) => {
+  try {
+    // Check if API key is configured
+    if (!process.env.EASYSLIP_API_KEY) {
+      throw new Error("EasySlip API key not configured");
+    }
+
+    console.log("🔍 Calling EasySlip API with URL:", slipUrl);
+
+    // Validate input
+    if (!slipUrl) {
+      throw new Error("Slip URL is required");
+    }
+
+    const response = await fetch(EASYSLIP_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.EASYSLIP_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        image: slipUrl
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ EasySlip API Error:", response.status, errorText);
+      throw new Error(`EasySlip API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    console.log("✅ EasySlip API Response Status:", result.status);
+
+    if (result.status === 200 && result.data) {
+      return {
+        success: true,
+        data: result.data,
+        provider: "easyslip"
+      };
+    } else {
+      console.error("❌ EasySlip verification failed:", result);
+      return {
+        success: false,
+        error: result.message || "การตรวจสอบ slip ไม่สำเร็จ",
+        provider: "easyslip"
+      };
+    }
+
+  } catch (error) {
+    console.error("❌ EasySlip API Error:", error);
+    return {
+      success: false,
+      error: error.message || "เกิดข้อผิดพลาดในการเรียก EasySlip API",
+      provider: "easyslip"
+    };
+  }
+};
 
 /**
  * Verify slip using SlipOK API with file upload

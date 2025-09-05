@@ -1,5 +1,41 @@
 import cloudinary from './cloudinary';
 
+// Upload file to Cloudinary
+export async function uploadToCloudinary(file, folder = 'payment-slips') {
+  try {
+    // Convert file to base64 if it's a File object
+    let fileData;
+    if (file instanceof File) {
+      const buffer = await file.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      fileData = `data:${file.type};base64,${base64}`;
+    } else {
+      fileData = file;
+    }
+
+    const result = await cloudinary.uploader.upload(fileData, {
+      folder: folder,
+      resource_type: 'auto',
+      quality: 'auto',
+      fetch_format: 'auto'
+    });
+
+    return {
+      success: true,
+      data: {
+        url: result.secure_url,
+        publicId: result.public_id
+      }
+    };
+  } catch (error) {
+    console.error('Error uploading to Cloudinary:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 // Delete image from Cloudinary
 export async function deleteCloudinaryImage(publicId) {
   try {

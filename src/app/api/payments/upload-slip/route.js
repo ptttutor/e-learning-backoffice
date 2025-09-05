@@ -1,202 +1,388 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { uploadToCloudinary } from "@/lib/cloudinary";
-import { verifySlipWithSlipOK, parseSlipResult, validateSlipData } from "@/lib/easyslip";
+import { prisma } from "@/lib/prisma";
+import { uploadToCloudinary } from "@/lib/cloudinary-utils";
+import { verifySlipWithEasySlip } from "@/lib/easyslip";
 
-const prisma = new PrismaClient();
-
+// POST - อัปโหลด slip และตรวจสอบอัตโนมัติ
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("slip");
-    const orderId = formData.get("orderId");
+    console.log("🚀 Starting payment slip upload process...");
 
-    if (!file || !orderId) {
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const orderId = formData.get("orderId");
+    const paymentMethod = formData.get("paymentMethod") || "BANK_TRANSFER";
+
+    console.log("📋 Request data:", {
+      hasFile: !!file,
+      orderId,
+      paymentMethod,
+      fileType: file?.type,
+      fileSize: file?.size,
+    });
+
+    if (!file) {
       return NextResponse.json(
-        { success: false, error: "กรุณาระบุไฟล์และหมายเลขคำสั่งซื้อ" },
+        { success: false, error: "กรุณาเลือกไฟล์ slip" },
         { status: 400 }
       );
     }
 
-    // Validate file type
+    if (!orderId) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาระบุ orderId" },
+        { status: 400 }
+      );
+    }
+
+    // ตรวจสอบไฟล์
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { success: false, error: "รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP)" },
+        { success: false, error: "รองรับเฉพาะไฟล์ JPG, PNG, WEBP เท่านั้น" },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 10MB for better quality)
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { success: false, error: "ขนาดไฟล์ต้องไม่เกิน 10MB" },
+        { success: false, error: "ไฟล์ต้องมีขนาดไม่เกิน 10MB" },
         { status: 400 }
       );
     }
 
-    // Find order
+    // ตรวจสอบ order - แก้ไข relation จาก payments เป็น payment
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        payment: true,
+        user: true,
         course: true,
-        ebook: true,
+        payment: true, // เปลี่ยนจาก payments เป็น payment
       },
     });
 
     if (!order) {
       return NextResponse.json(
-        { success: false, error: "ไม่พบคำสั่งซื้อ" },
+        { success: false, error: "ไม่พบข้อมูล order" },
         { status: 404 }
       );
     }
 
-    if (order.status !== "PENDING") {
+    console.log("Order found:", order.id, order.orderNumber, order.total);
+
+    // อัปโหลดไฟล์ไปยัง Cloudinary
+    console.log("Uploading to Cloudinary...");
+    const uploadResult = await uploadToCloudinary(file, "payment-slips");
+
+    if (!uploadResult.success) {
       return NextResponse.json(
-        { success: false, error: "คำสั่งซื้อนี้ไม่สามารถอัพโหลดหลักฐานได้" },
-        { status: 400 }
-      );
-    }
-
-    console.log('Starting slip verification process for order:', orderId);
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Step 1: Verify slip with SlipOK FIRST
-    console.log('🔍 Step 1: Verifying slip with SlipOK API...');
-    let slipVerification = null;
-    let slipValidation = null;
-    
-    try {
-      const slipOKResult = await verifySlipWithSlipOK(buffer, file.name, file.type);
-      slipVerification = parseSlipResult(slipOKResult);
-      
-      if (slipVerification.success) {
-        console.log('✅ SlipOK verification successful');
-        
-        // Validate against order data
-        slipValidation = validateSlipData(slipVerification.data, {
-          total: order.total,
-          createdAt: order.createdAt,
-          bankAccount: '123-4-56789-0' // Your bank account number
-        });
-        
-        console.log('✅ Slip validation completed');
-      } else {
-        console.log('❌ SlipOK verification failed:', slipVerification.error);
-        
-        // Return error if slip verification fails
-        return NextResponse.json({
+        {
           success: false,
-          error: "ไม่สามารถตรวจสอบสลิปได้: " + slipVerification.error,
-          details: {
-            step: "slip_verification",
-            slipOKError: slipVerification.error
-          }
-        }, { status: 400 });
-      }
-    } catch (slipOKError) {
-      console.error("❌ SlipOK verification error:", slipOKError);
-      return NextResponse.json({
-        success: false,
-        error: "เกิดข้อผิดพลาดในการตรวจสอบสลิป: " + slipOKError.message,
-        details: {
-          step: "slip_verification",
-          error: slipOKError.message
-        }
-      }, { status: 500 });
-    }
-
-    // Step 2: Upload to Cloudinary only if verification succeeds
-    console.log('📤 Step 2: Uploading verified slip to Cloudinary...');
-    let cloudinaryResult;
-    try {
-      const publicId = `slip_${orderId}_${Date.now()}`;
-      cloudinaryResult = await uploadToCloudinary(buffer, 'payment-slips', publicId);
-      console.log('✅ Cloudinary upload successful:', cloudinaryResult.public_id);
-    } catch (cloudinaryError) {
-      console.error("❌ Cloudinary upload error:", cloudinaryError);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "เกิดข้อผิดพลาดในการอัพโหลดไฟล์: " + cloudinaryError.message,
-          details: {
-            step: "cloudinary_upload",
-            error: cloudinaryError.message
-          }
+          error: "ไม่สามารถอัปโหลดไฟล์ได้",
+          details: uploadResult.error,
         },
         { status: 500 }
       );
     }
 
-    // Prepare slip analysis data
-    const slipAnalysis = {
-      cloudinaryUrl: cloudinaryResult.secure_url,
-      cloudinaryPublicId: cloudinaryResult.public_id,
-      fileSize: file.size,
-      fileType: file.type,
-      originalName: file.name,
-      slipOKResult: slipVerification,
-      validation: slipValidation,
-      uploadedAt: new Date()
-    };
+    console.log("Upload successful:", uploadResult.data.url);
 
-    // Update payment record with detailed analysis data
-    console.log('Updating payment with analysis data...');
-    console.log('Analysis data:', JSON.stringify(slipAnalysis, null, 2));
-    
-    // For now, use the notes field until Prisma client is regenerated
-    const updatedPayment = await prisma.payment.update({
-      where: { id: order.payment.id },
-      data: {
-        slipUrl: cloudinaryResult.secure_url,
-        status: "PENDING_VERIFICATION",
-        uploadedAt: new Date(),
-        notes: JSON.stringify(slipAnalysis), // Store analysis data in notes field temporarily
-      },
-    });
-    
-    console.log('Payment updated successfully. Notes length:', updatedPayment.notes?.length);
+    // ตรวจสอบ slip ด้วย EasySlip API
+    let verificationResult = null;
+    let confidence = 0;
+    let shouldAutoApprove = false;
 
-    // Update order status
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "PENDING_VERIFICATION",
-      },
-    });
+    try {
+      console.log("Verifying slip with EasySlip...");
+      verificationResult = await verifySlipWithEasySlip(uploadResult.data.url);
+      console.log("EasySlip result:", verificationResult);
 
-    // Prepare response
-    const responseData = {
-      orderId: order.id,
-      paymentId: updatedPayment.id,
-      slipUrl: cloudinaryResult.secure_url,
-      status: "PENDING_VERIFICATION",
-      slipAnalysis: {
-        slipOKSuccess: slipVerification?.success || false,
-        validationSummary: slipValidation?.summary || null,
-        detectedAmount: slipVerification?.data?.amount || null,
-        detectedDate: slipVerification?.data?.date || null,
+      if (verificationResult?.success && verificationResult?.data) {
+        const slipData = verificationResult.data;
+
+        // คำนวณความเชื่อมั่น
+        let confidenceScore = 0;
+
+        // ตรวจสอบจำนวนเงิน (40 คะแนน)
+        if (slipData.amount && Math.abs(slipData.amount - order.total) < 1) {
+          confidenceScore += 40;
+          console.log("Amount matches:", slipData.amount, "≈", order.total);
+        } else {
+          console.log("Amount mismatch:", slipData.amount, "≠", order.total);
+        }
+
+        // ตรวจสอบวันที่ (30 คะแนน)
+        if (slipData.transDate) {
+          const slipDate = new Date(slipData.transDate);
+          const orderDate = new Date(order.createdAt);
+          const daysDiff = Math.abs(
+            (slipDate - orderDate) / (1000 * 60 * 60 * 24)
+          );
+
+          if (daysDiff <= 7) {
+            confidenceScore += 30;
+            console.log("Date within range:", daysDiff, "days");
+          }
+        }
+
+        // ตรวจสอบธนาคาร (30 คะแนน)
+        if (slipData.sender?.bank) {
+          confidenceScore += 30;
+          console.log("Bank info available:", slipData.sender.bank);
+        }
+
+        confidence = confidenceScore;
+        shouldAutoApprove = confidence >= 80;
+
+        console.log("Final confidence score:", confidence, "/100");
+        if (shouldAutoApprove) {
+          console.log("Auto-approval triggered!");
+        }
       }
+    } catch (verifyError) {
+      console.error("EasySlip verification failed:", verifyError);
+      verificationResult = {
+        success: false,
+        error: verifyError.message,
+        provider: "easyslip",
+      };
+    }
+
+    // สร้าง payment data สำหรับ create
+    const createPaymentData = {
+      orderId,
+      method: paymentMethod,
+      status: shouldAutoApprove ? "COMPLETED" : "PENDING_VERIFICATION",
+      amount: order.total,
+      slipUrl: uploadResult.data.url,
+      uploadedAt: new Date(),
+      verifiedAt: shouldAutoApprove ? new Date() : null,
+      slipAnalysisData: verificationResult
+        ? JSON.stringify(verificationResult)
+        : null,
+      confidenceScore: confidence,
+      validationPassed: shouldAutoApprove,
+      lastAnalyzedAt: new Date(),
+      notes: shouldAutoApprove
+        ? `[AUTO] อนุมัติอัตโนมัติ - Confidence: ${confidence}%`
+        : `[MANUAL] ต้องตรวจสอบด้วยตนเอง - Confidence: ${confidence}%`,
+      // เพิ่ม error หาก EasySlip ล้มเหลว
+      ...(verificationResult &&
+        !verificationResult.success && {
+          analysisError: verificationResult.error,
+        }),
+      // เพิ่มข้อมูลจาก EasySlip verification
+      ...(verificationResult?.success &&
+        verificationResult?.data && {
+          detectedAmount: verificationResult.data.amount,
+          detectedDate: verificationResult.data.transDate
+            ? new Date(verificationResult.data.transDate)
+            : null,
+          detectedTime: verificationResult.data.transTime,
+          senderAccount: verificationResult.data.sender?.account,
+          senderName: verificationResult.data.sender?.name,
+          senderBank: verificationResult.data.sender?.bank,
+          receiverAccount: verificationResult.data.receiver?.account,
+          receiverName: verificationResult.data.receiver?.name,
+          receiverBank: verificationResult.data.receiver?.bank,
+          transactionRef: verificationResult.data.ref,
+        }),
     };
+
+    // สร้าง payment data สำหรับ update (ไม่รวม orderId)
+    const updatePaymentData = { ...createPaymentData };
+    delete updatePaymentData.orderId;
+
+    // ตรวจสอบว่ามี payment สำหรับ order นี้แล้วหรือยัง
+    const existingPayment =
+      order.payment &&
+      order.payment.status !== "REJECTED" &&
+      order.payment.status !== "FAILED"
+        ? order.payment
+        : null;
+
+    let payment;
+    if (existingPayment) {
+      // อัปเดต payment ที่มีอยู่ (ไม่รวม orderId)
+      payment = await prisma.payment.update({
+        where: { id: existingPayment.id },
+        data: updatePaymentData,
+        include: {
+          order: {
+            include: {
+              user: true,
+              course: true,
+            },
+          },
+        },
+      });
+      console.log("Updated existing payment:", payment.id);
+    } else {
+      // สร้าง payment ใหม่
+      payment = await prisma.payment.create({
+        data: createPaymentData,
+        include: {
+          order: {
+            include: {
+              user: true,
+              course: true,
+            },
+          },
+        },
+      });
+      console.log("Created new payment:", payment.id);
+    }
+
+    // ถ้าอนุมัติอัตโนมัติ ให้สร้าง enrollment
+    if (shouldAutoApprove && order.courseId) {
+      try {
+        console.log("Creating enrollment...");
+
+        // ตรวจสอบว่ามี enrollment แล้วหรือยัง
+        const existingEnrollment = await prisma.enrollment.findFirst({
+          where: {
+            userId: order.userId,
+            courseId: order.courseId,
+          },
+        });
+
+        if (!existingEnrollment) {
+          const enrollment = await prisma.enrollment.create({
+            data: {
+              userId: order.userId,
+              courseId: order.courseId,
+              enrolledAt: new Date(),
+              status: "ACTIVE",
+            },
+          });
+          console.log("Enrollment created:", enrollment.id);
+        } else {
+          console.log("Enrollment already exists");
+        }
+
+        // อัปเดต order status
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            status: "COMPLETED",
+            updatedAt: new Date(),
+          },
+        });
+        console.log("Order marked as completed");
+
+        // อัปเดต payment status เป็น COMPLETED
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "COMPLETED",
+            verifiedAt: new Date(),
+            paidAt: new Date(),
+          },
+        });
+        console.log("Payment marked as completed");
+      } catch (enrollError) {
+        console.error("Failed to create enrollment:", enrollError);
+      }
+    }
+
+    console.log("Payment slip upload completed successfully!");
 
     return NextResponse.json({
       success: true,
-      message: "อัพโหลดหลักฐานการชำระเงินสำเร็จ กำลังรอการตรวจสอบ",
-      data: responseData,
-    });
-
-  } catch (error) {
-    console.error("Upload slip error:", error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: "เกิดข้อผิดพลาดในการอัพโหลดหลักฐาน",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      data: {
+        payment,
+        verification: verificationResult,
+        confidence,
+        autoApproved: shouldAutoApprove,
+        upload: {
+          url: uploadResult.data.url,
+          publicId: uploadResult.data.publicId,
+        },
+        message: shouldAutoApprove
+          ? `อัปโหลดและอนุมัติการชำระเงินอัตโนมัติ (${confidence}% confidence)`
+          : `อัปโหลด slip สำเร็จ กำลังรอการตรวจสอบ (${confidence}% confidence)`,
       },
+    });
+  } catch (error) {
+    console.error("Error uploading payment slip:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "เกิดข้อผิดพลาดในการอัปโหลด slip",
+        details: error.message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// GET - ดูข้อมูล payment slip
+export async function GET(request) {
+  try {
+    console.log("🔍 Getting payment slip data...");
+
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("orderId");
+    const paymentId = searchParams.get("paymentId");
+
+    if (!orderId && !paymentId) {
+      return NextResponse.json(
+        { success: false, error: "กรุณาระบุ orderId หรือ paymentId" },
+        { status: 400 }
+      );
+    }
+
+    let payment;
+
+    if (paymentId) {
+      payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          order: {
+            include: {
+              user: true,
+              course: true,
+            },
+          },
+        },
+      });
+    } else {
+      payment = await prisma.payment.findFirst({
+        where: { orderId },
+        include: {
+          order: {
+            include: {
+              user: true,
+              course: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    }
+
+    if (!payment) {
+      return NextResponse.json(
+        { success: false, error: "ไม่พบข้อมูลการชำระเงิน" },
+        { status: 404 }
+      );
+    }
+
+    console.log("Payment found:", payment.id, payment.status);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        payment,
+        order: payment.order,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching payment slip:", error);
+    return NextResponse.json(
+      { success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูล" },
       { status: 500 }
     );
   }
