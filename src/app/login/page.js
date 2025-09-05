@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -7,7 +7,7 @@ import LoginContainer from "../../components/login/LoginContainer";
 import LoginLeftSection from "../../components/login/LoginLeftSection";
 import LoginRightSection from "../../components/login/LoginRightSection";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -67,5 +67,13 @@ export default function LoginPage() {
         </>
       )}
     </LoginContainer>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
