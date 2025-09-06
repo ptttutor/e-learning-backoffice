@@ -16,6 +16,41 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   
   const redirectUrl = searchParams.get("redirect");
+  const urlError = searchParams.get("error");
+  const errorDetails = searchParams.get("details");
+
+  // Handle URL errors
+  useEffect(() => {
+    if (urlError) {
+      let errorMessage = "";
+      switch (urlError) {
+        case 'line_oauth_error':
+          errorMessage = "เกิดข้อผิดพลาดในการล็อกอิน LINE";
+          break;
+        case 'no_code':
+          errorMessage = "ไม่พบรหัสยืนยันจาก LINE";
+          break;
+        case 'token_exchange_failed':
+          errorMessage = "ไม่สามารถแลกเปลี่ยน Token ได้";
+          break;
+        case 'profile_fetch_failed':
+          errorMessage = "ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้";
+          break;
+        case 'internal_error':
+          errorMessage = "เกิดข้อผิดพลาดภายในระบบ";
+          if (errorDetails) {
+            errorMessage += `: ${errorDetails}`;
+          }
+          break;
+        default:
+          errorMessage = "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ";
+      }
+      setError(errorMessage);
+      
+      // Log error for debugging
+      console.error('Login error from URL:', { urlError, errorDetails });
+    }
+  }, [urlError, errorDetails]);
 
   // Redirect if already authenticated
   useEffect(() => {

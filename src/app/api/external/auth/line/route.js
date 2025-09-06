@@ -69,7 +69,7 @@ export async function POST(request) {
           email: lineProfile.email || `${lineProfile.userId}@line.user`,
           name: lineProfile.displayName,
           image: lineProfile.pictureUrl,
-          role: 'USER',
+          role: 'STUDENT', // แก้ไขจาก 'USER' เป็น 'STUDENT'
         }
       });
       console.log('✅ Created new user:', user.email);
