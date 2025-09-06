@@ -1,6 +1,6 @@
 // src/app/api/external/auth/line/route.js
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { createExternalToken } from '@/lib/jwt';
 
 export async function POST(request) {

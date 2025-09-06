@@ -40,7 +40,7 @@ export default function PostTable({
       render: (_, record) => (
         <Space size={12}>
           <Avatar 
-            src={record.imageUrl}
+            src={record.imageUrl && record.imageUrl.trim() ? record.imageUrl : null}
             icon={<FileTextOutlined />} 
             size={50}
             shape="square"

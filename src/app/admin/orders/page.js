@@ -1088,7 +1088,7 @@ export default function AdminOrdersPage() {
                           overflow: "hidden",
                           marginBottom: "16px"
                         }}
-                        bodyStyle={{ padding: "16px" }}
+                        // bodyStyle={{ padding: "16px" }}
                       >
                         <Image
                           src={selectedOrder.payment.slipUrl}
@@ -1300,7 +1300,7 @@ export default function AdminOrdersPage() {
                         border: "1px dashed #ffbb96",
                         borderRadius: "8px",
                       }}
-                      bodyStyle={{ padding: "24px" }}
+                      // bodyStyle={{ padding: "24px" }}
                     >
                       <Space direction="vertical" size={12}>
                         <FileTextOutlined

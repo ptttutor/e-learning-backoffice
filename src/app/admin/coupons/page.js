@@ -140,7 +140,7 @@ export default function CouponsPage() {
       {/* Header */}
       <Card 
         style={{ marginBottom: "24px" }}
-        bodyStyle={{ padding: "24px" }}
+        // bodyStyle={{ padding: "24px" }}
       >
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>

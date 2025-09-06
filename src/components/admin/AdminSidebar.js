@@ -14,6 +14,7 @@ import {
   EditOutlined,
   TagOutlined,
   TagsOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 
@@ -80,14 +81,19 @@ const menuItems = [
     label: "หมวดหมู่โพสต์",
     icon: <TagOutlined />,
   },
+  {
+    key: "/admin/users",
+    label: "ผู้ใช้",
+    icon: <UserOutlined />,
+  },
 ];
 
 export default function AdminSidebar({ collapsed, pathname }) {
   // Navigation menu items with Links
-  const navMenuItems = menuItems.map(item => ({
+  const navMenuItems = menuItems.map((item) => ({
     ...item,
     label: (
-      <Link href={item.key} style={{ textDecoration: 'none' }}>
+      <Link href={item.key} style={{ textDecoration: "none" }}>
         {item.label}
       </Link>
     ),

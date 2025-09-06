@@ -62,7 +62,7 @@ export default function EbookTable({
       render: (_, record) => (
         <Space size={12}>
           <Avatar 
-            src={record.coverImageUrl}
+            src={record.coverImageUrl && record.coverImageUrl.trim() ? record.coverImageUrl : null}
             icon={<BookOutlined />} 
             size={50}
             shape="square"

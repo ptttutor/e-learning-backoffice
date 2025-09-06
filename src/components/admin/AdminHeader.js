@@ -51,11 +51,6 @@ export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
         type="text"
         icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         onClick={onToggle}
-        style={{
-          fontSize: '16px',
-          width: 64,
-          height: 64,
-        }}
       />
 
       {/* Right side - User info and actions */}

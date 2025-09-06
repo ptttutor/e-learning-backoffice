@@ -101,7 +101,7 @@ export default function FileViewerModal({ open, file, onClose }) {
       footer={null}
       width="90vw"
       style={{ top: 20 }}
-      bodyStyle={{ padding: 0 }}
+      // bodyStyle={{ padding: 0 }}
     >
       {loading && (
         <div style={{ 

@@ -54,7 +54,7 @@ export default function DeleteModal({
           >
             <Space size={12} style={{ marginBottom: "12px" }}>
               <Avatar 
-                src={post.imageUrl}
+                src={post.imageUrl && post.imageUrl.trim() ? post.imageUrl : null}
                 icon={<FileTextOutlined />} 
                 size={50}
                 shape="square"
