@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { message } from "antd";
 import {
   KeyboardSensor,
@@ -38,6 +38,24 @@ export const useChapters = (courseId) => {
     hasPrev: false,
   });
 
+  // Use refs to avoid stale closure issues
+  const filtersRef = useRef(filters);
+  const paginationRef = useRef(pagination);
+  const searchInputRef = useRef(searchInput);
+
+  // Update refs when state changes
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
+
+  useEffect(() => {
+    searchInputRef.current = searchInput;
+  }, [searchInput]);
+
   // ปรับปรุง sensors สำหรับการลากที่ดีขึ้น
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -50,7 +68,56 @@ export const useChapters = (courseId) => {
     })
   );
 
-  // Debounced search function
+  // Fetch chapters with server-side filtering and pagination
+  const fetchChapters = useCallback(async () => {
+    if (!courseId) return;
+    
+    setLoading(true);
+    try {
+      // Use refs to get current state values
+      const currentPagination = paginationRef.current;
+      const currentFilters = filtersRef.current;
+      const currentSearchInput = searchInputRef.current;
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        courseId,
+        page: currentPagination.page.toString(),
+        pageSize: currentPagination.pageSize.toString(),
+        sortBy: currentFilters.sortBy,
+      });
+
+      if (currentSearchInput.trim()) {
+        params.append('search', currentSearchInput.trim());
+      }
+      if (currentFilters.minOrder) {
+        params.append('minOrder', currentFilters.minOrder.toString());
+      }
+
+      const res = await fetch(`/api/admin/chapters?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setChapters(data.data || []);
+        setPagination(data.pagination || {
+          page: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        });
+      } else {
+        message.error(data.error || "เกิดข้อผิดพลาดในการโหลด chapters");
+      }
+    } catch (e) {
+      console.error("Fetch chapters error:", e);
+      message.error("เกิดข้อผิดพลาดในการโหลด chapters");
+    }
+    setLoading(false);
+  }, [courseId]);
+
+  // Debounced search function - ย้ายมาไว้หลัง fetchChapters
   const debouncedFetchChapters = useCallback(
     debounce(() => {
       if (courseId) {
@@ -113,46 +180,6 @@ export const useChapters = (courseId) => {
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
-
-  // Fetch chapters with server-side filtering and pagination
-  const fetchChapters = useCallback(async () => {
-    if (!courseId) return;
-    
-    setLoading(true);
-    try {
-      // Build query parameters
-      const params = new URLSearchParams({
-        courseId,
-        page: pagination.page.toString(),
-        pageSize: pagination.pageSize.toString(),
-        sortBy: filters.sortBy,
-      });
-
-      if (searchInput.trim()) {
-        params.append('search', searchInput.trim());
-      }
-      if (filters.minOrder) {
-        params.append('minOrder', filters.minOrder.toString());
-      }
-
-      const res = await fetch(`/api/admin/chapters?${params.toString()}`);
-      const data = await res.json();
-      
-      if (data.success) {
-        setChapters(data.data || []);
-        setPagination(prev => ({
-          ...prev,
-          ...data.pagination
-        }));
-      } else {
-        message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
-      }
-    } catch (e) {
-      console.error("Error fetching chapters:", e);
-      message.error("โหลดข้อมูล chapter ไม่สำเร็จ");
-    }
-    setLoading(false);
-  }, [courseId, searchInput, filters, pagination.page, pagination.pageSize]);
 
   // บันทึกการเปลี่ยนแปลงลำดับ
   const saveOrderChanges = async () => {
