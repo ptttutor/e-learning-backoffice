@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const postTypeName = searchParams.get("postType");
+    const postType = searchParams.get("postType"); // ชื่อประเภทโพสต์
     const limit = searchParams.get("limit");
     const featured = searchParams.get("featured");
 
@@ -15,23 +13,19 @@ export async function GET(request) {
       isActive: true,
       publishedAt: {
         lte: new Date(),
+        not: null,
+      },
+      postType: {
+        isActive: true,
       },
     };
 
-    // กรองตามประเภทโพสต์ถ้ามี
-    if (postTypeName) {
-      whereCondition.postType = {
-        name: postTypeName,
-        isActive: true,
-      };
-    } else {
-      // ถ้าไม่ระบุประเภท ให้แสดงเฉพาะประเภทที่เปิดใช้งาน
-      whereCondition.postType = {
-        isActive: true,
-      };
+    // กรองตามประเภทโพสต์ถ้ามีระบุ
+    if (postType) {
+      whereCondition.postType.name = postType;
     }
 
-    // กรองโพสต์แนะนำถ้ามี
+    // กรองโพสต์แนะนำถ้ามีระบุ
     if (featured === "true") {
       whereCondition.isFeatured = true;
     }
@@ -55,20 +49,26 @@ export async function GET(request) {
           },
         },
       },
-      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+      orderBy: [
+        { isFeatured: "desc" },
+        { publishedAt: "desc" },
+        { createdAt: "desc" }
+      ],
     };
 
-    // เพิ่ม limit ถ้ามี
-    if (limit && !isNaN(parseInt(limit))) {
+    // เพิ่ม limit ถ้ามีระบุ
+    if (limit && !isNaN(parseInt(limit)) && parseInt(limit) > 0) {
       queryOptions.take = parseInt(limit);
     }
 
+    // ดึงข้อมูลโพสต์
     const posts = await prisma.post.findMany(queryOptions);
 
     return NextResponse.json({
       success: true,
-      data: posts,
+      message: "Posts fetched successfully",
       count: posts.length,
+      data: posts
     });
   } catch (error) {
     console.error("Error fetching posts:", error);
@@ -77,6 +77,8 @@ export async function GET(request) {
         success: false,
         error: "Failed to fetch posts",
         message: error.message,
+        count: 0,
+        data: []
       },
       { status: 500 }
     );
