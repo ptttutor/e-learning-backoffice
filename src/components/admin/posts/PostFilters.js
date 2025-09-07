@@ -34,8 +34,8 @@ export default function PostFilters({
   pagination,
   onPageChange,
   onPageSizeChange,
-  postTypes,
-  authors,
+  postTypes = [], // Default เป็น empty array
+  authors = [],   // Default เป็น empty array
 }) {
   // นับจำนวน active filters
   const activeFiltersCount = [
@@ -84,9 +84,9 @@ export default function PostFilters({
             placeholder="เลือกประเภท"
             allowClear
           >
-            {(postTypes || []).map((type) => (
+            {Array.isArray(postTypes) && postTypes.map((type) => (
               <Option key={type.id} value={type.id}>
-                {type.name}
+                {type.name || 'ไม่ระบุประเภท'}
               </Option>
             ))}
           </Select>
@@ -105,9 +105,9 @@ export default function PostFilters({
             placeholder="เลือกผู้เขียน"
             allowClear
           >
-            {(authors || []).map((author) => (
+            {Array.isArray(authors) && authors.map((author) => (
               <Option key={author.id} value={author.id}>
-                {author.name}
+                {author.name || author.email || 'ไม่ระบุชื่อ'}
               </Option>
             ))}
           </Select>

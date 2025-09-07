@@ -129,7 +129,14 @@ export const usePosts = () => {
       setAuthorsLoading(true);
       const response = await fetch('/api/admin/users');
       const data = await response.json();
-      setAuthors(data.success ? data.data || [] : []);
+      
+      console.log('Authors API response:', data); // Debug log
+      
+      // ตรวจสอบและแน่ใจว่าได้ array
+      const authorsData = data.success && Array.isArray(data.data) ? data.data : [];
+      console.log('Authors data after processing:', authorsData); // Debug log
+      
+      setAuthors(authorsData);
     } catch (error) {
       console.error('Error fetching authors:', error);
       message.error('เกิดข้อผิดพลาดในการโหลดผู้เขียน');
