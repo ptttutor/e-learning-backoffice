@@ -18,30 +18,8 @@ export async function GET(req, { params }) {
             email: true
           }
         },
-        course: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            price: true,
-            instructor: {
-              select: {
-                name: true
-              }
-            }
-          }
-        },
-        ebook: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            price: true,
-            discountPrice: true,
-            author: true,
-            isPhysical: true
-          }
-        },
+        course: true,
+        ebook: true,
         payment: true,
         shipping: true
       }
