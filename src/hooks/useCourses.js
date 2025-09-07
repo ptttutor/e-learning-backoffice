@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { message } from "antd";
 
 export function useCourses() {
@@ -29,23 +29,37 @@ export function useCourses() {
     totalPages: 0,
   });
 
+  // Use ref to keep track of current state
+  const filtersRef = useRef(filters);
+  const paginationRef = useRef(pagination);
+
+  // Update refs when state changes
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
+
   // Fetch courses with server-side filtering and pagination
-  const fetchCourses = useCallback(async (customFilters = {}, customPagination = {}) => {
+  const fetchCourses = useCallback(async (customFilters, customPagination) => {
     setLoading(true);
     try {
-      const currentFilters = { ...filters, ...customFilters };
-      const currentPagination = { ...pagination, ...customPagination };
+      // ใช้ ref เพื่อได้ current state หรือใช้ parameters ที่ส่งมา
+      const currentFilters = customFilters || filtersRef.current;
+      const currentPagination = customPagination || paginationRef.current;
 
       // Build query parameters
       const params = new URLSearchParams({
-        page: currentPagination.page.toString(),
-        pageSize: currentPagination.pageSize.toString(),
-        search: currentFilters.search,
-        status: currentFilters.status,
-        instructorId: currentFilters.instructorId,
-        categoryId: currentFilters.categoryId,
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
+        page: currentPagination.page?.toString() || "1",
+        pageSize: currentPagination.pageSize?.toString() || "10",
+        search: currentFilters.search || "",
+        status: currentFilters.status || "ALL",
+        instructorId: currentFilters.instructorId || "",
+        categoryId: currentFilters.categoryId || "",
+        sortBy: currentFilters.sortBy || "createdAt",
+        sortOrder: currentFilters.sortOrder || "desc",
       });
 
       // Add price filters if they exist
@@ -59,8 +73,15 @@ export function useCourses() {
 
       if (data.success) {
         setCourses(data.data || []);
-        setPagination(data.pagination);
-        setFilters(currentFilters);
+        setPagination(data.pagination || {
+          page: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 0,
+        });
+        if (customFilters) {
+          setFilters(currentFilters);
+        }
       } else {
         message.error(data.error || "โหลดข้อมูลคอร์สไม่สำเร็จ");
       }
@@ -69,7 +90,7 @@ export function useCourses() {
       message.error("โหลดข้อมูลคอร์สไม่สำเร็จ");
     }
     setLoading(false);
-  }, [filters, pagination]);
+  }, []);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -98,14 +119,14 @@ export function useCourses() {
   }, []);
 
   // Handle filter change
-  const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
+  const handleFilterChange = useCallback((key, value) => {
+    const newFilters = { ...filtersRef.current, [key]: value };
     fetchCourses(newFilters, { page: 1 });
-  };
+  }, [fetchCourses]);
 
   // Handle table change (sorting, pagination)
-  const handleTableChange = (paginationInfo, filtersInfo, sorter) => {
-    const newFilters = { ...filters };
+  const handleTableChange = useCallback((paginationInfo, filtersInfo, sorter) => {
+    const newFilters = { ...filtersRef.current };
     const newPagination = {
       page: paginationInfo.current,
       pageSize: paginationInfo.pageSize,
@@ -118,11 +139,11 @@ export function useCourses() {
     }
 
     fetchCourses(newFilters, newPagination);
-  };
+  }, [fetchCourses]);
 
   // Reset filters
-  const resetFilters = () => {
-    const resetFilters = {
+  const resetFilters = useCallback(() => {
+    const resetFiltersData = {
       search: "",
       status: "ALL",
       instructorId: "",
@@ -133,30 +154,29 @@ export function useCourses() {
       sortOrder: "desc",
     };
     setSearchInput("");
-    setFilters(resetFilters);
-    fetchCourses(resetFilters, { page: 1 });
-  };
+    setFilters(resetFiltersData);
+    fetchCourses(resetFiltersData, { page: 1 });
+  }, [fetchCourses]);
 
-  // Initial load
+  // Initial load - แก้ไข dependencies
   useEffect(() => {
     const loadInitialData = async () => {
       await fetchCategories();
       await fetchInstructors();
-      await fetchCourses({}, { page: 1, pageSize: 10 });
+      await fetchCourses();
     };
     loadInitialData();
   }, [fetchCategories, fetchInstructors, fetchCourses]);
 
-  // Debounce search
+  // Debounce search - แก้ไข dependencies
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const newFilters = { ...filters, search: searchInput };
-      setFilters(newFilters);
+      const newFilters = { ...filtersRef.current, search: searchInput };
       fetchCourses(newFilters, { page: 1 });
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput, filters, fetchCourses]);
+  }, [searchInput, fetchCourses]);
 
   return {
     courses,
