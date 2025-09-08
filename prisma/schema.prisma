@@ -21,6 +21,7 @@ model User {
   enrollments  Enrollment[]
   orders       Order[]
   posts        Post[]        @relation("AuthorPosts")
+  reviews      Review[]
   ebookReviews EbookReview[]
   couponUsages CouponUsage[]
   downloads    EbookDownload[]
@@ -83,6 +84,7 @@ model Course {
   instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
   enrollments  Enrollment[]
   orders       Order[]
+  reviews      Review[]
 }
 
 model Chapter {
@@ -331,6 +333,33 @@ model Post {
   postType            PostType  @relation(fields: [postTypeId], references: [id])
 }
 
+// ระบบรีวิวสำหรับ Course และ Ebook
+model Review {
+  id         String    @id @default(uuid())
+  userId     String
+  courseId   String?   // nullable สำหรับรีวิว ebook
+  ebookId    String?   // nullable สำหรับรีวิว course
+  rating     Int       @default(5)
+  title      String?   // หัวข้อรีวิว
+  comment    String?
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false) // ตรวจสอบว่าเป็นผู้ซื้อจริง
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course     Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  ebook      Ebook?    @relation(fields: [ebookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId], name: "unique_user_course_review")
+  @@unique([userId, ebookId], name: "unique_user_ebook_review")
+  @@index([userId])
+  @@index([courseId])
+  @@index([ebookId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
 
 
 
@@ -364,7 +393,8 @@ model Ebook {
   
   category        EbookCategory? @relation(fields: [categoryId], references: [id])
   orders          Order[]
-  reviews         EbookReview[]
+  reviews         Review[]
+  ebookReviews    EbookReview[]
   downloads       EbookDownload[]
 }
 
