@@ -85,6 +85,16 @@ export async function GET(request) {
       })
     ]);
 
+    // สถิติ E-book
+    const [totalEbooks, publishedEbooks] = await Promise.all([
+      prisma.ebook.count(),
+      prisma.ebook.count({
+        where: {
+          isActive: true
+        }
+      })
+    ]);
+
     // สถิติ Enrollments
     const [totalEnrollments, activeEnrollments] = await Promise.all([
       prisma.enrollment.count({
@@ -157,6 +167,10 @@ export async function GET(request) {
             total: totalCourses,
             published: publishedCourses,
             draft: draftCourses
+          },
+          ebooks: {
+            total: totalEbooks,
+            published: publishedEbooks
           },
           enrollments: {
             total: totalEnrollments,
