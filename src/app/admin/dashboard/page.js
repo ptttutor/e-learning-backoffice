@@ -24,9 +24,10 @@ import {
   RiseOutlined
 } from '@ant-design/icons';
 import { useDashboardStats, useCourseSales } from '@/hooks/useDashboard';
+import SalesChart from '@/components/admin/SalesChart';
+import EbookSales from '@/components/admin/EbookSales';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 export default function AdminDashboard() {
   const [period, setPeriod] = useState(30);
@@ -194,38 +195,10 @@ export default function AdminDashboard() {
               </Col>
             </Row>
 
-            {/* กราฟรายได้ 7 วันล่าสุด */}
+            {/* กราฟยอดขายแบบใหม่ */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
               <Col span={24}>
-                <Card 
-                  title={
-                    <Space>
-                      <RiseOutlined />
-                      <span>แนวโน้มรายได้ 7 วันล่าสุด</span>
-                    </Space>
-                  }
-                >
-                  <Row gutter={16}>
-                    {stats.stats.revenue.trend.map((day, index) => (
-                      <Col span={24/7} key={day.date}>
-                        <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                          <Text style={{ fontSize: 12 }}>
-                            {new Date(day.date).toLocaleDateString('th-TH', { 
-                              day: 'numeric', 
-                              month: 'short' 
-                            })}
-                          </Text>
-                        </div>
-                        <Progress
-                          type="dashboard"
-                          percent={Math.round((day.revenue / Math.max(...stats.stats.revenue.trend.map(d => d.revenue))) * 100)}
-                          width={60}
-                          format={() => formatCurrency(day.revenue)}
-                        />
-                      </Col>
-                    ))}
-                  </Row>
-                </Card>
+                <SalesChart />
               </Col>
             </Row>
 
@@ -344,6 +317,9 @@ export default function AdminDashboard() {
           )}
         </Spin>
       </Card>
+
+      {/* E-book Sales */}
+      <EbookSales />
     </div>
   );
 }
