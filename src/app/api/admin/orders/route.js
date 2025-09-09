@@ -30,17 +30,46 @@ export async function GET(request) {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            image: true,
+            lineId: true,
+            role: true,
+            createdAt: true
           }
         },
         ebook: {
           select: {
             id: true,
             title: true,
+            description: true,
             author: true,
-            coverImageUrl: true,
+            isbn: true,
             price: true,
-            discountPrice: true
+            discountPrice: true,
+            coverImageUrl: true,
+            previewUrl: true,
+            fileSize: true,
+            pageCount: true,
+            language: true,
+            format: true,
+            isPhysical: true,
+            weight: true,
+            dimensions: true,
+            downloadLimit: true,
+            accessDuration: true,
+            isActive: true,
+            isFeatured: true,
+            publishedAt: true,
+            categoryId: true,
+            createdAt: true,
+            updatedAt: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            }
           }
         },
         course: {
@@ -49,38 +78,70 @@ export async function GET(request) {
             title: true,
             description: true,
             price: true,
+            duration: true,
+            isFree: true,
+            status: true,
+            instructorId: true,
+            categoryId: true,
+            coverImageUrl: true,
+            coverPublicId: true,
+            createdAt: true,
+            updatedAt: true,
             instructor: {
               select: {
-                name: true
+                id: true,
+                name: true,
+                email: true,
+                image: true
+              }
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            },
+            chapters: {
+              select: {
+                id: true,
+                title: true,
+                order: true,
+                createdAt: true
+              },
+              orderBy: {
+                order: 'asc'
               }
             }
           }
         },
-        payment: {
+        payment: true, // Get all payment fields including slip analysis data
+        shipping: true, // Get all shipping fields
+        coupon: {
           select: {
             id: true,
-            method: true,
-            status: true,
-            paidAt: true,
-            ref: true,
-            slipUrl: true,
-            uploadedAt: true,
-            verifiedAt: true
+            code: true,
+            name: true,
+            description: true,
+            type: true,
+            value: true,
+            minOrderAmount: true,
+            maxDiscount: true,
+            validFrom: true,
+            validUntil: true,
+            applicableType: true
           }
         },
-        shipping: {
+        items: {
           select: {
             id: true,
-            recipientName: true,
-            recipientPhone: true,
-            address: true,
-            district: true,
-            province: true,
-            postalCode: true,
-            status: true,
-            trackingNumber: true,
-            shippedAt: true,
-            deliveredAt: true
+            itemType: true,
+            itemId: true,
+            title: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            createdAt: true
           }
         }
       },

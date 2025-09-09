@@ -15,124 +15,136 @@ export async function GET(request, { params }) {
       );
     }
 
-    console.log('Fetching order with ID:', id);
-    
-    // First, get basic order info
-    const basicOrder = await prisma.order.findUnique({
-      where: { id }
-    });
-
-    if (!basicOrder) {
-      return NextResponse.json(
-        { success: false, error: 'ไม่พบคำสั่งซื้อ' },
-        { status: 404 }
-      );
-    }
-
-    console.log('Basic order found:', basicOrder.id);
-
-    // Then get related data step by step
-    let order = { ...basicOrder };
-
-    try {
-      // Get user data
-      if (basicOrder.userId) {
-        const user = await prisma.user.findUnique({
-          where: { id: basicOrder.userId },
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: {
           select: {
             id: true,
             name: true,
             email: true,
-            role: true
+            image: true,
+            lineId: true,
+            role: true,
+            createdAt: true
           }
-        });
-        order.user = user;
-      }
-
-      // Get payment data
-      const payment = await prisma.payment.findFirst({
-        where: { orderId: id }
-      });
-      order.payment = payment;
-
-      // Get ebook data if applicable
-      if (basicOrder.ebookId) {
-        const ebook = await prisma.ebook.findUnique({
-          where: { id: basicOrder.ebookId },
+        },
+        ebook: {
           select: {
             id: true,
             title: true,
+            description: true,
             author: true,
-            coverImageUrl: true,
+            isbn: true,
             price: true,
-            discountPrice: true
+            discountPrice: true,
+            coverImageUrl: true,
+            previewUrl: true,
+            fileSize: true,
+            pageCount: true,
+            language: true,
+            format: true,
+            isPhysical: true,
+            weight: true,
+            dimensions: true,
+            downloadLimit: true,
+            accessDuration: true,
+            isActive: true,
+            isFeatured: true,
+            publishedAt: true,
+            categoryId: true,
+            createdAt: true,
+            updatedAt: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            }
           }
-        });
-        order.ebook = ebook;
-      }
-
-      // Get course data if applicable
-      if (basicOrder.courseId) {
-        const course = await prisma.course.findUnique({
-          where: { id: basicOrder.courseId },
+        },
+        course: {
           select: {
             id: true,
             title: true,
             description: true,
             price: true,
-            instructorId: true
-          }
-        });
-        
-        if (course && course.instructorId) {
-          // Get instructor data
-          try {
-            const instructor = await prisma.user.findUnique({
-              where: { id: course.instructorId },
+            duration: true,
+            isFree: true,
+            status: true,
+            instructorId: true,
+            categoryId: true,
+            coverImageUrl: true,
+            coverPublicId: true,
+            createdAt: true,
+            updatedAt: true,
+            instructor: {
               select: {
+                id: true,
                 name: true,
-                email: true
+                email: true,
+                image: true
               }
-            });
-            course.instructor = instructor;
-          } catch (instructorError) {
-            console.log('No instructor found or error:', instructorError.message);
-            course.instructor = null;
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            },
+            chapters: {
+              select: {
+                id: true,
+                title: true,
+                order: true,
+                createdAt: true
+              },
+              orderBy: {
+                order: 'asc'
+              }
+            }
           }
-        } else if (course) {
-          course.instructor = null;
-        }
-        
-        order.course = course;
-      }
-
-      // Get shipping data
-      const shipping = await prisma.shipping.findFirst({
-        where: { orderId: id }
-      });
-      order.shipping = shipping;
-
-      // Get coupon data if applicable
-      if (basicOrder.couponId) {
-        const coupon = await prisma.coupon.findUnique({
-          where: { id: basicOrder.couponId },
+        },
+        payment: true, // Get all payment fields including slip analysis data
+        shipping: true, // Get all shipping fields
+        coupon: {
           select: {
             id: true,
             code: true,
             name: true,
+            description: true,
             type: true,
-            value: true
+            value: true,
+            minOrderAmount: true,
+            maxDiscount: true,
+            validFrom: true,
+            validUntil: true,
+            applicableType: true
           }
-        });
-        order.coupon = coupon;
+        },
+        items: {
+          select: {
+            id: true,
+            itemType: true,
+            itemId: true,
+            title: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true,
+            createdAt: true
+          }
+        }
       }
+    });
 
-    } catch (relationError) {
-      console.error('Error fetching relations:', relationError);
-      // Continue with basic order data
+    if (!order) {
+      return NextResponse.json(
+        { success: false, error: 'ไม่พบคำสั่งซื้อ' },
+        { status: 404 }
+      );
     }
-
-    console.log('Order data prepared successfully');
 
     return NextResponse.json({
       success: true,
