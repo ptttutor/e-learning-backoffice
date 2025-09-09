@@ -14,6 +14,8 @@ import {
   FilterOutlined,
   ClearOutlined,
   BookOutlined,
+  BarChartOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -114,15 +116,15 @@ export default function ChapterFilters({
             <BookOutlined style={{ color: "#1890ff" }} />
             {searchInput && (
               <Text type="secondary">
-                🔍 ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
+                <SearchOutlined /> ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
               </Text>
             )}
             {filters.minOrder && (
-              <Text type="secondary">📊 ลำดับต่ำสุด: {filters.minOrder}</Text>
+              <Text type="secondary"><BarChartOutlined /> ลำดับต่ำสุด: {filters.minOrder}</Text>
             )}
             {filters.sortBy && filters.sortBy !== "order_asc" && (
               <Text type="secondary">
-                🔄 เรียงตาม: {getSortLabel(filters.sortBy)}
+                <SortAscendingOutlined /> เรียงตาม: {getSortLabel(filters.sortBy)}
               </Text>
             )}
             {activeFiltersCount === 0 && (

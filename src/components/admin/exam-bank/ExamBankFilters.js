@@ -13,6 +13,9 @@ import {
   FilterOutlined,
   ReloadOutlined,
   BookOutlined,
+  FolderOutlined,
+  BarChartOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -178,23 +181,23 @@ export default function ExamBankFilters({
               <BookOutlined style={{ color: "#1890ff" }} />
               {searchInput && (
                 <Text type="secondary">
-                  🔍 ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
+                  <SearchOutlined /> ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
                 </Text>
               )}
               {filters.categoryId && (
                 <Text type="secondary">
-                  📂 หมวดหมู่: <strong>{categories.find(c => c.id === filters.categoryId)?.name}</strong>
+                  <FolderOutlined /> หมวดหมู่: <strong>{categories.find(c => c.id === filters.categoryId)?.name}</strong>
                 </Text>
               )}
               {filters.minFiles && (
-                <Text type="secondary">📊 ไฟล์ขั้นต่ำ: {filters.minFiles}</Text>
+                <Text type="secondary"><BarChartOutlined /> ไฟล์ขั้นต่ำ: {filters.minFiles}</Text>
               )}
               {filters.maxFiles && (
-                <Text type="secondary">📊 ไฟล์สูงสุด: {filters.maxFiles}</Text>
+                <Text type="secondary"><BarChartOutlined /> ไฟล์สูงสุด: {filters.maxFiles}</Text>
               )}
               {filters.sortBy && filters.sortBy !== "createdAt" && (
                 <Text type="secondary">
-                  🔄 เรียงตาม: {getSortLabel(filters.sortBy)}
+                  <SortAscendingOutlined /> เรียงตาม: {getSortLabel(filters.sortBy)}
                 </Text>
               )}
               {activeFiltersCount === 0 && (

@@ -70,7 +70,7 @@ export default function DeleteModal({
               borderRadius: 6 
             }}>
               <Text type="warning">
-                ⚠️ ไม่สามารถลบคูปองที่มีการใช้งานแล้วได้
+                <ExclamationCircleOutlined /> ไม่สามารถลบคูปองที่มีการใช้งานแล้วได้
               </Text>
             </div>
           ) : (
@@ -81,7 +81,7 @@ export default function DeleteModal({
               borderRadius: 6 
             }}>
               <Text type="danger">
-                ⚠️ การลบจะไม่สามารถกู้คืนได้ กรุณายืนยันอีกครั้ง
+                <ExclamationCircleOutlined /> การลบจะไม่สามารถกู้คืนได้ กรุณายืนยันอีกครั้ง
               </Text>
             </div>
           )}

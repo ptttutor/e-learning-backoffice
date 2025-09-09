@@ -102,7 +102,7 @@ export default function DeleteModal({
             }}
           >
             <Text type="danger" strong>
-              ⚠️ การลบ Chapter จะลบเนื้อหาทั้งหมดใน Chapter นี้ด้วย
+              <ExclamationCircleOutlined /> การลบ Chapter จะลบเนื้อหาทั้งหมดใน Chapter นี้ด้วย
             </Text>
           </div>
 

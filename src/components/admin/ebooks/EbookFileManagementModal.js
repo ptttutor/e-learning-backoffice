@@ -26,6 +26,7 @@ import {
   DownloadOutlined,
   CalendarOutlined,
   BookOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -209,7 +210,7 @@ export default function EbookFileManagementModal({
             marginBottom: '16px'
           }}>
             <Text style={{ color: '#fa8c16', fontSize: '14px' }}>
-              ⚠️ <strong>ข้อควรระวัง:</strong> ไฟล์ที่อัปโหลดที่นี่จะเป็นไฟล์สำหรับลูกค้าดาวน์โหลด กรุณาตรวจสอบคุณภาพและความถูกต้อง
+              <ExclamationCircleOutlined /> <strong>ข้อควรระวัง:</strong> ไฟล์ที่อัปโหลดที่นี่จะเป็นไฟล์สำหรับลูกค้าดาวน์โหลด กรุณาตรวจสอบคุณภาพและความถูกต้อง
             </Text>
           </div>
           

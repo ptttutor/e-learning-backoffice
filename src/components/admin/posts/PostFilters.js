@@ -18,6 +18,8 @@ import {
   UserOutlined,
   TagOutlined,
   CalendarOutlined,
+  FolderOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons";
 import dayjs from 'dayjs';
 
@@ -191,22 +193,22 @@ export default function PostFilters({
             <FileTextOutlined style={{ color: "#1890ff" }} />
             {searchInput && (
               <Text type="secondary">
-                🔍 ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
+                                <SearchOutlined /> ค้นหา: &quot;<strong>{searchInput}</strong>&quot;
               </Text>
             )}
             {filters.postTypeId && (
               <Text type="secondary">
-                📂 ประเภท: <strong>{postTypes.find(t => t.id === filters.postTypeId)?.name}</strong>
+                                <FolderOutlined /> ประเภท: <strong>{postTypes.find(t => t.id === filters.postTypeId)?.name}</strong>
               </Text>
             )}
             {filters.authorId && (
               <Text type="secondary">
-                👤 ผู้เขียน: <strong>{authors.find(a => a.id === filters.authorId)?.name}</strong>
+                <UserOutlined /> ผู้เขียน: <strong>{authors.find(a => a.id === filters.authorId)?.name}</strong>
               </Text>
             )}
             {(filters.dateFrom || filters.dateTo) && (
               <Text type="secondary">
-                📅 วันที่: <strong>
+                <CalendarOutlined /> วันที่: <strong>
                   {filters.dateFrom && dayjs(filters.dateFrom).format('DD/MM/YYYY')} 
                   {filters.dateFrom && filters.dateTo && ' - '}
                   {filters.dateTo && dayjs(filters.dateTo).format('DD/MM/YYYY')}
@@ -215,7 +217,7 @@ export default function PostFilters({
             )}
             {filters.sortBy && filters.sortBy !== "created_desc" && (
               <Text type="secondary">
-                🔄 เรียงตาม: {getSortLabel(filters.sortBy)}
+                <SortAscendingOutlined /> เรียงตาม: {getSortLabel(filters.sortBy)}
               </Text>
             )}
             {activeFiltersCount === 0 && (

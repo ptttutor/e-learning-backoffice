@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Select, DatePicker, Row, Col, Statistic, Spin, message, Space, Typography } from 'antd';
 import { Line } from '@ant-design/plots';
-import { DollarOutlined, ShoppingCartOutlined, BookOutlined, RiseOutlined, BarChartOutlined } from '@ant-design/icons';
+import { DollarOutlined, ShoppingCartOutlined, BookOutlined, RiseOutlined, BarChartOutlined, CalendarOutlined, ReadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 
@@ -211,9 +211,9 @@ const SalesChart = () => {
               style={{ width: '100%' }}
               size="small"
             >
-              <Option value="daily">📅 รายวัน</Option>
-              <Option value="monthly">📊 รายเดือน</Option>
-              <Option value="yearly">📈 รายปี</Option>
+              <Option value="daily"><CalendarOutlined /> รายวัน</Option>
+              <Option value="monthly"><BarChartOutlined /> รายเดือน</Option>
+              <Option value="yearly"><RiseOutlined /> รายปี</Option>
             </Select>
           </div>
         </Col>
@@ -242,15 +242,16 @@ const SalesChart = () => {
             padding: '16px',
             marginBottom: '20px'
           }}>
-            <Typography.Text style={{ 
+            <Space style={{ 
               display: 'block', 
               marginBottom: '12px', 
               fontSize: '14px', 
               fontWeight: '600',
               color: '#434343'
             }}>
-              📊 สถิติการขาย
-            </Typography.Text>
+              <BarChartOutlined style={{ color: '#434343' }} />
+              <span>สถิติการขาย</span>
+            </Space>
             <Row gutter={[12, 12]}>
               <Col xs={12} sm={8} lg={4}>
                 <div style={{
@@ -307,7 +308,7 @@ const SalesChart = () => {
                   minHeight: '80px'
                 }}>
                   <div style={{ color: '#722ed1', fontSize: '16px', marginBottom: '4px' }}>
-                    💰
+                    <DollarOutlined />
                   </div>
                   <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                     รายได้ Course
@@ -332,7 +333,7 @@ const SalesChart = () => {
                   minHeight: '80px'
                 }}>
                   <div style={{ color: '#fa541c', fontSize: '16px', marginBottom: '4px' }}>
-                    📚
+                    <BookOutlined />
                   </div>
                   <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                     รายได้ E-book
@@ -379,7 +380,7 @@ const SalesChart = () => {
                   minHeight: '80px'
                 }}>
                   <div style={{ color: '#eb2f96', fontSize: '16px', marginBottom: '4px' }}>
-                    📖
+                    <ReadOutlined />
                   </div>
                   <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
                     E-book ที่ขายได้

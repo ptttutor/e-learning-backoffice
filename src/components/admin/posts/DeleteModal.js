@@ -1,6 +1,6 @@
 "use client";
 import { Modal, Button, Typography, Space, Tag, Avatar } from "antd";
-import { DeleteOutlined, FileTextOutlined, StarOutlined } from "@ant-design/icons";
+import { DeleteOutlined, FileTextOutlined, StarOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -102,7 +102,7 @@ export default function DeleteModal({
             </div>
           </div>
           <p style={{ color: "#ff4d4f", marginTop: "12px", marginBottom: 0 }}>
-            ⚠️ การดำเนินการนี้ไม่สามารถยกเลิกได้
+            <ExclamationCircleOutlined /> การดำเนินการนี้ไม่สามารถยกเลิกได้
           </p>
         </div>
       )}

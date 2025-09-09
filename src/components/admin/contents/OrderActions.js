@@ -6,6 +6,7 @@ import {
   UndoOutlined,
   ReloadOutlined,
   WarningFilled,
+  DragOutlined,
 } from "@ant-design/icons";
 
 export default function OrderActions({
@@ -77,7 +78,7 @@ export default function OrderActions({
             </>
           ) : (
             <>
-              🖱️ <strong>วิธีใช้:</strong> คลิกและลากที่กล่องสีฟ้า
+              <DragOutlined /> <strong>วิธีใช้:</strong> คลิกและลากที่กล่องสีฟ้า
               เพื่อเรียงลำดับเนื้อหา (ลากอย่างน้อย 8px)
             </>
           )}

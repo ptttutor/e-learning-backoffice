@@ -13,6 +13,7 @@ import {
   CloudUploadOutlined,
   FileOutlined,
   FilePdfOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -148,7 +149,7 @@ export default function EbookTable({
           <Tag color="processing">{record.format}</Tag>
           {record.isPhysical && (
             <Tag color="orange" style={{ fontSize: "10px" }}>
-              📦 กายภาพ
+              <InboxOutlined /> กายภาพ
             </Tag>
           )}
           {record.pageCount && (
