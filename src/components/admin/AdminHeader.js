@@ -1,14 +1,12 @@
 "use client";
 
-import { Button, Avatar, Dropdown, Space, Badge, Typography } from "antd";
+import { Button, Avatar, Dropdown, Space, Typography } from "antd";
 import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
   SettingOutlined,
-  BellOutlined,
-  MailOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -16,19 +14,19 @@ const { Text } = Typography;
 export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
   // User menu items
   const userMenuItems = [
-    {
-      key: 'profile',
-      label: 'ข้อมูลส่วนตัว',
-      icon: <UserOutlined />,
-    },
-    {
-      key: 'settings',
-      label: 'การตั้งค่า',
-      icon: <SettingOutlined />,
-    },
-    {
-      type: 'divider',
-    },
+    // {
+    //   key: 'profile',
+    //   label: 'ข้อมูลส่วนตัว',
+    //   icon: <UserOutlined />,
+    // },
+    // {
+    //   key: 'settings',
+    //   label: 'การตั้งค่า',
+    //   icon: <SettingOutlined />,
+    // },
+    // {
+    //   type: 'divider',
+    // },
     {
       key: 'logout',
       label: 'ออกจากระบบ',
@@ -55,24 +53,6 @@ export default function AdminHeader({ collapsed, onToggle, user, onLogout }) {
 
       {/* Right side - User info and actions */}
       <Space size="middle">
-        {/* Notifications */}
-        <Badge count={5} size="small">
-          <Button
-            type="text"
-            icon={<BellOutlined style={{ fontSize: '18px' }} />}
-            style={{ height: '40px', width: '40px' }}
-          />
-        </Badge>
-
-        {/* Messages */}
-        <Badge count={2} size="small">
-          <Button
-            type="text"
-            icon={<MailOutlined style={{ fontSize: '18px' }} />}
-            style={{ height: '40px', width: '40px' }}
-          />
-        </Badge>
-
         {/* User Profile Dropdown */}
         <Dropdown
           menu={{
