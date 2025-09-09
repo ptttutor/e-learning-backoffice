@@ -1,9 +1,10 @@
 "use client";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import "antd/dist/reset.css";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SessionProvider } from "next-auth/react";
+import { AntdRegistry } from '@ant-design/nextjs-registry';
+import { AntdConfigProvider } from '../lib/antd';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,13 @@ export default function RootLayout({ children }) {
       </head>
       <body style={{ fontFamily: "var(--font-geist-sans)" }}>
         <SessionProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <AntdRegistry>
+              <AntdConfigProvider>
+                {children}
+              </AntdConfigProvider>
+            </AntdRegistry>
+          </AuthProvider>
         </SessionProvider>
       </body>
     </html>

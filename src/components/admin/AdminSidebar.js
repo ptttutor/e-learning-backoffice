@@ -3,6 +3,7 @@
 import { Menu, Typography } from "antd";
 import {
   DashboardOutlined,
+  DollarOutlined,
   ShoppingCartOutlined,
   CarOutlined,
   BookOutlined,

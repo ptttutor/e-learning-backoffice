@@ -1,206 +1,175 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
-
-// GET - ดึงสถิติสำหรับ dashboard
 export async function GET(request) {
   try {
-    // Get total orders
-    const totalOrders = await prisma.order.count();
 
-    // Get total revenue (only completed orders)
-    const revenueResult = await prisma.order.aggregate({
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '30'; // days
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(period));
+
+    // สถิติ Orders
+    const [totalOrders, completedOrders, pendingOrders] = await Promise.all([
+      prisma.order.count({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      }),
+      prisma.order.count({
+        where: {
+          status: 'COMPLETED',
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      }),
+      prisma.order.count({
+        where: {
+          status: {
+            in: ['PENDING', 'PENDING_PAYMENT', 'PENDING_VERIFICATION']
+          },
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      })
+    ]);
+
+    // สถิติรายได้
+    const revenueData = await prisma.order.aggregate({
       where: {
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
       },
       _sum: {
         total: true
       }
     });
-    const totalRevenue = revenueResult._sum.total || 0;
 
-    // Get total customers
-    const totalCustomers = await prisma.user.count({
-      where: {
-        role: 'STUDENT'
-      }
-    });
-
-    // Get total products (ebooks + courses)
-    const [totalEbooks, totalCourses] = await Promise.all([
-      prisma.ebook.count({
+    // สถิติ Users
+    const [totalUsers, newUsers] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({
         where: {
-          isActive: true
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
         }
-      }),
+      })
+    ]);
+
+    // สถิติ Courses
+    const [totalCourses, publishedCourses, draftCourses] = await Promise.all([
+      prisma.course.count(),
       prisma.course.count({
         where: {
           status: 'PUBLISHED'
         }
+      }),
+      prisma.course.count({
+        where: {
+          status: 'DRAFT'
+        }
       })
     ]);
-    const totalProducts = totalEbooks + totalCourses;
 
-    // Get pending orders (waiting for payment verification)
-    const pendingOrders = await prisma.order.count({
-      where: {
-        status: 'PENDING_PAYMENT'
-      }
-    });
-
-    // Get completed orders
-    const completedOrders = await prisma.order.count({
-      where: {
-        status: 'COMPLETED'
-      }
-    });
-
-    // Get orders by payment method
-    const paymentMethods = await prisma.payment.groupBy({
-      by: ['method'],
-      _count: {
-        method: true
-      }
-    });
-
-    // Get monthly revenue (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const monthlyRevenue = await prisma.order.groupBy({
-      by: ['createdAt'],
-      where: {
-        status: 'COMPLETED',
-        createdAt: {
-          gte: sixMonthsAgo
+    // สถิติ Enrollments
+    const [totalEnrollments, activeEnrollments] = await Promise.all([
+      prisma.enrollment.count({
+        where: {
+          enrolledAt: {
+            gte: startDate,
+            lte: endDate
+          }
         }
-      },
-      _sum: {
-        total: true
-      }
-    });
+      }),
+      prisma.enrollment.count({
+        where: {
+          status: 'ACTIVE',
+          enrolledAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      })
+    ]);
 
-    // Process monthly revenue data
-    const monthlyRevenueData = [];
-    for (let i = 5; i >= 0; i--) {
+    // Revenue trend (รายได้ 7 วันล่าสุด)
+    const revenueTrend = [];
+    for (let i = 6; i >= 0; i--) {
       const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
       
-      const monthRevenue = monthlyRevenue
-        .filter(item => {
-          const itemDate = new Date(item.createdAt);
-          const itemMonthKey = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}`;
-          return itemMonthKey === monthKey;
-        })
-        .reduce((sum, item) => sum + (item._sum.total || 0), 0);
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
 
-      monthlyRevenueData.push({
-        month: date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short' }),
-        revenue: monthRevenue
+      const dailyRevenue = await prisma.order.aggregate({
+        where: {
+          status: 'COMPLETED',
+          createdAt: {
+            gte: date,
+            lt: nextDate
+          }
+        },
+        _sum: {
+          total: true
+        }
+      });
+
+      revenueTrend.push({
+        date: date.toISOString().split('T')[0],
+        revenue: dailyRevenue._sum.total || 0
       });
     }
-
-    // Get top selling products
-    const topEbooks = await prisma.order.groupBy({
-      by: ['ebookId'],
-      where: {
-        status: 'COMPLETED',
-        orderType: 'EBOOK',
-        ebookId: {
-          not: null
-        }
-      },
-      _count: {
-        ebookId: true
-      },
-      orderBy: {
-        _count: {
-          ebookId: 'desc'
-        }
-      },
-      take: 5
-    });
-
-    const topCourses = await prisma.order.groupBy({
-      by: ['courseId'],
-      where: {
-        status: 'COMPLETED',
-        orderType: 'COURSE',
-        courseId: {
-          not: null
-        }
-      },
-      _count: {
-        courseId: true
-      },
-      orderBy: {
-        _count: {
-          courseId: 'desc'
-        }
-      },
-      take: 5
-    });
-
-    // Get product details for top selling items
-    const topEbookDetails = await Promise.all(
-      topEbooks.map(async (item) => {
-        const ebook = await prisma.ebook.findUnique({
-          where: { id: item.ebookId },
-          select: { id: true, title: true, author: true, coverImageUrl: true }
-        });
-        return {
-          ...ebook,
-          type: 'ebook',
-          sales: item._count.ebookId
-        };
-      })
-    );
-
-    const topCourseDetails = await Promise.all(
-      topCourses.map(async (item) => {
-        const course = await prisma.course.findUnique({
-          where: { id: item.courseId },
-          select: { 
-            id: true, 
-            title: true, 
-            instructor: { 
-              select: { name: true } 
-            } 
-          }
-        });
-        return {
-          ...course,
-          type: 'course',
-          sales: item._count.courseId
-        };
-      })
-    );
-
-    const topProducts = [...topEbookDetails, ...topCourseDetails]
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 10);
 
     return NextResponse.json({
       success: true,
       data: {
-        totalOrders,
-        totalRevenue,
-        totalCustomers,
-        totalProducts,
-        pendingOrders,
-        completedOrders,
-        paymentMethods,
-        monthlyRevenue: monthlyRevenueData,
-        topProducts
+        period: parseInt(period),
+        stats: {
+          orders: {
+            total: totalOrders,
+            completed: completedOrders,
+            pending: pendingOrders
+          },
+          revenue: {
+            total: revenueData._sum.total || 0,
+            trend: revenueTrend
+          },
+          users: {
+            total: totalUsers,
+            new: newUsers
+          },
+          courses: {
+            total: totalCourses,
+            published: publishedCourses,
+            draft: draftCourses
+          },
+          enrollments: {
+            total: totalEnrollments,
+            active: activeEnrollments
+          }
+        }
       }
     });
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
     return NextResponse.json(
-      { success: false, error: 'เกิดข้อผิดพลาดในการดึงข้อมูลสถิติ' },
+      { error: 'Failed to fetch dashboard statistics' },
       { status: 500 }
     );
   }
