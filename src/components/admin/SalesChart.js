@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, DatePicker, Row, Col, Statistic, Spin, message } from 'antd';
+import { Card, Select, DatePicker, Row, Col, Statistic, Spin, message, Space, Typography } from 'antd';
 import { Line } from '@ant-design/plots';
-import { DollarOutlined, ShoppingCartOutlined, BookOutlined, RiseOutlined } from '@ant-design/icons';
+import { DollarOutlined, ShoppingCartOutlined, BookOutlined, RiseOutlined, BarChartOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
 
@@ -176,108 +176,225 @@ const SalesChart = () => {
   };
 
   return (
-    <div>
-      <Card title="กราฟยอดขาย" className="mb-4">
-        <Row gutter={[16, 16]} className="mb-4">
-          <Col xs={24} sm={12} md={8}>
+    <Card 
+      title={
+        <Space>
+          <div style={{
+            background: 'linear-gradient(135deg, #1890ff, #722ed1)',
+            borderRadius: '8px',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <BarChartOutlined style={{ color: '#fff', fontSize: '18px' }} />
+          </div>
+          <span style={{ fontSize: '18px', fontWeight: '600' }}>กราฟยอดขาย Course & E-book</span>
+        </Space>
+      }
+      style={{ 
+        borderRadius: '16px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+        marginBottom: '24px'
+      }}
+      bodyStyle={{ padding: '20px' }}
+    >
+      <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
+        <Col xs={24} sm={12} md={8}>
+          <div>
+            <Typography.Text style={{ marginBottom: '6px', display: 'block', fontWeight: '500', fontSize: '12px', color: '#666' }}>
+              ประเภทกราฟ
+            </Typography.Text>
             <Select
               value={period}
               onChange={handlePeriodChange}
               style={{ width: '100%' }}
-              size="large"
+              size="small"
             >
-              <Option value="daily">รายวัน</Option>
-              <Option value="monthly">รายเดือน</Option>
-              <Option value="yearly">รายปี</Option>
+              <Option value="daily">📅 รายวัน</Option>
+              <Option value="monthly">📊 รายเดือน</Option>
+              <Option value="yearly">📈 รายปี</Option>
             </Select>
-          </Col>
-          <Col xs={24} sm={12} md={16}>
+          </div>
+        </Col>
+        <Col xs={24} sm={12} md={16}>
+          <div>
+            <Typography.Text style={{ marginBottom: '6px', display: 'block', fontWeight: '500', fontSize: '12px', color: '#666' }}>
+              ช่วงวันที่
+            </Typography.Text>
             <RangePicker
               value={dateRange}
               onChange={handleDateRangeChange}
               style={{ width: '100%' }}
-              size="large"
+              size="small"
               placeholder={['วันที่เริ่มต้น', 'วันที่สิ้นสุด']}
               format="DD/MM/YYYY"
               allowClear
             />
-          </Col>
-        </Row>
+          </div>
+        </Col>
+      </Row>
 
         {data && (
-          <Row gutter={[16, 16]} className="mb-4">
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="ยอดขายรวม"
-                  value={data.summary.totalRevenue}
-                  prefix={<DollarOutlined />}
-                  suffix="บาท"
-                  valueStyle={{ color: '#3f8600', fontSize: '16px' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="ออร์เดอร์ทั้งหมด"
-                  value={data.summary.totalOrders}
-                  prefix={<ShoppingCartOutlined />}
-                  valueStyle={{ color: '#1890ff', fontSize: '16px' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="รายได้ Course"
-                  value={data.summary.courseRevenue || 0}
-                  suffix="บาท"
-                  valueStyle={{ color: '#722ed1', fontSize: '16px' }}
-                />
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  ({data.summary.courseOrders || 0} ออร์เดอร์)
+          <div style={{ 
+            background: 'linear-gradient(135deg, #f6f9fc 0%, #f1f4f8 100%)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px'
+          }}>
+            <Typography.Text style={{ 
+              display: 'block', 
+              marginBottom: '12px', 
+              fontSize: '14px', 
+              fontWeight: '600',
+              color: '#434343'
+            }}>
+              📊 สถิติการขาย
+            </Typography.Text>
+            <Row gutter={[12, 12]}>
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#52c41a', fontSize: '16px', marginBottom: '4px' }}>
+                    <DollarOutlined />
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    ยอดขายรวม
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a' }}>
+                    ฿{data.summary.totalRevenue.toLocaleString()}
+                  </div>
                 </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="รายได้ E-book"
-                  value={data.summary.ebookRevenue || 0}
-                  suffix="บาท"
-                  valueStyle={{ color: '#fa541c', fontSize: '16px' }}
-                />
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  ({data.summary.ebookOrders || 0} ออร์เดอร์)
+              </Col>
+              
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#1890ff', fontSize: '16px', marginBottom: '4px' }}>
+                    <ShoppingCartOutlined />
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    ออร์เดอร์ทั้งหมด
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1890ff' }}>
+                    {data.summary.totalOrders.toLocaleString()}
+                  </div>
                 </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="Course ที่ขายได้"
-                  value={data.summary.uniqueCourses || 0}
-                  prefix={<BookOutlined />}
-                  valueStyle={{ color: '#13c2c2', fontSize: '16px' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card size="small">
-                <Statistic
-                  title="E-book ที่ขายได้"
-                  value={data.summary.uniqueEbooks || 0}
-                  prefix={<BookOutlined />}
-                  valueStyle={{ color: '#eb2f96', fontSize: '16px' }}
-                />
-              </Card>
-            </Col>
-          </Row>
+              </Col>
+
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#722ed1', fontSize: '16px', marginBottom: '4px' }}>
+                    💰
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    รายได้ Course
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#722ed1' }}>
+                    ฿{(data.summary.courseRevenue || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#999', marginTop: '1px' }}>
+                    ({data.summary.courseOrders || 0} ออร์เดอร์)
+                  </div>
+                </div>
+              </Col>
+
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#fa541c', fontSize: '16px', marginBottom: '4px' }}>
+                    📚
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    รายได้ E-book
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#fa541c' }}>
+                    ฿{(data.summary.ebookRevenue || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '9px', color: '#999', marginTop: '1px' }}>
+                    ({data.summary.ebookOrders || 0} ออร์เดอร์)
+                  </div>
+                </div>
+              </Col>
+
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#13c2c2', fontSize: '16px', marginBottom: '4px' }}>
+                    <BookOutlined />
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    Course ที่ขายได้
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#13c2c2' }}>
+                    {data.summary.uniqueCourses || 0}
+                  </div>
+                </div>
+              </Col>
+
+              <Col xs={12} sm={8} lg={4}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #f0f0f0',
+                  minHeight: '80px'
+                }}>
+                  <div style={{ color: '#eb2f96', fontSize: '16px', marginBottom: '4px' }}>
+                    📖
+                  </div>
+                  <div style={{ color: '#999', fontSize: '10px', marginBottom: '2px' }}>
+                    E-book ที่ขายได้
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#eb2f96' }}>
+                    {data.summary.uniqueEbooks || 0}
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </div>
         )}
 
         <Spin spinning={loading}>
-          <div style={{ height: '400px', minHeight: '400px' }}>
+          <div style={{ height: '350px', minHeight: '350px' }}>
             {data && getChartData().length > 0 ? (
               <Line {...chartConfig} />
             ) : (
@@ -294,7 +411,6 @@ const SalesChart = () => {
           </div>
         </Spin>
       </Card>
-    </div>
   );
 };
 
