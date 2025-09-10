@@ -25,13 +25,19 @@ export async function GET(request, { params }) {
                 id: true,
                 title: true,
                 author: true,
-                coverImageUrl: true
+                coverImageUrl: true,
+                isPhysical: true,
+                weight: true,
+                dimensions: true
               }
             },
             course: {
               select: {
                 id: true,
                 title: true,
+                isPhysical: true,
+                weight: true,
+                dimensions: true,
                 instructor: {
                   select: {
                     name: true

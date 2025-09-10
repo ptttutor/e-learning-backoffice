@@ -237,6 +237,33 @@ export default function AdminShippingPage() {
       ),
       width: 200,
     },
+    {
+      title: "สินค้า",
+      key: "product",
+      render: (_, record) => {
+        const isEbook = record.order?.ebook;
+        const isCourse = record.order?.course;
+        return (
+          <Space direction="vertical" size={4}>
+            <div>
+              <Text strong style={{ fontSize: "13px" }}>
+                {isEbook ? record.order.ebook.title : 
+                 isCourse ? record.order.course.title : 'ไม่ระบุ'}
+              </Text>
+            </div>
+            <div>
+              <Tag 
+                color={isEbook ? "blue" : isCourse ? "green" : "default"}
+                style={{ fontSize: "11px" }}
+              >
+                {isEbook ? "📚 E-book" : isCourse ? "🎓 Course" : "อื่นๆ"}
+              </Tag>
+            </div>
+          </Space>
+        );
+      },
+      width: 180,
+    },
 
     {
       title: "ที่อยู่",
@@ -564,11 +591,64 @@ export default function AdminShippingPage() {
                     <Text strong>{selectedShipment.order.user?.name}</Text>
                   </Descriptions.Item>
                   <Descriptions.Item label={<Text>สินค้า</Text>} span={2}>
-                    <Text>
-                      {selectedShipment.order.ebook?.title ||
-                        selectedShipment.order.course?.title}
-                    </Text>
+                    <Space direction="vertical" size={4}>
+                      <Space size={8}>
+                        <Text strong>
+                          {selectedShipment.order.ebook?.title ||
+                            selectedShipment.order.course?.title}
+                        </Text>
+                        <Tag 
+                          color={selectedShipment.order.ebook ? "blue" : "green"}
+                          style={{ fontSize: "11px" }}
+                        >
+                          {selectedShipment.order.ebook ? "📚 E-book" : "🎓 Course"}
+                        </Tag>
+                      </Space>
+                      {selectedShipment.order.ebook?.author && (
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          ผู้เขียน: {selectedShipment.order.ebook.author}
+                        </Text>
+                      )}
+                      {selectedShipment.order.course?.instructor && (
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          ผู้สอน: {selectedShipment.order.course.instructor.name}
+                        </Text>
+                      )}
+                    </Space>
                   </Descriptions.Item>
+                  
+                  {/* Product Specifications for Physical Items */}
+                  {(selectedShipment.order.ebook?.isPhysical || selectedShipment.order.course?.isPhysical) && (
+                    <>
+                      {(selectedShipment.order.ebook?.weight || selectedShipment.order.course?.weight) && (
+                        <Descriptions.Item
+                          label={
+                            <Space size={6}>
+                              <Text>น้ำหนัก</Text>
+                            </Space>
+                          }
+                        >
+                          <Text>
+                            {selectedShipment.order.ebook?.weight || selectedShipment.order.course?.weight} กรัม
+                          </Text>
+                        </Descriptions.Item>
+                      )}
+                      {(selectedShipment.order.ebook?.dimensions || selectedShipment.order.course?.dimensions) && (
+                        <Descriptions.Item
+                          label={
+                            <Space size={6}>
+                              <Text>ขนาด</Text>
+                            </Space>
+                          }
+                        >
+                          <Text>
+                            {selectedShipment.order.ebook?.dimensions || selectedShipment.order.course?.dimensions}
+                          </Text>
+                        </Descriptions.Item>
+                      )}
+                    </>
+                  )}
+                  
                   <Descriptions.Item
                     label={
                       <Space size={6}>
