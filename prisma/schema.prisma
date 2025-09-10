@@ -19,6 +19,7 @@ model User {
   updatedAt    DateTime      @updatedAt
   courses      Course[]      @relation("InstructorCourses")
   enrollments  Enrollment[]
+  examAttempts ExamAttempt[]
   orders       Order[]
   posts        Post[]        @relation("AuthorPosts")
   reviews      Review[]
@@ -83,6 +84,7 @@ model Course {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   chapters     Chapter[]
+  exams        Exam[]
   category     Category?    @relation(fields: [categoryId], references: [id])
   instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
   enrollments  Enrollment[]
@@ -579,4 +581,123 @@ model EbookDownload {
   user         User      @relation(fields: [userId], references: [id])
   ebook        Ebook     @relation(fields: [ebookId], references: [id])
   order        Order     @relation(fields: [orderId], references: [id])
+}
+// ระบบข้อสอบพื้นฐาน
+model Exam {
+  id              String       @id @default(uuid())
+  title           String
+  description     String?
+  courseId        String?      // เชื่อมกับ Course
+  examType        ExamType     @default(QUIZ)
+  timeLimit       Int?         // เวลาจำกัด (นาที)
+  totalMarks      Int          @default(0)
+  passingMarks    Int          @default(0)
+  attemptsAllowed Int          @default(1)
+  showResults     Boolean      @default(true)
+  showAnswers     Boolean      @default(false)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  course          Course?      @relation(fields: [courseId], references: [id])
+  questions       Question[]
+  attempts        ExamAttempt[]
+  
+  @@index([courseId])
+}
+
+// คำถาม
+model Question {
+  id              String         @id @default(uuid())
+  examId          String
+  questionText    String
+  questionImage   String?        // รูปประกอบ (optional)
+  questionType    QuestionType   @default(MULTIPLE_CHOICE)
+  marks           Int            @default(1)
+  explanation     String?        // เฉลย
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  exam            Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options         QuestionOption[]
+  answers         StudentAnswer[]
+  
+  @@index([examId])
+}
+
+// ตัวเลือกคำตอบ
+model QuestionOption {
+  id          String   @id @default(uuid())
+  questionId  String
+  optionText  String
+  isCorrect   Boolean  @default(false)
+  order       Int      @default(0)
+  
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@index([questionId])
+}
+
+// การทำข้อสอบ
+model ExamAttempt {
+  id              String          @id @default(uuid())
+  examId          String
+  userId          String
+  status          ExamStatus      @default(IN_PROGRESS)
+  startedAt       DateTime        @default(now())
+  completedAt     DateTime?
+  totalQuestions  Int             @default(0)
+  correctAnswers  Int             @default(0)
+  totalMarks      Int             @default(0)
+  obtainedMarks   Int             @default(0)
+  percentage      Float           @default(0)
+  passed          Boolean         @default(false)
+  
+  exam            Exam            @relation(fields: [examId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  answers         StudentAnswer[]
+  
+  @@unique([examId, userId]) // ทำได้ครั้งเดียว (ถ้าต้องการหลายครั้ง ให้เอาออก)
+  @@index([examId])
+  @@index([userId])
+}
+
+// คำตอบนักเรียน
+model StudentAnswer {
+  id           String      @id @default(uuid())
+  attemptId    String
+  questionId   String
+  optionId     String?     // สำหรับ Multiple Choice
+  textAnswer   String?     // สำหรับ Text Answer
+  isCorrect    Boolean     @default(false)
+  marks        Int         @default(0)
+  answeredAt   DateTime    @default(now())
+  
+  attempt      ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question     Question    @relation(fields: [questionId], references: [id])
+  
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+
+enum ExamType {
+  PRETEST     // ทดสอบก่อนเรียน
+  POSTTEST    // ทดสอบหลังเรียน
+  QUIZ        // แบบทดสอบ
+  MIDTERM     // สอบกลางภาค
+  FINAL       // สอบปลายภาค
+  PRACTICE    // ฝึกทำ
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE  // เลือกตอบ
+  TRUE_FALSE       // จริง/เท็จ
+  SHORT_ANSWER     // ตอบสั้น
+}
+
+enum ExamStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
