@@ -1,30 +1,31 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     
     const postType = await prisma.postType.update({
       where: { id },
       data,
       include: {
-        _count: {
+        posts: {
           select: {
-            posts: true
+            id: true
           }
         }
       }
     });
 
-    return NextResponse.json(postType);
+    return NextResponse.json({
+      success: true,
+      data: postType
+    });
   } catch (error) {
     console.error('Error updating post type:', error);
     return NextResponse.json(
-      { error: 'Failed to update post type' },
+      { success: false, error: 'Failed to update post type' },
       { status: 500 }
     );
   }
@@ -32,7 +33,7 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // ตรวจสอบว่ามีโพสต์ที่ใช้ post type นี้หรือไม่
     const postsCount = await prisma.post.count({
@@ -41,7 +42,7 @@ export async function DELETE(request, { params }) {
 
     if (postsCount > 0) {
       return NextResponse.json(
-        { error: `ไม่สามารถลบได้ เนื่องจากมีโพสต์ ${postsCount} รายการที่ใช้ประเภทนี้` },
+        { success: false, error: `ไม่สามารถลบได้ เนื่องจากมีโพสต์ ${postsCount} รายการที่ใช้ประเภทนี้` },
         { status: 400 }
       );
     }
@@ -54,7 +55,7 @@ export async function DELETE(request, { params }) {
   } catch (error) {
     console.error('Error deleting post type:', error);
     return NextResponse.json(
-      { error: 'Failed to delete post type' },
+      { success: false, error: 'Failed to delete post type' },
       { status: 500 }
     );
   }
