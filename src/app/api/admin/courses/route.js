@@ -139,6 +139,9 @@ export async function POST(req) {
         categoryId: body.categoryId,
         coverImageUrl: body.coverImageUrl,
         coverPublicId: body.coverPublicId,
+        isPhysical: body.isPhysical ?? false,
+        weight: body.weight,
+        dimensions: body.dimensions,
       },
     });
     return NextResponse.json({ success: true, data: course });

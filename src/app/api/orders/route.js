@@ -72,7 +72,9 @@ export async function POST(request) {
       itemPrice = item.discountPrice || item.price || 0;
     }
 
-    const shippingFee = itemType === "ebook" && item.isPhysical ? 50 : 0;
+    // Calculate shipping fee for physical items
+    const shippingFee = ((itemType === "ebook" && item.isPhysical) || 
+                        (itemType === "course" && item.isPhysical)) ? 50 : 0;
     let couponDiscount = 0;
     let couponId = null;
 
@@ -222,7 +224,8 @@ export async function POST(request) {
     });
 
     // Create shipping record if needed
-    if (itemType === "ebook" && item.isPhysical && shippingAddress) {
+    if (((itemType === "ebook" && item.isPhysical) || 
+         (itemType === "course" && item.isPhysical)) && shippingAddress) {
       await prisma.shipping.create({
         data: {
           orderId: order.id,

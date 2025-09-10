@@ -13,6 +13,7 @@ import {
   Typography,
   Tag,
   message,
+  Checkbox,
 } from "antd";
 import {
   PlusOutlined,
@@ -114,6 +115,9 @@ export default function CourseModal({
         categoryId: editing.categoryId,
         coverImageUrl: editing.coverImageUrl,
         coverPublicId: editing.coverPublicId,
+        isPhysical: editing.isPhysical,
+        weight: editing.weight,
+        dimensions: editing.dimensions,
       };
 
       setTimeout(() => {
@@ -279,6 +283,44 @@ export default function CourseModal({
               </Option>
             ))}
           </Select>
+        </Form.Item>
+
+        {/* Physical Product Section */}
+        <Form.Item name="isPhysical" valuePropName="checked">
+          <Checkbox>สินค้าที่ต้องจัดส่ง (เช่น หนังสือประกอบ, CD, DVD)</Checkbox>
+        </Form.Item>
+
+        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.isPhysical !== currentValues.isPhysical}>
+          {({ getFieldValue }) =>
+            getFieldValue('isPhysical') ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px', padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+                <Form.Item
+                  name="weight"
+                  label="น้ำหนัก (กรัม)"
+                  rules={[{ required: getFieldValue('isPhysical'), message: 'กรุณากรอกน้ำหนัก' }]}
+                >
+                  <InputNumber 
+                    placeholder="500" 
+                    style={{ width: '100%' }}
+                    min={0}
+                    step={1}
+                    suffix="กรัม"
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="dimensions"
+                  label="ขนาด (กว้าง x ยาว x สูง)"
+                  rules={[{ required: getFieldValue('isPhysical'), message: 'กรุณากรอกขนาด' }]}
+                >
+                  <Input 
+                    placeholder="เช่น 15 x 21 x 2 (ซม.)" 
+                    style={{ width: '100%' }}
+                  />
+                </Form.Item>
+              </div>
+            ) : null
+          }
         </Form.Item>
 
         <Form.Item>

@@ -109,6 +109,29 @@ export default function CourseTable({
       width: 250,
     },
     {
+      title: "รูปแบบ",
+      key: "format",
+      render: (_, record) => (
+        <Space direction="vertical" size={4}>
+          {record.isFree ? (
+            <Tag color="green" icon={<DollarOutlined />}>
+              ฟรี
+            </Tag>
+          ) : (
+            <Tag color="blue" icon={<DollarOutlined />}>
+              เสียค่าใช้จ่าย
+            </Tag>
+          )}
+          {record.isPhysical && (
+            <Tag color="orange" icon={<TagOutlined />}>
+              ส่งของ
+            </Tag>
+          )}
+        </Space>
+      ),
+      width: 120,
+    },
+    {
       title: "ราคา",
       dataIndex: "price",
       key: "price",
