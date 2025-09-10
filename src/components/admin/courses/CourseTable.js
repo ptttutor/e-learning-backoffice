@@ -9,6 +9,7 @@ import {
   TagOutlined,
   DollarOutlined,
   PictureOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -20,6 +21,7 @@ export default function CourseTable({
   pagination,
   onEdit,
   onDelete,
+  onManageExams,
   onTableChange,
 }) {
   const getStatusColor = (status) => {
@@ -230,6 +232,15 @@ export default function CourseTable({
             style={{ borderRadius: "6px" }}
           >
             ลบ
+          </Button>
+          <Button
+            icon={<FileTextOutlined />}
+            size="small"
+            type="default"
+            onClick={() => onManageExams(record)}
+            style={{ borderRadius: "6px" }}
+          >
+            จัดการข้อสอบ
           </Button>
           <Button
             icon={<SettingOutlined />}

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, Typography, Space, message } from "antd";
 import { BookOutlined, PlusOutlined } from "@ant-design/icons";
 
@@ -15,6 +16,8 @@ import { useCourses } from "@/hooks/useCourses";
 const { Title, Text } = Typography;
 
 export default function CoursesPage() {
+  const router = useRouter();
+  
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -141,6 +144,12 @@ export default function CoursesPage() {
     setEditing(null);
   };
 
+  // Handle manage exams
+  const handleManageExams = (course) => {
+    console.log('Managing exams for course:', course.id);
+    router.push(`/admin/courses/exams/${course.id}`);
+  };
+
   return (
     <div
       style={{
@@ -193,6 +202,7 @@ export default function CoursesPage() {
           pagination={pagination}
           onEdit={openModal}
           onDelete={handleDelete}
+          onManageExams={handleManageExams}
           onTableChange={handleTableChange}
         />
       </Card>
