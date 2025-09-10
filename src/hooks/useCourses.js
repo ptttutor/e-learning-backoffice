@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { message } from "antd";
+import { useMessage } from "./useAntdApp";
 
 export function useCourses() {
+  const message = useMessage();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);

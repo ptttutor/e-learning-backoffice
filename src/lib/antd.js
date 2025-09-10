@@ -1,4 +1,4 @@
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App } from 'antd';
 import thTH from 'antd/locale/th_TH';
 
 export const antdConfig = {
@@ -13,7 +13,9 @@ export const antdConfig = {
 export function AntdConfigProvider({ children }) {
   return (
     <ConfigProvider {...antdConfig}>
-      {children}
+      <App>
+        {children}
+      </App>
     </ConfigProvider>
   );
 }
