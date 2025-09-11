@@ -49,7 +49,7 @@ export default function EbookFilters({
             showSearch
             optionFilterProp="children"
           >
-            {categories.map((category) => (
+            {Array.isArray(categories) && categories.map((category) => (
               <Option key={category.id} value={category.id}>
                 {category.name}
               </Option>

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { message } from 'antd';
+import { useMessage } from './useAntdApp';
 
 export const usePosts = () => {
+  const message = useMessage();
   const [posts, setPosts] = useState([]);
   const [postTypes, setPostTypes] = useState([]);
   const [authors, setAuthors] = useState([]);

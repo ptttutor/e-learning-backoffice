@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { message } from "antd";
+import { useMessage } from "./useAntdApp";
 
 export const useUsers = () => {
+  const message = useMessage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");

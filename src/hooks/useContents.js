@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
+import { useMessage } from "./useAntdApp";
 import {
   KeyboardSensor,
   PointerSensor,
@@ -13,6 +13,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 
 export const useContents = (chapterId) => {
+  const message = useMessage();
   const [contents, setContents] = useState([]); // filtered contents สำหรับแสดงผล
   const [allContents, setAllContents] = useState([]); // contents ทั้งหมดสำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from 'react';
-import { Button, Card, Typography, Space, Spin, Modal, message } from "antd";
+import { Button, Card, Typography, Space, Spin, Modal } from "antd";
 import { BookOutlined, PlusOutlined } from "@ant-design/icons";
+import { useMessage } from "@/hooks/useAntdApp";
 
 // Components
 import EbookFilters from "@/components/admin/ebooks/EbookFilters";
@@ -16,6 +17,7 @@ import { useEbooks } from "@/hooks/useEbooks";
 const { Title, Text } = Typography;
 
 export default function EbooksPage() {
+  const message = useMessage();
   // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEbook, setEditingEbook] = useState(null);

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { message } from 'antd';
+import { useMessage } from './useAntdApp';
 
 export function useEbooks() {
+  const message = useMessage();
   const [ebooks, setEbooks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,9 +77,10 @@ export function useEbooks() {
 
       const response = await fetch(`/api/admin/ebooks?${params}`);
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('API Error:', errorData);
-        message.error(`Failed to fetch ebooks: ${errorData.error}`);
+        message.error(`Failed to fetch ebooks: ${errorData.error || 'Unknown error'}`);
+        setEbooks([]);
         return;
       }
       const data = await response.json();
@@ -111,13 +113,22 @@ export function useEbooks() {
   const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/ebook-categories');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error fetching categories:', errorData);
+        message.error(`Failed to fetch categories: ${errorData.error || 'Unknown error'}`);
+        setCategories([]); // Ensure categories is always an array
+        return;
+      }
       const data = await response.json();
-      setCategories(data);
+      // Ensure data is an array
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
       message.error('เกิดข้อผิดพลาดในการโหลดหมวดหมู่');
+      setCategories([]); // Ensure categories is always an array
     }
-  }, []); // Remove dependency to prevent infinite loop
+  }, [message]); // Add message dependency
 
   // Handle filter change
   const handleFilterChange = useCallback((key, value) => {

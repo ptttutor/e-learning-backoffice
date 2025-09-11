@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { message } from "antd";
+import { useMessage } from "./useAntdApp";
 import {
   KeyboardSensor,
   PointerSensor,
@@ -13,6 +13,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 
 export const useChapters = (courseId) => {
+  const message = useMessage();
   const [chapters, setChapters] = useState([]);
   const [allChapters, setAllChapters] = useState([]); // สำหรับ drag & drop
   const [initialOrder, setInitialOrder] = useState([]);
