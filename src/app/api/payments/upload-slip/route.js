@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadToCloudinary } from "@/lib/cloudinary-utils";
 import { verifySlipWithEasySlip, calculateSlipConfidence } from "@/lib/easyslip";
+import { sendPaymentSuccessNotification } from "@/lib/email";
 
 // POST - อัปโหลด slip และตรวจสอบอัตโนมัติ
 export async function POST(request) {
@@ -237,6 +238,25 @@ export async function POST(request) {
           }
         });
         console.log('✅ Payment marked as completed');
+
+        // ส่ง email notification เมื่ออนุมัติอัตโนมัติ
+        try {
+          console.log("📧 Sending auto-approval email notification...");
+          const emailResult = await sendPaymentSuccessNotification(
+            payment,
+            order,
+            order.user
+          );
+          
+          if (emailResult.success) {
+            console.log("✅ Auto-approval email sent successfully");
+          } else {
+            console.log("⚠️ Failed to send auto-approval email:", emailResult.error);
+          }
+        } catch (emailError) {
+          console.error("❌ Error sending auto-approval email:", emailError);
+          // ไม่ throw error เพราะไม่ต้องการให้การส่ง email ล้มเหลวส่งผลกระทบต่อการประมวลผล
+        }
 
       } catch (enrollError) {
         console.error('❌ Failed to create enrollment:', enrollError);

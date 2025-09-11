@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifySlipWithEasySlip } from "@/lib/easyslip";
+import { sendPaymentSuccessNotification, sendPaymentFailureNotification } from "@/lib/email";
 
 // GET - ตรวจสอบสถานะการชำระเงิน
 export async function GET(request) {
@@ -282,6 +283,44 @@ export async function POST(request) {
     }
 
     console.log("Payment updated:", updatedPayment.id, updatedPayment.status);
+
+    // ส่ง email notification ตามสถานะ
+    try {
+      if (newStatus === "APPROVED" || newStatus === "COMPLETED") {
+        // ส่ง email แจ้งเตือนการชำระเงินสำเร็จ
+        console.log("📧 Sending payment success email notification...");
+        const emailResult = await sendPaymentSuccessNotification(
+          updatedPayment,
+          updatedPayment.order,
+          updatedPayment.order.user
+        );
+        
+        if (emailResult.success) {
+          console.log("✅ Payment success email sent successfully");
+        } else {
+          console.log("⚠️ Failed to send payment success email:", emailResult.error);
+        }
+      } else if (newStatus === "REJECTED" || newStatus === "FAILED") {
+        // ส่ง email แจ้งเตือนการชำระเงินไม่สำเร็จ
+        console.log("📧 Sending payment failure email notification...");
+        const reason = notes || adminNotes || 'ไม่ระบุเหตุผล';
+        const emailResult = await sendPaymentFailureNotification(
+          updatedPayment,
+          updatedPayment.order,
+          updatedPayment.order.user,
+          reason
+        );
+        
+        if (emailResult.success) {
+          console.log("✅ Payment failure email sent successfully");
+        } else {
+          console.log("⚠️ Failed to send payment failure email:", emailResult.error);
+        }
+      }
+    } catch (emailError) {
+      console.error("❌ Error sending email notification:", emailError);
+      // ไม่ throw error เพราะไม่ต้องการให้การส่ง email ล้มเหลวส่งผลกระทบต่อการอัปเดตสถานะ
+    }
 
     return NextResponse.json({
       success: true,

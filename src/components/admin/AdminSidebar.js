@@ -16,6 +16,7 @@ import {
   TagOutlined,
   TagsOutlined,
   UserOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 
@@ -86,6 +87,11 @@ const menuItems = [
     key: "/admin/users",
     label: "ผู้ใช้",
     icon: <UserOutlined />,
+  },
+  {
+    key: "/admin/email-test",
+    label: "ทดสอบ Email",
+    icon: <MailOutlined />,
   },
 ];
 
