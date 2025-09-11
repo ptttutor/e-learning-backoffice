@@ -88,11 +88,11 @@ const menuItems = [
     label: "ผู้ใช้",
     icon: <UserOutlined />,
   },
-  {
-    key: "/admin/email-test",
-    label: "ทดสอบ Email",
-    icon: <MailOutlined />,
-  },
+  // {
+  //   key: "/admin/email-test",
+  //   label: "ทดสอบ Email",
+  //   icon: <MailOutlined />,
+  // },
 ];
 
 export default function AdminSidebar({ collapsed, pathname }) {
