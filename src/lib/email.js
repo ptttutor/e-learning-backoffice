@@ -35,6 +35,134 @@ const createTransporter = () => {
 };
 
 /**
+ * ส่ง email แจ้งเตือนเมื่อได้รับ slip และกำลังตรวจสอบ
+ * @param {Object} paymentData - ข้อมูลการชำระเงิน
+ * @param {Object} orderData - ข้อมูลคำสั่งซื้อ
+ * @param {Object} userData - ข้อมูลผู้ใช้
+ * @param {number} confidence - ความเชื่อมั่นของระบบ
+ */
+export const sendPaymentPendingNotification = async (paymentData, orderData, userData, confidence = 0) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.ADMIN_EMAIL) {
+      console.log('⚠️ Email configuration not found, skipping email notification');
+      return { success: false, error: 'Email configuration not found' };
+    }
+
+    const transporter = createTransporter();
+
+    // สร้างเนื้อหา email
+    const itemName = orderData.course?.title || orderData.ebook?.title || 'ไม่ระบุ';
+    const itemType = orderData.course ? 'คอร์สเรียน' : 'E-book';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #ffc107; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { background-color: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; }
+          .footer { background-color: #6c757d; color: white; padding: 15px; text-align: center; border-radius: 0 0 5px 5px; }
+          .info-row { margin: 10px 0; padding: 5px 0; border-bottom: 1px solid #dee2e6; }
+          .label { font-weight: bold; color: #495057; }
+          .value { color: #212529; }
+          .pending { color: #ffc107; font-weight: bold; }
+          .amount { font-size: 18px; font-weight: bold; color: #007bff; }
+          .note { background-color: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>📋 รอตรวจสอบ Slip การชำระเงิน</h2>
+            <p>มี Slip การชำระเงินใหม่รอการตรวจสอบ</p>
+          </div>
+          
+          <div class="content">
+            <h3>ข้อมูลการชำระเงิน</h3>
+            
+            <div class="info-row">
+              <span class="label">สถานะ:</span>
+              <span class="value pending">⏳ รอการตรวจสอบ</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">หมายเลขคำสั่งซื้อ:</span>
+              <span class="value">${orderData.id}</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">รายการ:</span>
+              <span class="value">${itemName} (${itemType})</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">จำนวนเงิน:</span>
+              <span class="value amount">฿${paymentData.amount.toLocaleString()}</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">วิธีชำระเงิน:</span>
+              <span class="value">${getPaymentMethodText(paymentData.method)}</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">ลูกค้า:</span>
+              <span class="value">${userData.name} (${userData.email})</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">เวลาที่อัปโหลด:</span>
+              <span class="value">${new Date(paymentData.uploadedAt).toLocaleString('th-TH')}</span>
+            </div>
+            
+            <div class="info-row">
+              <span class="label">ความเชื่อมั่นของระบบ:</span>
+              <span class="value">${confidence}%</span>
+            </div>
+            
+            ${paymentData.slipUrl ? `
+            <div class="info-row">
+              <span class="label">Slip URL:</span>
+              <span class="value"><a href="${paymentData.slipUrl}" target="_blank">ดู Slip</a></span>
+            </div>
+            ` : ''}
+            
+            <div class="note">
+              <strong>📝 หมายเหตุ:</strong><br>
+              ${paymentData.notes || 'กรุณาตรวจสอบ Slip การชำระเงินใน Admin Panel'}
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>ระบบ E-Learning - ฟิสิกส์พี่เต้ย</p>
+            <p>เวลาส่ง: ${new Date().toLocaleString('th-TH')}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `"ระบบ E-Learning" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: `📋 รอตรวจสอบ Slip - ${itemName} (฿${paymentData.amount.toLocaleString()})`,
+      html: htmlContent,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Payment pending email sent:', result.messageId);
+    
+    return { success: true, messageId: result.messageId };
+  } catch (error) {
+    console.error('❌ Error sending payment pending email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * ส่ง email แจ้งเตือนการชำระเงินสำเร็จ
  * @param {Object} paymentData - ข้อมูลการชำระเงิน
  * @param {Object} orderData - ข้อมูลคำสั่งซื้อ

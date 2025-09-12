@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadToCloudinary } from "@/lib/cloudinary-utils";
 import { verifySlipWithEasySlip, calculateSlipConfidence } from "@/lib/easyslip";
-import { sendPaymentSuccessNotification } from "@/lib/email";
+import { 
+  sendPaymentSuccessNotification, 
+  sendPaymentFailureNotification,
+  sendPaymentPendingNotification 
+} from "@/lib/email";
 
 // POST - อัปโหลด slip และตรวจสอบอัตโนมัติ
 export async function POST(request) {
@@ -239,28 +243,44 @@ export async function POST(request) {
         });
         console.log('✅ Payment marked as completed');
 
-        // ส่ง email notification เมื่ออนุมัติอัตโนมัติ
-        try {
-          console.log("📧 Sending auto-approval email notification...");
-          const emailResult = await sendPaymentSuccessNotification(
-            payment,
-            order,
-            order.user
-          );
-          
-          if (emailResult.success) {
-            console.log("✅ Auto-approval email sent successfully");
-          } else {
-            console.log("⚠️ Failed to send auto-approval email:", emailResult.error);
-          }
-        } catch (emailError) {
-          console.error("❌ Error sending auto-approval email:", emailError);
-          // ไม่ throw error เพราะไม่ต้องการให้การส่ง email ล้มเหลวส่งผลกระทบต่อการประมวลผล
-        }
-
       } catch (enrollError) {
         console.error('❌ Failed to create enrollment:', enrollError);
       }
+    }
+
+    // ส่ง email notification ตามสถานะ
+    try {
+      console.log("📧 Sending email notification based on payment status...");
+      
+      let emailResult;
+      
+      if (shouldAutoApprove) {
+        // กรณีอนุมัติอัตโนมัติ - ส่ง email แจ้งความสำเร็จ
+        console.log("📧 Sending auto-approval success email...");
+        emailResult = await sendPaymentSuccessNotification(
+          payment,
+          order,
+          order.user
+        );
+      } else {
+        // กรณีรอการตรวจสอบ - ส่ง email แจ้งว่าได้รับ slip แล้ว
+        console.log("📧 Sending pending verification email...");
+        emailResult = await sendPaymentPendingNotification(
+          payment,
+          order,
+          order.user,
+          confidenceCalculation?.score || 0
+        );
+      }
+      
+      if (emailResult?.success) {
+        console.log("✅ Email notification sent successfully");
+      } else {
+        console.log("⚠️ Failed to send email notification:", emailResult?.error);
+      }
+    } catch (emailError) {
+      console.error("❌ Error sending email notification:", emailError);
+      // ไม่ throw error เพราะไม่ต้องการให้การส่ง email ล้มเหลวส่งผลกระทบต่อการประมวลผล
     }
 
     console.log('🎉 Payment slip upload completed successfully!');
