@@ -11,6 +11,7 @@ import {
   PictureOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
+import { getSubjectLabel } from "@/lib/constants";
 
 const { Text } = Typography;
 
@@ -210,6 +211,25 @@ export default function CourseTable({
         </Space>
       ),
       width: 150,
+    },
+    {
+      title: "วิชา",
+      dataIndex: "subject",
+      key: "subject",
+      sorter: true,
+      sortOrder:
+        filters.sortBy === "subject"
+          ? filters.sortOrder === "asc"
+            ? "ascend"
+            : "descend"
+          : null,
+      render: (subject) => (
+        <Space>
+          <BookOutlined style={{ color: "#8c8c8c" }} />
+          <Text>{subject ? getSubjectLabel(subject) : "-"}</Text>
+        </Space>
+      ),
+      width: 180,
     },
     {
       title: "การจัดการ",

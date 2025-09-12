@@ -77,6 +77,7 @@ export async function PUT(req, { params }) {
         status: body.status,
         instructorId: body.instructorId,
         categoryId: body.categoryId,
+        subject: body.subject,
         coverImageUrl: body.coverImageUrl,
         coverPublicId: body.coverPublicId,
         isPhysical: body.isPhysical ?? false,

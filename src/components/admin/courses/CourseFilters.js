@@ -1,5 +1,6 @@
 "use client";
 import { Input, Select, InputNumber, Button, Typography, Space } from "antd";
+import { getSubjectOptions } from "@/lib/constants";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -91,6 +92,26 @@ export default function CourseFilters({
             {categories.map((category) => (
               <Option key={category.id} value={category.id}>
                 {category.name}
+              </Option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Subject Filter */}
+        <div style={{ minWidth: "180px" }}>
+          <Text strong>วิชา:</Text>
+          <Select
+            value={filters.subject}
+            onChange={(value) => onFilterChange("subject", value)}
+            style={{ width: "100%", marginTop: "4px" }}
+            placeholder="เลือกวิชา"
+            allowClear
+            showSearch
+            optionFilterProp="children"
+          >
+            {getSubjectOptions().map((subject) => (
+              <Option key={subject.value} value={subject.value}>
+                {subject.label}
               </Option>
             ))}
           </Select>

@@ -17,6 +17,7 @@ export async function GET(req) {
     const status = searchParams.get("status") || "";
     const instructorId = searchParams.get("instructorId") || "";
     const categoryId = searchParams.get("categoryId") || "";
+    const subject = searchParams.get("subject") || "";
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const sortBy = searchParams.get("sortBy") || "createdAt";
@@ -50,6 +51,11 @@ export async function GET(req) {
     // Category filter
     if (categoryId) {
       where.categoryId = categoryId;
+    }
+
+    // Subject filter
+    if (subject) {
+      where.subject = subject;
     }
 
     // Price range filter
@@ -137,6 +143,7 @@ export async function POST(req) {
         status: body.status ?? "DRAFT",
         instructorId: body.instructorId,
         categoryId: body.categoryId,
+        subject: body.subject,
         coverImageUrl: body.coverImageUrl,
         coverPublicId: body.coverPublicId,
         isPhysical: body.isPhysical ?? false,

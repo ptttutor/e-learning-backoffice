@@ -17,6 +17,7 @@ export function useCourses() {
     status: "ALL",
     instructorId: "",
     categoryId: "",
+    subject: "",
     minPrice: "",
     maxPrice: "",
     sortBy: "createdAt",
@@ -59,6 +60,7 @@ export function useCourses() {
         status: currentFilters.status || "ALL",
         instructorId: currentFilters.instructorId || "",
         categoryId: currentFilters.categoryId || "",
+        subject: currentFilters.subject || "",
         sortBy: currentFilters.sortBy || "createdAt",
         sortOrder: currentFilters.sortOrder || "desc",
       });
@@ -149,6 +151,7 @@ export function useCourses() {
       status: "ALL",
       instructorId: "",
       categoryId: "",
+      subject: "",
       minPrice: "",
       maxPrice: "",
       sortBy: "createdAt",

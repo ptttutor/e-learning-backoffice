@@ -23,7 +23,6 @@ model User {
   orders       Order[]
   posts        Post[]        @relation("AuthorPosts")
   reviews      Review[]
-  ebookReviews EbookReview[]
   couponUsages CouponUsage[]
   downloads    EbookDownload[]
   accounts     Account[]
@@ -76,6 +75,7 @@ model Course {
   status       CourseStatus @default(DRAFT)
   instructorId String
   categoryId   String?
+  subject      Subjects?
   coverImageUrl String?
   coverPublicId String?
   isPhysical   Boolean      @default(false) // หากเป็น physical course (เช่น หนังสือประกอบ, CD, DVD)
@@ -399,7 +399,6 @@ model Ebook {
   category        EbookCategory? @relation(fields: [categoryId], references: [id])
   orders          Order[]
   reviews         Review[]
-  ebookReviews    EbookReview[]
   downloads       EbookDownload[]
 }
 
@@ -414,21 +413,6 @@ model EbookCategory {
 }
 
 
-
-model EbookReview {
-  id        String   @id @default(uuid())
-  ebookId   String
-  userId    String
-  rating    Int      @default(5)
-  comment   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ebook     Ebook    @relation(fields: [ebookId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([ebookId, userId])
-}
 
 model Shipping {
   id                String         @id @default(uuid())
@@ -700,4 +684,25 @@ enum ExamStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum Subjects {
+  Thai                    // ภาษาไทย / 泰语
+  Mathematics             // คณิตศาสตร์ / 数学
+  Science                 // วิทยาศาสตร์ / 科学
+  Physics                 // ฟิสิกส์ / 物理
+  Chemistry               // เคมี / 化学
+  Biology                 // ชีววิทยา / 生物
+  SocialStudies           // สังคมศึกษา ศาสนา วัฒนธรรม / 社会学, 宗教, 文化
+  History                 // ประวัติศาสตร์ / 历史
+  Geography               // ภูมิศาสตร์ / 地理
+  HealthAndPE             // สุขศึกษาและพลศึกษา / 健康与体育
+  Art                     // ศิลปะ / 美术
+  Music                   // ดนตรี / 音乐
+  OccupationsAndTechnology // การงานอาชีพและเทคโนโลยี / 职业与技术
+  ComputerScience         // วิทยาการคอมพิวเตอร์ / 计算机科学
+  ForeignLanguages        // ภาษาต่างประเทศ / 外语
+  English                 // ภาษาอังกฤษ / 英语
+  Chinese                 // ภาษาจีน / 汉语
+  Japanese                // ภาษาญี่ปุ่น / 日语
 }

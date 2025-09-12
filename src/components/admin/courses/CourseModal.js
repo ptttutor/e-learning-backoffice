@@ -21,7 +21,9 @@ import {
   UploadOutlined,
   UserOutlined,
   TagOutlined,
+  BookOutlined,
 } from "@ant-design/icons";
+import { getSubjectOptions } from "@/lib/constants";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -113,6 +115,7 @@ export default function CourseModal({
         status: editing.status,
         instructorId: editing.instructorId,
         categoryId: editing.categoryId,
+        subject: editing.subject,
         coverImageUrl: editing.coverImageUrl,
         coverPublicId: editing.coverPublicId,
         isPhysical: editing.isPhysical,
@@ -279,6 +282,24 @@ export default function CourseModal({
                 <Space>
                   <TagOutlined style={{ color: "#8c8c8c" }} />
                   {cat.name}
+                </Space>
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="subject" label="วิชา">
+          <Select
+            placeholder="เลือกวิชา"
+            allowClear
+            showSearch
+            optionFilterProp="children"
+          >
+            {getSubjectOptions().map((subject) => (
+              <Option key={subject.value} value={subject.value}>
+                <Space>
+                  <BookOutlined style={{ color: "#8c8c8c" }} />
+                  {subject.label}
                 </Space>
               </Option>
             ))}
