@@ -112,7 +112,7 @@ export default function ExamCategoryFilters({
         <Text type="secondary">
           แสดง {currentCount} จาก {totalCount} หมวดหมู่
           {filters.search && (
-            <span> | ค้นหา: "<strong>{filters.search}</strong>"</span>
+            <span> | ค้นหา: &ldquo;<strong>{filters.search}</strong>&rdquo;</span>
           )}
           {filters.isActive !== "" && (
             <span> | สถานะ: <strong>{filters.isActive === "true" ? "เปิดใช้งาน" : "ปิดใช้งาน"}</strong></span>

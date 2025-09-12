@@ -19,6 +19,7 @@ import {
   CalendarOutlined,
   FolderOutlined,
   SortAscendingOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import dayjs from 'dayjs';
 

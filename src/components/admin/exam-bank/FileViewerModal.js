@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Modal, Spin, Alert } from "antd";
 import { FileOutlined } from "@ant-design/icons";
+import Image from "next/image";
 
 export default function FileViewerModal({ open, file, onClose }) {
   const [loading, setLoading] = useState(true);
@@ -54,9 +55,11 @@ export default function FileViewerModal({ open, file, onClose }) {
         ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileName.split('.').pop().toLowerCase())) {
       return (
         <div style={{ textAlign: 'center', padding: '20px' }}>
-          <img
+          <Image
             src={file.filePath}
             alt={fileName}
+            width={800}
+            height={600}
             style={{ 
               maxWidth: '100%', 
               maxHeight: '600px',

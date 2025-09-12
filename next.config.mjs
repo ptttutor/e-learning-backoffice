@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false, // ปิด strict mode เพื่อลด compatibility warnings
-  swcMinify: true,
   experimental: {
     // ใช้ swc compiler
     forceSwcTransforms: true,
