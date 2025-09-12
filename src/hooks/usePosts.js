@@ -113,8 +113,14 @@ export const usePosts = () => {
       setPostTypesLoading(true);
       const response = await fetch('/api/admin/post-types');
       const data = await response.json();
-      // post-types API returns array directly
-      setPostTypes(Array.isArray(data) ? data : []);
+      
+      console.log('Post types API response:', data); // Debug log
+      
+      // API ส่งข้อมูลในรูปแบบ { success: true, data: [...] }
+      const postTypesData = data.success && Array.isArray(data.data) ? data.data : [];
+      console.log('Post types data after processing:', postTypesData); // Debug log
+      
+      setPostTypes(postTypesData);
     } catch (error) {
       console.error('Error fetching post types:', error);
       message.error('เกิดข้อผิดพลาดในการโหลดประเภทโพสต์');

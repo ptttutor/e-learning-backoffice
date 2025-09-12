@@ -15,7 +15,6 @@ import {
   FilterOutlined,
   ClearOutlined,
   FileTextOutlined,
-  UserOutlined,
   TagOutlined,
   CalendarOutlined,
   FolderOutlined,
@@ -37,13 +36,11 @@ export default function PostFilters({
   onPageChange,
   onPageSizeChange,
   postTypes = [], // Default เป็น empty array
-  authors = [],   // Default เป็น empty array
 }) {
   // นับจำนวน active filters
   const activeFiltersCount = [
     searchInput,
     filters.postTypeId,
-    filters.authorId,
     filters.dateFrom || filters.dateTo,
     filters.sortBy !== "created_desc" ? filters.sortBy : null,
   ].filter(Boolean).length;
@@ -89,27 +86,6 @@ export default function PostFilters({
             {Array.isArray(postTypes) && postTypes.map((type) => (
               <Option key={type.id} value={type.id}>
                 {type.name || 'ไม่ระบุประเภท'}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Author Filter */}
-        <div style={{ minWidth: "180px" }}>
-          <Text strong>
-            <UserOutlined style={{ marginRight: "4px" }} />
-            ผู้เขียน:
-          </Text>
-          <Select
-            value={filters.authorId}
-            onChange={(value) => onFilterChange("authorId", value)}
-            style={{ width: "100%", marginTop: "4px" }}
-            placeholder="เลือกผู้เขียน"
-            allowClear
-          >
-            {Array.isArray(authors) && authors.map((author) => (
-              <Option key={author.id} value={author.id}>
-                {author.name || author.email || 'ไม่ระบุชื่อ'}
               </Option>
             ))}
           </Select>

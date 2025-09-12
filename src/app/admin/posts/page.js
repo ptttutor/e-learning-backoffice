@@ -170,7 +170,6 @@ export default function PostsPage() {
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
           postTypes={postTypes}
-          authors={authors}
         />
       </Card>
 
