@@ -264,7 +264,7 @@ export async function POST(request) {
   }
 }
 
-// GET - ดึงรายการ orders ของ user
+// GET -  orders  user
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
