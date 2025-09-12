@@ -7,15 +7,79 @@ const prisma = new PrismaClient();
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
+    
+    // Pagination
     const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 50;
+    const pageSize = parseInt(searchParams.get('pageSize')) || 10;
+    
+    // Filters
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'ALL';
+    const shippingMethod = searchParams.get('shippingMethod') || '';
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    
+    // Sorting
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Build where clause
     const where = {};
-    if (status) {
+    
+    // Status filter
+    if (status !== 'ALL') {
       where.status = status;
     }
+    
+    // Shipping method filter
+    if (shippingMethod) {
+      where.shippingMethod = shippingMethod;
+    }
+    
+    // Date range filter
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    
+    // Search filter
+    if (search) {
+      where.OR = [
+        {
+          orderId: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          recipientName: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          recipientPhone: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          trackingNumber: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }
+      ];
+    }
+
+    // Build orderBy clause
+    const orderBy = {};
+    orderBy[sortBy] = sortOrder;
 
     const shipments = await prisma.shipping.findMany({
       where,
@@ -57,11 +121,9 @@ export async function GET(request) {
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      skip: (page - 1) * limit,
-      take: limit
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize
     });
 
     // Get total count for pagination
@@ -70,12 +132,10 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data: shipments,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limit)
-      }
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page,
+      pageSize
     });
 
   } catch (error) {
