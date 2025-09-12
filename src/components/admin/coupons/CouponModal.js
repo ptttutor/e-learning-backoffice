@@ -117,7 +117,7 @@ export default function CouponModal({
       cancelText="ยกเลิก"
       width={800}
       confirmLoading={loading}
-      destroyOnClose
+      
     >
       <Form
         form={form}

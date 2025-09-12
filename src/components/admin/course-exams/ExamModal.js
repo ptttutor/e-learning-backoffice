@@ -108,7 +108,7 @@ export default function ExamModal({
       footer={null}
       width={700}
       style={{ top: 20 }}
-      destroyOnClose
+      
     >
       <Form
         form={form}

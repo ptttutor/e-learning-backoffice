@@ -74,7 +74,7 @@ export default function PostCategoryModal({
       footer={null}
       width={600}
       style={{ top: 20 }}
-      destroyOnClose
+      
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item

@@ -200,7 +200,7 @@ export default function PostModal({
       footer={null}
       width={900}
       style={{ top: 20 }}
-      destroyOnClose
+      
     >
       <Form 
         form={form} 

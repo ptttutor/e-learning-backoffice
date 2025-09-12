@@ -258,7 +258,7 @@ export default function QuestionModal({
       footer={null}
       width={800}
       style={{ top: 20 }}
-      destroyOnClose
+      
     >
       <Form
         form={form}

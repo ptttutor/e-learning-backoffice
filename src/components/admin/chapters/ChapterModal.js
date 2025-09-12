@@ -48,7 +48,7 @@ export default function ChapterModal({
       footer={null}
       width={500}
       style={{ top: 20 }}
-      destroyOnClose
+      
     >
       <Form
         form={form}
