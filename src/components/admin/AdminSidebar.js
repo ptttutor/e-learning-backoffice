@@ -64,14 +64,14 @@ const menuItems = [
     icon: <FolderOutlined />,
   },
   {
-    key: "/admin/exams",
-    label: "ข้อสอบ",
-    icon: <FileTextOutlined />,
-  },
-  {
     key: "/admin/exam-bank",
     label: "คลังข้อสอบ",
     icon: <BankOutlined />,
+  },
+  {
+    key: "/admin/exam-categories",
+    label: "หมวดหมู่ข้อสอบ",
+    icon: <QuestionCircleOutlined />,
   },
   {
     key: "/admin/posts",
