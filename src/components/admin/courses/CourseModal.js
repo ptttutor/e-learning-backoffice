@@ -91,6 +91,7 @@ export default function CourseModal({
         ...values,
         coverImageUrl: coverImageUrl || values.coverImageUrl,
         price: parseFloat(values.price) || 0,
+        discountPrice: values.discountPrice ? parseFloat(values.discountPrice) : null,
       };
       await onSubmit(courseData);
     } catch (e) {
@@ -112,6 +113,8 @@ export default function CourseModal({
         title: editing.title,
         description: editing.description,
         price: editing.price,
+        discountPrice: editing.discountPrice,
+        sampleVideo: editing.sampleVideo,
         status: editing.status,
         instructorId: editing.instructorId,
         categoryId: editing.categoryId,
@@ -215,6 +218,22 @@ export default function CourseModal({
             }
             parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
           />
+        </Form.Item>
+
+        <Form.Item name="discountPrice" label="ราคาหลังส่วนลด">
+          <InputNumber
+            min={0}
+            style={{ width: "100%" }}
+            placeholder="0"
+            formatter={(value) =>
+              `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            }
+            parser={(value) => value.replace(/฿\s?|(,*)/g, "")}
+          />
+        </Form.Item>
+
+        <Form.Item name="sampleVideo" label="วิดีโอตัวอย่าง">
+          <Input placeholder="URL ของวิดีโอตัวอย่าง (เช่น YouTube, Vimeo)" />
         </Form.Item>
 
         <Form.Item

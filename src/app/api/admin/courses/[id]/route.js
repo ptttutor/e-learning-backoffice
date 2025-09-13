@@ -72,6 +72,8 @@ export async function PUT(req, { params }) {
         title: body.title,
         description: body.description,
         price: parseFloat(body.price) || 0,
+        discountPrice: body.discountPrice ? parseFloat(body.discountPrice) : null,
+        sampleVideo: body.sampleVideo,
         duration: body.duration,
         isFree: body.isFree,
         status: body.status,

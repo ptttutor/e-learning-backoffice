@@ -145,15 +145,25 @@ export default function CourseTable({
             ? "ascend"
             : "descend"
           : null,
-      render: (price) => (
-        <Space>
-          <DollarOutlined style={{ color: "#52c41a" }} />
-          <Text strong style={{ color: "#52c41a" }}>
-            {new Intl.NumberFormat("th-TH", {
-              style: "currency",
-              currency: "THB",
-            }).format(price || 0)}
-          </Text>
+      render: (price, record) => (
+        <Space direction="vertical" size={2}>
+          <Space>
+            <DollarOutlined style={{ color: "#52c41a" }} />
+            <Text strong style={{ color: "#52c41a" }}>
+              {new Intl.NumberFormat("th-TH", {
+                style: "currency",
+                currency: "THB",
+              }).format(price || 0)}
+            </Text>
+          </Space>
+          {record.discountPrice && (
+            <Text type="secondary" delete style={{ fontSize: "12px" }}>
+              {new Intl.NumberFormat("th-TH", {
+                style: "currency",
+                currency: "THB",
+              }).format(record.discountPrice)}
+            </Text>
+          )}
         </Space>
       ),
       width: 150,

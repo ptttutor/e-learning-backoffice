@@ -70,6 +70,8 @@ model Course {
   title        String
   description  String?
   price        Float        @default(0)
+  discountPrice Float?      // ราคาหลังส่วนลด
+  sampleVideo  String?      // URL วิดีโอตัวอย่าง
   duration     Int?
   isFree       Boolean      @default(false)
   status       CourseStatus @default(DRAFT)
