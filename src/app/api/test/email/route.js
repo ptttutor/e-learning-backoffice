@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { sendEmailNotification, sendPaymentSuccessNotification, sendPaymentFailureNotification } from '@/lib/email';
+import { 
+  sendEmailNotification, 
+  sendPaymentSuccessNotification, 
+  sendPaymentFailureNotification,
+  sendPaymentPendingNotification 
+} from '@/lib/email';
 
 // POST - ทดสอบการส่ง email
 export async function POST(request) {
@@ -20,7 +25,7 @@ export async function POST(request) {
         // ทดสอบ email การชำระเงินสำเร็จ
         const mockSuccessPayment = {
           id: 'test-payment-1',
-          amount: 1500,
+          amount: 1200, // ราคาหลังหักส่วนลด
           method: 'BANK_TRANSFER',
           status: 'COMPLETED',
           confidence: 95,
@@ -31,10 +36,19 @@ export async function POST(request) {
 
         const mockSuccessOrder = {
           id: orderId || 'test-order-1',
+          subtotal: 1500, // ราคาเต็ม
+          shippingFee: 0,
+          couponDiscount: 300, // ส่วนลด
+          total: 1200, // ราคาสุดท้าย
+          couponCode: 'SAVE20',
           course: {
             title: 'คอร์สฟิสิกส์ ม.ปลาย - ทดสอบระบบ'
           },
-          total: 1500
+          coupon: {
+            name: 'ส่วนลดพิเศษ 20%',
+            type: 'PERCENTAGE',
+            value: 20
+          }
         };
 
         const mockSuccessUser = {
@@ -49,7 +63,7 @@ export async function POST(request) {
         // ทดสอบ email การชำระเงินไม่สำเร็จ
         const mockFailurePayment = {
           id: 'test-payment-2',
-          amount: 1200,
+          amount: 1050, // ราคาหลังหักส่วนลด
           method: 'BANK_TRANSFER',
           status: 'REJECTED',
           confidence: 25,
@@ -59,10 +73,19 @@ export async function POST(request) {
 
         const mockFailureOrder = {
           id: orderId || 'test-order-2',
+          subtotal: 1200, // ราคาเต็ม
+          shippingFee: 50,
+          couponDiscount: 200, // ส่วนลด
+          total: 1050, // ราคาสุดท้าย
+          couponCode: 'NEWUSER200',
           ebook: {
             title: 'E-book ฟิสิกส์พื้นฐาน - ทดสอบระบบ'
           },
-          total: 1200
+          coupon: {
+            name: 'ส่วนลดสมาชิกใหม่',
+            type: 'FIXED_AMOUNT',
+            value: 200
+          }
         };
 
         const mockFailureUser = {
@@ -75,6 +98,48 @@ export async function POST(request) {
           mockFailureOrder, 
           mockFailureUser,
           'หลักฐานการโอนเงินไม่ชัดเจน หรือจำนวนเงินไม่ตรงกับที่ระบุ'
+        );
+        break;
+
+      case 'pending':
+        // ทดสอบ email รอการตรวจสอบ
+        const mockPendingPayment = {
+          id: 'test-payment-3',
+          amount: 850, // ราคาหลังหักส่วนลด
+          method: 'BANK_TRANSFER',
+          status: 'PENDING_VERIFICATION',
+          slipUrl: 'https://example.com/slip.jpg',
+          uploadedAt: new Date(),
+          notes: 'รอการตรวจสอบ slip โดย admin'
+        };
+
+        const mockPendingOrder = {
+          id: orderId || 'test-order-3',
+          subtotal: 1000, // ราคาเต็ม
+          shippingFee: 0,
+          couponDiscount: 150, // ส่วนลด
+          total: 850, // ราคาสุดท้าย
+          couponCode: 'SAVE15',
+          course: {
+            title: 'คอร์สเคมี ม.ปลาย - ทดสอบระบบ'
+          },
+          coupon: {
+            name: 'ส่วนลดนักเรียน 15%',
+            type: 'PERCENTAGE',
+            value: 15
+          }
+        };
+
+        const mockPendingUser = {
+          name: 'นางสาว ทดสอบ รอตรวจสอบ',
+          email: 'test-pending@example.com'
+        };
+
+        result = await sendPaymentPendingNotification(
+          mockPendingPayment, 
+          mockPendingOrder, 
+          mockPendingUser,
+          75 // confidence score
         );
         break;
 

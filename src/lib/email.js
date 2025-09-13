@@ -70,7 +70,11 @@ export const sendPaymentPendingNotification = async (paymentData, orderData, use
           .value { color: #212529; }
           .pending { color: #ffc107; font-weight: bold; }
           .amount { font-size: 18px; font-weight: bold; color: #007bff; }
+          .discount { font-size: 16px; font-weight: bold; color: #52c41a; }
+          .original-price { text-decoration: line-through; color: #8c8c8c; font-size: 14px; }
           .note { background-color: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 15px 0; }
+          .price-summary { background-color: #e6f7ff; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff; margin: 15px 0; }
+          .coupon-info { background-color: #f6ffed; padding: 15px; border-radius: 5px; border-left: 4px solid #52c41a; margin: 15px 0; }
         </style>
       </head>
       <body>
@@ -98,9 +102,30 @@ export const sendPaymentPendingNotification = async (paymentData, orderData, use
               <span class="value">${itemName} (${itemType})</span>
             </div>
             
-            <div class="info-row">
-              <span class="label">จำนวนเงิน:</span>
-              <span class="value amount">฿${paymentData.amount.toLocaleString()}</span>
+            ${orderData.couponCode ? `
+            <div class="coupon-info">
+              <strong>🎫 ข้อมูลคูปองส่วนลด</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">รหัสคูปอง:</span> <code>${orderData.couponCode}</code><br>
+                ${orderData.coupon?.name ? `<span class="label">ชื่อคูปอง:</span> ${orderData.coupon.name}<br>` : ''}
+                <span class="label">ประเภทส่วนลด:</span> ${getCouponTypeText(orderData.coupon?.type)}<br>
+                <span class="label">ค่าส่วนลด:</span> <span class="discount">-฿${(orderData.couponDiscount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+            ` : ''}
+            
+            <div class="price-summary">
+              <strong>💰 สรุปการชำระเงิน</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">ราคาสินค้า:</span> 
+                ${orderData.couponDiscount > 0 ? 
+                  `<span class="original-price">฿${orderData.subtotal.toLocaleString()}</span>` : 
+                  `฿${orderData.subtotal.toLocaleString()}`
+                }<br>
+                ${orderData.shippingFee > 0 ? `<span class="label">ค่าจัดส่ง:</span> ฿${orderData.shippingFee.toLocaleString()}<br>` : ''}
+                ${orderData.couponDiscount > 0 ? `<span class="label">ส่วนลด:</span> <span class="discount">-฿${orderData.couponDiscount.toLocaleString()}</span><br>` : ''}
+                <span class="label">ยอดที่ต้องชำระ:</span> <span class="amount">฿${paymentData.amount.toLocaleString()}</span>
+              </div>
             </div>
             
             <div class="info-row">
@@ -197,6 +222,10 @@ export const sendPaymentSuccessNotification = async (paymentData, orderData, use
           .value { color: #212529; }
           .success { color: #28a745; font-weight: bold; }
           .amount { font-size: 18px; font-weight: bold; color: #28a745; }
+          .discount { font-size: 16px; font-weight: bold; color: #52c41a; }
+          .original-price { text-decoration: line-through; color: #8c8c8c; font-size: 14px; }
+          .price-summary { background-color: #e6f7ff; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff; margin: 15px 0; }
+          .coupon-info { background-color: #f6ffed; padding: 15px; border-radius: 5px; border-left: 4px solid #52c41a; margin: 15px 0; }
         </style>
       </head>
       <body>
@@ -224,9 +253,30 @@ export const sendPaymentSuccessNotification = async (paymentData, orderData, use
               <span class="value">${itemName} (${itemType})</span>
             </div>
             
-            <div class="info-row">
-              <span class="label">จำนวนเงิน:</span>
-              <span class="value amount">฿${paymentData.amount.toLocaleString()}</span>
+            ${orderData.couponCode ? `
+            <div class="coupon-info">
+              <strong>🎫 ข้อมูลคูปองส่วนลด</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">รหัสคูปอง:</span> <code>${orderData.couponCode}</code><br>
+                ${orderData.coupon?.name ? `<span class="label">ชื่อคูปอง:</span> ${orderData.coupon.name}<br>` : ''}
+                <span class="label">ประเภทส่วนลด:</span> ${getCouponTypeText(orderData.coupon?.type)}<br>
+                <span class="label">ค่าส่วนลด:</span> <span class="discount">-฿${(orderData.couponDiscount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+            ` : ''}
+            
+            <div class="price-summary">
+              <strong>💰 สรุปการชำระเงิน</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">ราคาสินค้า:</span> 
+                ${orderData.couponDiscount > 0 ? 
+                  `<span class="original-price">฿${orderData.subtotal.toLocaleString()}</span>` : 
+                  `฿${orderData.subtotal.toLocaleString()}`
+                }<br>
+                ${orderData.shippingFee > 0 ? `<span class="label">ค่าจัดส่ง:</span> ฿${orderData.shippingFee.toLocaleString()}<br>` : ''}
+                ${orderData.couponDiscount > 0 ? `<span class="label">ส่วนลด:</span> <span class="discount">-฿${orderData.couponDiscount.toLocaleString()}</span><br>` : ''}
+                <span class="label">ยอดที่ชำระ:</span> <span class="amount">฿${paymentData.amount.toLocaleString()}</span>
+              </div>
             </div>
             
             <div class="info-row">
@@ -321,7 +371,11 @@ export const sendPaymentFailureNotification = async (paymentData, orderData, use
           .value { color: #212529; }
           .error { color: #dc3545; font-weight: bold; }
           .amount { font-size: 18px; font-weight: bold; color: #dc3545; }
+          .discount { font-size: 16px; font-weight: bold; color: #52c41a; }
+          .original-price { text-decoration: line-through; color: #8c8c8c; font-size: 14px; }
           .reason { background-color: #f8d7da; padding: 10px; border-radius: 5px; border-left: 4px solid #dc3545; margin: 15px 0; }
+          .price-summary { background-color: #e6f7ff; padding: 15px; border-radius: 5px; border-left: 4px solid #1890ff; margin: 15px 0; }
+          .coupon-info { background-color: #f6ffed; padding: 15px; border-radius: 5px; border-left: 4px solid #52c41a; margin: 15px 0; }
         </style>
       </head>
       <body>
@@ -349,9 +403,30 @@ export const sendPaymentFailureNotification = async (paymentData, orderData, use
               <span class="value">${itemName} (${itemType})</span>
             </div>
             
-            <div class="info-row">
-              <span class="label">จำนวนเงิน:</span>
-              <span class="value amount">฿${paymentData.amount.toLocaleString()}</span>
+            ${orderData.couponCode ? `
+            <div class="coupon-info">
+              <strong>🎫 ข้อมูลคูปองส่วนลด</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">รหัสคูปอง:</span> <code>${orderData.couponCode}</code><br>
+                ${orderData.coupon?.name ? `<span class="label">ชื่อคูปอง:</span> ${orderData.coupon.name}<br>` : ''}
+                <span class="label">ประเภทส่วนลด:</span> ${getCouponTypeText(orderData.coupon?.type)}<br>
+                <span class="label">ค่าส่วนลด:</span> <span class="discount">-฿${(orderData.couponDiscount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+            ` : ''}
+            
+            <div class="price-summary">
+              <strong>💰 สรุปการชำระเงิน</strong><br>
+              <div style="margin-top: 8px;">
+                <span class="label">ราคาสินค้า:</span> 
+                ${orderData.couponDiscount > 0 ? 
+                  `<span class="original-price">฿${orderData.subtotal.toLocaleString()}</span>` : 
+                  `฿${orderData.subtotal.toLocaleString()}`
+                }<br>
+                ${orderData.shippingFee > 0 ? `<span class="label">ค่าจัดส่ง:</span> ฿${orderData.shippingFee.toLocaleString()}<br>` : ''}
+                ${orderData.couponDiscount > 0 ? `<span class="label">ส่วนลด:</span> <span class="discount">-฿${orderData.couponDiscount.toLocaleString()}</span><br>` : ''}
+                <span class="label">ยอดที่ต้องชำระ:</span> <span class="amount">฿${paymentData.amount.toLocaleString()}</span>
+              </div>
             </div>
             
             <div class="info-row">
@@ -415,6 +490,18 @@ export const sendPaymentFailureNotification = async (paymentData, orderData, use
     console.error('❌ Error sending payment failure email:', error);
     return { success: false, error: error.message };
   }
+};
+
+/**
+ * แปลงประเภทคูปองเป็นข้อความภาษาไทย
+ */
+const getCouponTypeText = (type) => {
+  const types = {
+    'PERCENTAGE': 'ส่วนลดเปอร์เซ็นต์ (%)',
+    'FIXED_AMOUNT': 'ส่วนลดจำนวนคงที่ (฿)',
+    'FREE_SHIPPING': 'ฟรีค่าจัดส่ง'
+  };
+  return types[type] || type;
 };
 
 /**

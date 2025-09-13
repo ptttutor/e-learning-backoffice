@@ -274,10 +274,10 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
   if (slipData.sender?.bank || slipData.receiver?.bank) {
     details.bank = {
       match: true,
-      score: 100,
+      score: 30,
       message: `พบข้อมูลธนาคาร: ${slipData.sender?.bank || ''} -> ${slipData.receiver?.bank || ''}`
     };
-    totalScore += 100;
+    totalScore += 30;
   } else {
     details.bank = {
       match: false,

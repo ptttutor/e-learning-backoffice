@@ -103,12 +103,30 @@ export async function POST(request) {
     if (paymentId) {
       payment = await prisma.payment.findUnique({
         where: { id: paymentId },
-        include: { order: { include: { user: true, course: true } } },
+        include: { 
+          order: { 
+            include: { 
+              user: true, 
+              course: true, 
+              ebook: true,
+              coupon: true 
+            } 
+          } 
+        },
       });
     } else {
       payment = await prisma.payment.findFirst({
         where: { orderId },
-        include: { order: { include: { user: true, course: true } } },
+        include: { 
+          order: { 
+            include: { 
+              user: true, 
+              course: true, 
+              ebook: true,
+              coupon: true 
+            } 
+          } 
+        },
         orderBy: { createdAt: "desc" },
       });
     }
@@ -256,6 +274,8 @@ export async function POST(request) {
           include: {
             user: true,
             course: true,
+            ebook: true,
+            coupon: true,
           },
         },
       },

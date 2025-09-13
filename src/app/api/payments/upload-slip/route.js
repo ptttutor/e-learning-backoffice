@@ -62,6 +62,8 @@ export async function POST(request) {
       include: {
         user: true,
         course: true,
+        ebook: true,
+        coupon: true,
         payment: true
       }
     });
@@ -173,7 +175,9 @@ export async function POST(request) {
           order: {
             include: {
               user: true,
-              course: true
+              course: true,
+              ebook: true,
+              coupon: true
             }
           }
         }
@@ -187,7 +191,9 @@ export async function POST(request) {
           order: {
             include: {
               user: true,
-              course: true
+              course: true,
+              ebook: true,
+              coupon: true
             }
           }
         }
