@@ -111,7 +111,8 @@ export const usePosts = () => {
   const fetchPostTypes = useCallback(async () => {
     try {
       setPostTypesLoading(true);
-      const response = await fetch('/api/admin/post-types');
+      // ดึงข้อมูลทั้งหมดโดยไม่ใช้ pagination
+      const response = await fetch('/api/admin/post-types?pageSize=1000&status=ALL');
       const data = await response.json();
       
       console.log('Post types API response:', data); // Debug log
@@ -134,13 +135,14 @@ export const usePosts = () => {
   const fetchAuthors = useCallback(async () => {
     try {
       setAuthorsLoading(true);
-      const response = await fetch('/api/admin/users');
+
+      const response = await fetch('/api/admin/users?pageSize=1000&status=all&role=all');
       const data = await response.json();
       
       console.log('Authors API response:', data); // Debug log
       
-      // ตรวจสอบและแน่ใจว่าได้ array
-      const authorsData = data.success && Array.isArray(data.data) ? data.data : [];
+
+      const authorsData = data.success && data.data?.users ? data.data.users : [];
       console.log('Authors data after processing:', authorsData); // Debug log
       
       setAuthors(authorsData);
