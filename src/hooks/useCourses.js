@@ -114,7 +114,8 @@ export function useCourses() {
     try {
       const res = await fetch("/api/admin/users?role=INSTRUCTOR");
       const data = await res.json();
-      setInstructors((data.data || []).filter((u) => u.role === "INSTRUCTOR"));
+      console.log('data :>> ', data);
+      setInstructors(data.data?.users || []);
     } catch (e) {
       message.error("โหลดข้อมูลผู้สอนไม่สำเร็จ");
     }
