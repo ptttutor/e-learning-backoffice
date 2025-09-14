@@ -247,45 +247,45 @@ export default function CourseTable({
       render: (_, record) => (
         <Space size={8} wrap>
           <Button
+            shape="circle"
             icon={<EditOutlined />}
-            size="small"
+            size="middle"
+            type="primary"
+            style={{ borderRadius: "50%" }}
             onClick={() => onEdit(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            แก้ไข
-          </Button>
+            title="แก้ไข"
+          />
           <Button
+            shape="circle"
             icon={<DeleteOutlined />}
-            size="small"
+            size="middle"
             danger
+            style={{ borderRadius: "50%" }}
             onClick={() => onDelete(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            ลบ
-          </Button>
+            title="ลบ"
+          />
           <Button
+            shape="circle"
             icon={<FileTextOutlined />}
-            size="small"
-            type="default"
+            size="middle"
+            style={{ borderRadius: "50%" }}
             onClick={() => onManageExams(record)}
-            style={{ borderRadius: "6px" }}
-          >
-            จัดการข้อสอบ
-          </Button>
+            title="จัดการข้อสอบ"
+          />
           <Button
+            shape="circle"
             icon={<SettingOutlined />}
-            size="small"
-            type="link"
+            size="middle"
+            type="default"
+            style={{ borderRadius: "50%" }}
             onClick={() =>
               (window.location.href = `/admin/courses/chapter/${record.id}`)
             }
-            style={{ borderRadius: "6px" }}
-          >
-            จัดการ Chapter
-          </Button>
+            title="จัดการ Chapter"
+          />
         </Space>
       ),
-      width: 280,
+      width: 180,
       fixed: "right",
     },
   ];

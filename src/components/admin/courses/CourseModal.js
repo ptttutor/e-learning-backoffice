@@ -38,6 +38,7 @@ export default function CourseModal({
   categories,
   instLoading,
   catLoading,
+  submitting = false,
 }) {
   const [form] = Form.useForm();
   const message = useMessage();
@@ -400,10 +401,19 @@ export default function CourseModal({
               htmlType="submit"
               icon={editing ? <EditOutlined /> : <PlusOutlined />}
               style={{ borderRadius: "6px" }}
+              loading={submitting}
+              disabled={submitting || uploading}
             >
-              {editing ? "อัพเดท" : "สร้าง"}
+              {submitting 
+                ? (editing ? "กำลังอัพเดท..." : "กำลังสร้าง...") 
+                : (editing ? "อัพเดท" : "สร้าง")
+              }
             </Button>
-            <Button onClick={handleCancel} style={{ borderRadius: "6px" }}>
+            <Button 
+              onClick={handleCancel} 
+              style={{ borderRadius: "6px" }}
+              disabled={submitting}
+            >
               ยกเลิก
             </Button>
           </Space>

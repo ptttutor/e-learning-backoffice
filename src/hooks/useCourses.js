@@ -183,6 +183,25 @@ export function useCourses() {
     return () => clearTimeout(timeoutId);
   }, [searchInput, fetchCourses]);
 
+  // Helper functions for optimistic updates
+  const updateCourseInList = useCallback((courseId, updatedData) => {
+    setCourses(prevCourses => 
+      prevCourses.map(course => 
+        course.id === courseId 
+          ? { ...course, ...updatedData }
+          : course
+      )
+    );
+  }, []);
+
+  const addCourseToList = useCallback((newCourse) => {
+    setCourses(prevCourses => [newCourse, ...prevCourses]);
+    setPagination(prev => ({
+      ...prev,
+      totalCount: prev.totalCount + 1
+    }));
+  }, []);
+
   return {
     courses,
     loading,
@@ -198,5 +217,7 @@ export function useCourses() {
     handleFilterChange,
     handleTableChange,
     resetFilters,
+    updateCourseInList,
+    addCourseToList,
   };
 }
