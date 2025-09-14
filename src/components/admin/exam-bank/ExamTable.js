@@ -22,6 +22,8 @@ export default function ExamTable({
   onDelete,
   onManageFiles,
   onTableChange,
+  deleting = false,
+  deletingId = null,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -123,38 +125,46 @@ export default function ExamTable({
     {
       title: "การจัดการ",
       key: "actions",
-      render: (_, record) => (
-        <Space size={8}>
-          <Button
-            type="primary"
-            icon={<CloudUploadOutlined />}
-            size="small"
-            onClick={() => onManageFiles(record)}
-            style={{ borderRadius: "4px" }}
-          >
-            จัดการไฟล์
-          </Button>
-          <Button
-            type="default"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => onEdit(record)}
-            style={{ borderRadius: "4px" }}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            type="primary"
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => onDelete(record)}
-            style={{ borderRadius: "4px" }}
-          >
-            ลบ
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => {
+        const isDeleting = deleting && deletingId === record.id;
+        
+        return (
+          <Space size={8}>
+            <Button
+              type="primary"
+              icon={<CloudUploadOutlined />}
+              size="small"
+              onClick={() => onManageFiles(record)}
+              style={{ borderRadius: "4px" }}
+              disabled={isDeleting}
+            >
+              จัดการไฟล์
+            </Button>
+            <Button
+              type="default"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => onEdit(record)}
+              style={{ borderRadius: "4px" }}
+              disabled={isDeleting}
+            >
+              แก้ไข
+            </Button>
+            <Button
+              type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              onClick={() => onDelete(record)}
+              style={{ borderRadius: "4px" }}
+              loading={isDeleting}
+              disabled={deleting && !isDeleting}
+            >
+              ลบ
+            </Button>
+          </Space>
+        );
+      },
       width: 300,
       fixed: "right",
     },

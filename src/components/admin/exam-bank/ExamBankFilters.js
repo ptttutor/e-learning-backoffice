@@ -28,10 +28,8 @@ export default function ExamBankFilters({
   onFilterChange,
   onReset,
   categories,
-  totalCount,
-  currentCount,
-  pagination,
-  onPageChange,
+  catLoading,
+  pagination = { page: 1, totalPages: 1, totalCount: 0, pageSize: 10 },
 }) {
   // Count active filters
   const activeFiltersCount = Object.values(filters).filter(

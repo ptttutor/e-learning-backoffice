@@ -56,7 +56,16 @@ export function useExamBank() {
 
       if (data.success) {
         setExams(data.data || []);
-        setPagination(data.pagination || {});
+        const paginationData = data.pagination || {};
+        setPagination({
+          page: paginationData.page || 1,
+          pageSize: paginationData.pageSize || 10,
+          totalCount: paginationData.totalCount || 0,
+          totalPages: Math.ceil((paginationData.totalCount || 0) / (paginationData.pageSize || 10)),
+          hasNext: paginationData.page < Math.ceil((paginationData.totalCount || 0) / (paginationData.pageSize || 10)),
+          hasPrev: (paginationData.page || 1) > 1,
+        });
+        console.log('Updated pagination:', paginationData);
       } else {
         message.error(data.error || "โหลดข้อมูลข้อสอบไม่สำเร็จ");
       }
@@ -130,6 +139,37 @@ export function useExamBank() {
 
   // Save exam
   const saveExam = async (examData, editingExam) => {
+    const tempId = `temp-${Date.now()}`;
+    const newExam = {
+      id: editingExam ? editingExam.id : tempId,
+      title: examData.title,
+      description: examData.description,
+      categoryId: examData.categoryId,
+      isActive: examData.isActive !== undefined ? examData.isActive : true,
+      createdAt: editingExam ? editingExam.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      category: categories.find(cat => cat.id === examData.categoryId) || null,
+      files: editingExam ? editingExam.files || [] : [],
+      _count: { files: editingExam ? editingExam._count?.files || 0 : 0 },
+      fileCount: editingExam ? editingExam.fileCount || 0 : 0,
+    };
+
+    // Optimistic update
+    if (editingExam) {
+      // Update existing exam
+      setExams(prevExams => 
+        prevExams.map(exam => exam.id === editingExam.id ? newExam : exam)
+      );
+    } else {
+      // Add new exam at the beginning
+      setExams(prevExams => [newExam, ...prevExams]);
+      // Update pagination count
+      setPagination(prev => ({
+        ...prev,
+        totalCount: prev.totalCount + 1
+      }));
+    }
+
     try {
       const url = editingExam
         ? `/api/admin/exam-bank/${editingExam.id}`
@@ -146,22 +186,76 @@ export function useExamBank() {
       const result = await response.json();
 
       if (result.success) {
-        message.success(editingExam ? "แก้ไขข้อสอบสำเร็จ" : "สร้างข้อสอบสำเร็จ");
-        await fetchExams();
+        // Replace temp data with real data from server
+        if (editingExam) {
+          setExams(prevExams => 
+            prevExams.map(exam => exam.id === editingExam.id ? {
+              ...result.data,
+              category: categories.find(cat => cat.id === result.data.categoryId),
+              files: result.data.files || [],
+              _count: result.data._count || { files: 0 },
+              fileCount: result.data.fileCount || 0
+            } : exam)
+          );
+        } else {
+          setExams(prevExams => 
+            prevExams.map(exam => exam.id === tempId ? {
+              ...result.data,
+              category: categories.find(cat => cat.id === result.data.categoryId),
+              files: result.data.files || [],
+              _count: result.data._count || { files: 0 },
+              fileCount: result.data.fileCount || 0
+            } : exam)
+          );
+        }
         return true;
       } else {
+        // Revert optimistic update on error
+        if (editingExam) {
+          setExams(prevExams => 
+            prevExams.map(exam => exam.id === editingExam.id ? editingExam : exam)
+          );
+        } else {
+          setExams(prevExams => prevExams.filter(exam => exam.id !== tempId));
+          setPagination(prev => ({
+            ...prev,
+            totalCount: Math.max(0, prev.totalCount - 1)
+          }));
+        }
         message.error(result.error || "เกิดข้อผิดพลาด");
         return false;
       }
     } catch (error) {
+      // Revert optimistic update on error
+      if (editingExam) {
+        setExams(prevExams => 
+          prevExams.map(exam => exam.id === editingExam.id ? editingExam : exam)
+        );
+      } else {
+        setExams(prevExams => prevExams.filter(exam => exam.id !== tempId));
+        setPagination(prev => ({
+          ...prev,
+          totalCount: Math.max(0, prev.totalCount - 1)
+        }));
+      }
       console.error("Error saving exam:", error);
       message.error("เกิดข้อผิดพลาดในการบันทึก");
       return false;
     }
   };
 
-  // Delete exam
+  // Delete exam with optimistic update
   const deleteExam = async (examId) => {
+    // Store original exam for potential rollback
+    const examToDelete = exams.find(exam => exam.id === examId);
+    
+    // Optimistic update - remove exam immediately
+    setExams(prevExams => prevExams.filter(exam => exam.id !== examId));
+    setPagination(prev => ({
+      ...prev,
+      totalCount: Math.max(0, prev.totalCount - 1)
+    }));
+
     try {
       const response = await fetch(`/api/admin/exam-bank/${examId}`, {
         method: "DELETE",
@@ -170,14 +264,28 @@ export function useExamBank() {
       const result = await response.json();
 
       if (result.success) {
-        message.success("ลบข้อสอบสำเร็จ");
-        await fetchExams();
         return true;
       } else {
+        // Revert optimistic update on error
+        if (examToDelete) {
+          setExams(prevExams => [...prevExams, examToDelete]);
+          setPagination(prev => ({
+            ...prev,
+            totalCount: prev.totalCount + 1
+          }));
+        }
         message.error(result.error || "เกิดข้อผิดพลาดในการลบ");
         return false;
       }
     } catch (error) {
+      // Revert optimistic update on error
+      if (examToDelete) {
+        setExams(prevExams => [...prevExams, examToDelete]);
+        setPagination(prev => ({
+          ...prev,
+          totalCount: prev.totalCount + 1
+        }));
+      }
       console.error("Error deleting exam:", error);
       message.error("เกิดข้อผิดพลาดในการลบ");
       return false;
@@ -281,6 +389,7 @@ export function useExamBank() {
 
   return {
     exams,
+    setExams,
     loading,
     categories,
     catLoading,

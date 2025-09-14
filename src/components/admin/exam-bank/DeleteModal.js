@@ -107,6 +107,7 @@ export default function DeleteModal({
             <Button
               onClick={onCancel}
               style={{ borderRadius: "6px" }}
+              disabled={loading}
             >
               ยกเลิก
             </Button>
@@ -117,6 +118,7 @@ export default function DeleteModal({
               onClick={onConfirm}
               icon={<DeleteOutlined />}
               style={{ borderRadius: "6px" }}
+              disabled={loading}
             >
               ลบข้อสอบ
             </Button>

@@ -30,10 +30,11 @@ const { Text } = Typography;
 export default function FileManagementModal({
   open,
   exam,
-  examFiles,
+  examFiles = [],
   onCancel,
   onFileUpload,
   onDeleteFile,
+  deletingFileId = null,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -346,6 +347,8 @@ export default function FileManagementModal({
                         icon={<DeleteOutlined />}
                         onClick={() => onDeleteFile(file.id, file.fileName)}
                         style={{ borderRadius: "6px" }}
+                        loading={deletingFileId === file.id}
+                        disabled={deletingFileId !== null}
                       >
                         ลบ
                       </Button>

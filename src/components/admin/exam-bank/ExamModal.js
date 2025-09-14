@@ -27,6 +27,7 @@ export default function ExamModal({
   categories,
   onCancel,
   onSubmit,
+  submitting = false,
 }) {
   const [form] = Form.useForm();
 
@@ -88,6 +89,7 @@ export default function ExamModal({
           <Input
             placeholder="เช่น ข้อสอบฟิสิกส์ ม.6 เทอม 1"
             style={{ borderRadius: "6px" }}
+            disabled={submitting}
           />
         </Form.Item>
 
@@ -104,6 +106,7 @@ export default function ExamModal({
             placeholder="เลือกหมวดหมู่"
             allowClear
             style={{ borderRadius: "6px" }}
+            disabled={submitting}
           >
             {categories.map((category) => (
               <Option key={category.id} value={category.id}>
@@ -127,6 +130,7 @@ export default function ExamModal({
             rows={4}
             placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับข้อสอบนี้"
             style={{ borderRadius: "6px" }}
+            disabled={submitting}
           />
         </Form.Item>
 
@@ -137,12 +141,15 @@ export default function ExamModal({
               htmlType="submit"
               icon={editing ? <EditOutlined /> : <PlusOutlined />}
               style={{ borderRadius: "6px" }}
+              loading={submitting}
+              disabled={submitting}
             >
               {editing ? "อัพเดท" : "สร้าง"}
             </Button>
             <Button
               onClick={onCancel}
               style={{ borderRadius: "6px" }}
+              disabled={submitting}
             >
               ยกเลิก
             </Button>
