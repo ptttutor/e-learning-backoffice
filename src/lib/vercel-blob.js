@@ -213,7 +213,7 @@ export function generateUniqueFilename(originalName, prefix = '') {
  * @param {number} maxSize - Maximum file size in bytes
  * @returns {Object} Validation result
  */
-export function validateFile(file, allowedTypes = [], maxSize = 15 * 1024 * 1024) {
+export function validateFile(file, allowedTypes = [], maxSize = null) {
   const errors = [];
 
   // Check file type
@@ -221,8 +221,8 @@ export function validateFile(file, allowedTypes = [], maxSize = 15 * 1024 * 1024
     errors.push(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
   }
 
-  // Check file size
-  if (file.size > maxSize) {
+  // Check file size only if maxSize is specified
+  if (maxSize !== null && file.size > maxSize) {
     const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1);
     errors.push(`File too large. Maximum size is ${maxSizeMB}MB`);
   }

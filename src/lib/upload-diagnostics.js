@@ -41,11 +41,6 @@ export const uploadDiagnostics = {
   checkFileCompatibility(file) {
     const issues = [];
     
-    // Size checks
-    if (file.size > 15 * 1024 * 1024) {
-      issues.push(`Large file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-    }
-    
     // Type checks
     if (!file.type) {
       issues.push('No MIME type detected');
@@ -75,6 +70,42 @@ export const uploadDiagnostics = {
   },
 
   /**
+   * Create error handler with context
+   */
+  createErrorHandler(componentName, context = {}) {
+    return (error) => {
+      const errorInfo = {
+        component: componentName,
+        context,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      };
+
+      console.error(`❌ Upload error in ${componentName}:`, errorInfo);
+
+      // Provide user-friendly error messages
+      let userMessage = 'เกิดข้อผิดพลาดในการอัพโหลด';
+
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        userMessage = 'เกิดปัญหาการเชื่อมต่อ กรุณาลองใหม่';
+      } else if (error.message.includes('timeout')) {
+        userMessage = 'การอัพโหลดใช้เวลานานเกินไป กรุณาลองใหม่';
+      } else if (error.message.includes('size') || error.message.includes('large')) {
+        userMessage = 'ไฟล์มีขนาดใหญ่เกินไป';
+      } else if (error.message.includes('type') || error.message.includes('format')) {
+        userMessage = 'รูปแบบไฟล์ไม่ถูกต้อง';
+      }
+
+      return {
+        userMessage,
+        technicalError: error.message,
+        errorInfo,
+      };
+    };
+  },
+
+  /**
    * Monitor upload performance
    */
   createPerformanceMonitor() {
@@ -93,6 +124,24 @@ export const uploadDiagnostics = {
         
         console.log(`📊 Progress: ${percent}% (${totalElapsed}ms total, +${progressElapsed}ms)`);
         lastProgressTime = now;
+      },
+      
+      end() {
+        const totalTime = Date.now() - startTime;
+        console.log(`⏱️ Upload operation completed in ${totalTime}ms`);
+        return {
+          duration: totalTime,
+          timestamp: new Date().toISOString(),
+        };
+      },
+
+      getMetrics() {
+        const totalTime = Date.now() - startTime;
+        return {
+          duration: totalTime,
+          startTime: new Date(startTime).toISOString(),
+          currentTime: new Date().toISOString(),
+        };
       },
       
       complete(result) {

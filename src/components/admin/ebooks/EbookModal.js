@@ -12,7 +12,6 @@ import {
   Typography,
   InputNumber,
   Checkbox,
-  message,
   Popconfirm,
 } from "antd";
 import {
@@ -28,6 +27,8 @@ import {
   CheckCircleOutlined,
   BulbOutlined,
 } from "@ant-design/icons";
+import { uploadDiagnostics } from "@/lib/upload-diagnostics";
+import { useMessage } from "@/hooks/useAntdApp";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -42,6 +43,7 @@ export default function EbookModal({
   submitting = false,
 }) {
   const [form] = Form.useForm();
+  const message = useMessage();
   const [uploadingCover, setUploadingCover] = useState(false);
 
   // Handle file upload with confirmation
@@ -100,14 +102,34 @@ export default function EbookModal({
   const handleFileUpload = async (file, type) => {
     if (!file) return;
 
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    uploadData.append('type', type);
+    const monitor = uploadDiagnostics.createPerformanceMonitor();
+    const errorHandler = uploadDiagnostics.createErrorHandler('EbookModal', {
+      component: 'EbookModal',
+      field: type === 'cover' ? 'coverImageUrl' : 'fileUrl',
+      fileType: type
+    });
 
     try {
+      // Check file compatibility first
+      const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
+      if (!compatibilityCheck.compatible) {
+        throw new Error(compatibilityCheck.issues.join(', '));
+      }
+
       if (type === 'cover') {
         setUploadingCover(true);
       }
+
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('type', type);
+
+      console.log('EbookModal Upload starting:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: type,
+        component: 'EbookModal'
+      });
 
       const response = await fetch('/api/upload-blob', {
         method: 'POST',
@@ -117,18 +139,27 @@ export default function EbookModal({
       const result = await response.json();
       
       if (result.success) {
+        monitor.end();
+        console.log('EbookModal Upload success:', {
+          url: result.data.url,
+          compressionInfo: result.data.compressionInfo,
+          performance: monitor.getMetrics(),
+          fileType: type
+        });
+
         if (type === 'cover') {
           form.setFieldsValue({
             coverImageUrl: result.data.url
           });
-          message.success('อัปโหลดรูปปกสำเร็จ');
+          message.success(`อัปโหลดรูปปกสำเร็จ${result.data.compressionInfo?.wasCompressed ? ' (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)' : ''}`);
         }
       } else {
-        message.error('การอัปโหลดไฟล์ล้มเหลว: ' + result.error);
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      message.error('เกิดข้อผิดพลาดในการอัปโหลดไฟล์');
+      console.error('EbookModal Upload error:', error);
+      const handledError = errorHandler(error);
+      message.error(`เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ${handledError.userMessage}`);
     } finally {
       if (type === 'cover') {
         setUploadingCover(false);

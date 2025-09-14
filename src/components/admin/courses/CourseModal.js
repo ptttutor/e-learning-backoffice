@@ -12,7 +12,6 @@ import {
   Image,
   Typography,
   Tag,
-  message,
   Checkbox,
 } from "antd";
 import {
@@ -24,6 +23,8 @@ import {
   BookOutlined,
 } from "@ant-design/icons";
 import { getSubjectOptions } from "@/lib/constants";
+import { uploadDiagnostics } from "@/lib/upload-diagnostics";
+import { useMessage } from "@/hooks/useAntdApp";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -39,17 +40,37 @@ export default function CourseModal({
   catLoading,
 }) {
   const [form] = Form.useForm();
+  const message = useMessage();
   const [uploading, setUploading] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
 
   // Handle cover image upload
   const handleCoverUpload = async (file) => {
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "cover");
+    const monitor = uploadDiagnostics.createPerformanceMonitor();
+    const errorHandler = uploadDiagnostics.createErrorHandler('CourseModal', {
+      component: 'CourseModal',
+      field: 'coverImageUrl',
+      fileType: 'cover'
+    });
 
     try {
+      // Check file compatibility first
+      const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
+      if (!compatibilityCheck.compatible) {
+        throw new Error(compatibilityCheck.issues.join(', '));
+      }
+
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "cover");
+
+      console.log('CourseModal Upload starting:', {
+        fileName: file.name,
+        fileSize: file.size,
+        component: 'CourseModal'
+      });
+
       const response = await fetch("/api/upload-blob", {
         method: "POST",
         body: formData,
@@ -57,17 +78,26 @@ export default function CourseModal({
 
       const result = await response.json();
       if (result.success) {
+        monitor.end();
+        console.log('CourseModal Upload success:', {
+          url: result.data.url,
+          compressionInfo: result.data.compressionInfo,
+          performance: monitor.getMetrics()
+        });
+
         setCoverImageUrl(result.data.url);
         form.setFieldsValue({
           coverImageUrl: result.data.url,
           coverPublicId: result.data.pathname,
         });
-        message.success("อัพโหลดรูปปกสำเร็จ");
+        message.success(`อัพโหลดรูปปกสำเร็จ${result.data.compressionInfo?.wasCompressed ? ' (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)' : ''}`);
       } else {
-        message.error(result.error || "อัพโหลดรูปปกไม่สำเร็จ");
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการอัพโหลด");
+      console.error('CourseModal Upload error:', error);
+      const handledError = errorHandler(error);
+      message.error(`เกิดข้อผิดพลาดในการอัพโหลด: ${handledError.userMessage}`);
     }
     setUploading(false);
     return false;

@@ -13,7 +13,6 @@ import {
   Image,
   Card,
   Upload,
-  message,
   Row,
   Col,
   Divider,
@@ -33,6 +32,8 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import dayjs from 'dayjs';
+import { uploadDiagnostics } from "@/lib/upload-diagnostics";
+import { useMessage } from "@/hooks/useAntdApp";
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -46,6 +47,7 @@ export default function PostModal({
   onSubmit,
 }) {
   const [form] = Form.useForm();
+  const message = useMessage();
   const [uploading, setUploading] = useState(false);
   const [uploadingMobile, setUploadingMobile] = useState(false);
 
@@ -80,13 +82,33 @@ export default function PostModal({
 
   // Upload image to Vercel Blob
   const uploadImage = async (file, isMobile = false) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', 'post-image');
+    const monitor = uploadDiagnostics.createPerformanceMonitor();
+    const errorHandler = uploadDiagnostics.createErrorHandler('PostModal', {
+      component: 'PostModal',
+      field: isMobile ? 'imageUrlMobileMode' : 'imageUrl',
+      isMobile
+    });
 
     try {
+      // Check file compatibility first
+      const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
+      if (!compatibilityCheck.compatible) {
+        throw new Error(compatibilityCheck.issues.join(', '));
+      }
+
       if (isMobile) setUploadingMobile(true);
       else setUploading(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'post-image');
+
+      console.log('PostModal Upload starting:', {
+        fileName: file.name,
+        fileSize: file.size,
+        isMobile,
+        component: 'PostModal'
+      });
 
       const response = await fetch('/api/upload-blob', {
         method: 'POST',
@@ -100,14 +122,25 @@ export default function PostModal({
         form.setFieldsValue({
           [fieldName]: data.data.url
         });
-        message.success(`อัพโหลดรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
+        
+        monitor.end();
+        console.log('PostModal Upload success:', {
+          url: data.data.url,
+          compressionInfo: data.data.compressionInfo,
+          performance: monitor.getMetrics(),
+          isMobile
+        });
+        
+        message.success(`อัพโหลดรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ${data.data.compressionInfo?.wasCompressed ? ' (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)' : ''}`);
         return data.data.url;
       } else {
         throw new Error(data.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error(`เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ: ${error.message}`);
+      console.error('PostModal Upload error:', error);
+      const handledError = errorHandler(error);
+      message.error(`เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ: ${handledError.userMessage}`);
+      throw error;
     } finally {
       if (isMobile) setUploadingMobile(false);
       else setUploading(false);
@@ -122,12 +155,6 @@ export default function PostModal({
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       message.error('รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WebP)');
-      return false;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      message.error('ขนาดไฟล์ต้องไม่เกิน 5MB');
       return false;
     }
 
@@ -445,7 +472,7 @@ export default function PostModal({
           
           <Divider style={{ margin: '12px 0' }} />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            <PictureOutlined /> รองรับไฟล์: JPG, PNG, WebP (สูงสุด 5MB)
+            <PictureOutlined /> รองรับไฟล์: JPG, PNG, WebP (รูปภาพขนาดใหญ่จะถูกบีบอัดอัตโนมัติ)
           </Text>
         </Card>
 

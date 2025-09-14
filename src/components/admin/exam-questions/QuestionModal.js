@@ -15,7 +15,6 @@ import {
   Switch,
   Upload,
   Image,
-  message,
 } from "antd";
 import {
   QuestionCircleOutlined,
@@ -26,6 +25,8 @@ import {
   PictureOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
+import { uploadDiagnostics } from "@/lib/upload-diagnostics";
+import { useMessage } from "@/hooks/useAntdApp";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -39,6 +40,7 @@ export default function QuestionModal({
   onSubmit,
 }) {
   const [form] = Form.useForm();
+  const message = useMessage();
   const [loading, setLoading] = useState(false);
   const [questionType, setQuestionType] = useState("MULTIPLE_CHOICE");
   const [options, setOptions] = useState([
@@ -175,11 +177,32 @@ export default function QuestionModal({
 
   // Custom upload function for Vercel Blob
   const customUpload = async ({ file, onSuccess, onError }) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', 'question-image');
+    const monitor = uploadDiagnostics.createPerformanceMonitor();
+    const errorHandler = uploadDiagnostics.createErrorHandler('QuestionModal', {
+      component: 'QuestionModal',
+      field: 'questionImage',
+      questionType: questionType
+    });
 
     try {
+      // Check file compatibility first
+      const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
+      if (!compatibilityCheck.compatible) {
+        onError(new Error(compatibilityCheck.issues.join(', ')));
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'question-image');
+
+      console.log('QuestionModal Upload starting:', {
+        fileName: file.name,
+        fileSize: file.size,
+        questionType,
+        component: 'QuestionModal'
+      });
+
       const response = await fetch('/api/upload-blob', {
         method: 'POST',
         body: formData,
@@ -188,12 +211,26 @@ export default function QuestionModal({
       const result = await response.json();
 
       if (result.success) {
+        monitor.end();
+        console.log('QuestionModal Upload success:', {
+          url: result.data.url,
+          compressionInfo: result.data.compressionInfo,
+          performance: monitor.getMetrics(),
+          questionType
+        });
+        
+        if (result.data.compressionInfo?.wasCompressed) {
+          message.info('รูปภาพถูกบีบอัดเพื่อคุณภาพที่เหมาะสม');
+        }
+        
         onSuccess(result, file);
       } else {
-        onError(new Error(result.error || 'Upload failed'));
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      onError(error);
+      console.error('QuestionModal Upload error:', error);
+      const handledError = errorHandler(error);
+      onError(new Error(handledError.userMessage));
     }
   };
 

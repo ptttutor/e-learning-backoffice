@@ -1,12 +1,14 @@
-import { Modal, Form, Input, Select, Upload, Avatar, Row, Col, Space, message } from "antd";
+import { Modal, Form, Input, Select, Upload, Avatar, Row, Col, Space } from "antd";
 import { UserOutlined, UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { uploadDiagnostics } from "@/lib/upload-diagnostics";
+import { useMessage } from "@/hooks/useAntdApp";
 
 const { Option } = Select;
 
 export default function UserModal({ open, editing, onCancel, onSubmit }) {
   const [form] = Form.useForm();
+  const message = useMessage();
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
 
@@ -145,11 +147,6 @@ export default function UserModal({ open, editing, onCancel, onSubmit }) {
       const isImage = file.type.startsWith('image/');
       if (!isImage) {
         message.error('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น!');
-        return false;
-      }
-      const isLt15M = file.size / 1024 / 1024 < 15;
-      if (!isLt15M) {
-        message.error('ขนาดไฟล์ต้องไม่เกิน 15MB!');
         return false;
       }
       
