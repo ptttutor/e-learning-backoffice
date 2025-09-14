@@ -288,8 +288,7 @@ export async function PATCH(request, { params }) {
           status: 'REJECTED',
           verifiedAt: new Date(),
           verifiedBy: 'ADMIN',
-          rejectionReason: rejectionReason || 'ไม่ระบุเหตุผล',
-          notes: notes || null
+          notes: rejectionReason || notes || 'ไม่ระบุเหตุผลในการปฏิเสธ'
         }
       });
 
