@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Card,
@@ -14,6 +14,7 @@ import {
   Divider,
   Empty,
   message,
+  Progress,
 } from "antd";
 import {
   CloudUploadOutlined,
@@ -42,6 +43,9 @@ export default function EbookFileManagementModal({
   loadingFiles = false,
   uploadingFile = false,
 }) {
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+
   console.log('EbookFileManagementModal rendered with:', { 
     open, 
     ebook: ebook?.title, 
@@ -72,10 +76,55 @@ export default function EbookFileManagementModal({
     return formatMap[format] || 'application/pdf';
   };
 
+  // Handle file upload with progress
+  const handleFileUpload = async (options) => {
+    const { file, onSuccess, onError, onProgress } = options;
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 15;
+        });
+      }, 200);
+      
+      // Call the actual upload handler
+      await onFileUpload({
+        file,
+        onSuccess: () => {
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
+            onSuccess();
+          }, 500);
+        },
+        onError: (error) => {
+          clearInterval(progressInterval);
+          setIsUploading(false);
+          setUploadProgress(0);
+          onError(error);
+        }
+      });
+    } catch (error) {
+      setIsUploading(false);
+      setUploadProgress(0);
+      onError(error);
+    }
+  };
+
   const uploadProps = {
     name: 'file',
     multiple: false,
-    customRequest: onFileUpload,
+    customRequest: handleFileUpload,
     accept: '.pdf,.epub,.mobi,.doc,.docx',
     showUploadList: false,
     beforeUpload: (file) => {
@@ -214,12 +263,12 @@ export default function EbookFileManagementModal({
             </Text>
           </div>
           
-          <Dragger {...uploadProps} disabled={uploadingFile || loadingFiles}>
+          <Dragger {...uploadProps} disabled={isUploading || uploadingFile || loadingFiles}>
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">
-              {uploadingFile ? "กำลังอัปโหลด..." : "คลิกหรือลากไฟล์เนื้อหา eBook มาที่นี่เพื่ออัปโหลด"}
+              {isUploading ? "กำลังอัปโหลด..." : uploadingFile ? "กำลังอัปโหลด..." : "คลิกหรือลากไฟล์เนื้อหา eBook มาที่นี่เพื่ออัปโหลด"}
             </p>
             <p className="ant-upload-hint">
               รองรับไฟล์ PDF, EPUB, MOBI, DOC, DOCX (ไม่เกิน 50MB)
@@ -228,6 +277,22 @@ export default function EbookFileManagementModal({
                 ไฟล์นี้จะถูกใช้สำหรับให้ลูกค้าดาวน์โหลดหลังจากซื้อ
               </Text>
             </p>
+            {isUploading && (
+              <div style={{ marginTop: 16, padding: '0 24px' }}>
+                <Progress 
+                  percent={Math.round(uploadProgress)} 
+                  status="active"
+                  strokeColor={{
+                    '0%': '#108ee9',
+                    '100%': '#87d068',
+                  }}
+                  format={(percent) => `${percent}%`}
+                />
+                <Text type="secondary" style={{ fontSize: '12px', display: 'block', textAlign: 'center', marginTop: 8 }}>
+                  กำลังอัปโหลดไฟล์... กรุณารอสักครู่
+                </Text>
+              </div>
+            )}
           </Dragger>
         </Card>
 

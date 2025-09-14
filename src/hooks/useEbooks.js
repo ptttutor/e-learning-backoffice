@@ -195,20 +195,16 @@ export function useEbooks() {
       });
 
       if (response.ok) {
-        message.success(editingEbook ? 'อัพเดท eBook สำเร็จ' : 'สร้าง eBook สำเร็จ');
-        // Refresh with current filters and pagination - use explicit values  
-        fetchEbooks();
-        return true;
+        const data = await response.json();
+        return { success: true, data: data.data };
       } else {
         const errorData = await response.json();
         console.error('API Error:', errorData);
-        message.error(`Failed to save ebook: ${errorData.error}`);
-        return false;
+        return { success: false, error: errorData.error || 'Unknown error' };
       }
     } catch (error) {
       console.error('Error saving ebook:', error);
-      message.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-      return false;
+      return { success: false, error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' };
     }
   };
 
@@ -226,7 +222,6 @@ export function useEbooks() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Delete API Error:', errorData);
-        message.error(`Failed to delete ebook: ${errorData.error || 'Unknown error'}`);
         return false;
       }
 
@@ -234,17 +229,12 @@ export function useEbooks() {
       console.log('Delete response data:', data);
 
       if (data.success !== false) {
-        message.success('ลบ eBook สำเร็จ');
-        // Refresh with current filters and pagination - use explicit values
-        fetchEbooks();
         return true;
       } else {
-        message.error(data.error || 'เกิดข้อผิดพลาดในการลบ');
         return false;
       }
     } catch (error) {
       console.error('Error deleting ebook:', error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
       return false;
     }
   };
@@ -342,18 +332,14 @@ export function useEbooks() {
       const result = await response.json();
 
       if (result.success) {
-        message.success("อัปโหลดไฟล์สำเร็จ");
-        // Refresh ebooks to get updated fileUrl
-        fetchEbooks();
+        // Return result without auto refresh - let component handle the update
         return result.data;
       } else {
-        message.error(result.error || "อัปโหลดไฟล์ไม่สำเร็จ");
-        return null;
+        return { error: result.error || "อัปโหลดไฟล์ไม่สำเร็จ" };
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      message.error("เกิดข้อผิดพลาดในการอัปโหลด");
-      return null;
+      return { error: "เกิดข้อผิดพลาดในการอัปโหลด" };
     }
   }, []);
 
@@ -367,23 +353,20 @@ export function useEbooks() {
       const result = await response.json();
 
       if (result.success) {
-        message.success("ลบไฟล์สำเร็จ");
-        // Refresh ebooks to get updated fileUrl
-        fetchEbooks();
+        // Return success without auto refresh - let component handle the update
         return true;
       } else {
-        message.error(result.error || "ลบไฟล์ไม่สำเร็จ");
         return false;
       }
     } catch (error) {
       console.error("Error deleting file:", error);
-      message.error("เกิดข้อผิดพลาดในการลบไฟล์");
       return false;
     }
   }, []);
 
   return {
     ebooks,
+    setEbooks,
     categories,
     loading,
     filters,

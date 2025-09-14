@@ -13,6 +13,7 @@ import {
   InputNumber,
   Checkbox,
   Popconfirm,
+  Progress,
 } from "antd";
 import {
   PlusOutlined,
@@ -27,7 +28,6 @@ import {
   CheckCircleOutlined,
   BulbOutlined,
 } from "@ant-design/icons";
-import { uploadDiagnostics } from "@/lib/upload-diagnostics";
 import { useMessage } from "@/hooks/useAntdApp";
 
 const { Text } = Typography;
@@ -45,126 +45,79 @@ export default function EbookModal({
   const [form] = Form.useForm();
   const message = useMessage();
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
 
-  // Handle file upload with confirmation
-  const handleFileUploadWithConfirmation = async (file, type) => {
-    const currentValue = form.getFieldValue(
-      type === 'cover' ? 'coverImageUrl' : 'fileUrl'
-    );
-    
-    if (currentValue && currentValue.trim()) {
-      // แสดง confirm dialog ถ้ามีไฟล์เดิมอยู่แล้ว
-      Modal.confirm({
-        title: 'ยืนยันการแทนที่ไฟล์',
-        content: (
-          <div>
-            <p>มีไฟล์{type === 'cover' ? 'รูปปก' : ''}อยู่แล้ว คุณต้องการแทนที่ด้วยไฟล์ใหม่หรือไม่?</p>
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              ไฟล์ปัจจุบัน: <strong>{currentValue.split('/').pop()}</strong>
-            </p>
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              ไฟล์ใหม่: <strong>{file.name}</strong>
-            </p>
-          </div>
-        ),
-        okText: 'แทนที่',
-        cancelText: 'ยกเลิก',
-        okType: 'primary',
-        onOk: () => handleFileUpload(file, type),
-        onCancel: () => {
-          message.info('ยกเลิกการอัปโหลดไฟล์');
-        }
-      });
-    } else {
-      // ถ้าไม่มีไฟล์เดิม ให้อัปโหลดเลย
-      await handleFileUpload(file, type);
-    }
-  };
-
-  // Handle file removal
-  const handleFileRemoval = (type) => {
-    Modal.confirm({
-      title: 'ยืนยันการลบไฟล์',
-      content: `คุณต้องการลบไฟล์${type === 'cover' ? 'รูปปก' : ''}นี้หรือไม่?`,
-      okText: 'ลบ',
-      cancelText: 'ยกเลิก',
-      okType: 'danger',
-      onOk: () => {
-        if (type === 'cover') {
-          form.setFieldsValue({ coverImageUrl: '' });
-        }
-        message.success(`ลบไฟล์${type === 'cover' ? 'รูปปก' : ''}สำเร็จ`);
-      }
-    });
-  };
-
-  // Handle file upload
-  const handleFileUpload = async (file, type) => {
-    if (!file) return;
-
-    const monitor = uploadDiagnostics.createPerformanceMonitor();
-    const errorHandler = uploadDiagnostics.createErrorHandler('EbookModal', {
-      component: 'EbookModal',
-      field: type === 'cover' ? 'coverImageUrl' : 'fileUrl',
-      fileType: type
+  // Handle cover image upload (simplified like CourseModal)
+  const handleCoverUpload = async (file) => {
+    console.log('🎯 Starting cover upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
     });
 
     try {
-      // Check file compatibility first
-      const compatibilityCheck = uploadDiagnostics.checkFileCompatibility(file);
-      if (!compatibilityCheck.compatible) {
-        throw new Error(compatibilityCheck.issues.join(', '));
-      }
+      setUploadingCover(true);
+      setUploadProgress(0);
+      
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 15;
+        });
+      }, 200);
 
-      if (type === 'cover') {
-        setUploadingCover(true);
-      }
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "cover");
 
-      const uploadData = new FormData();
-      uploadData.append('file', file);
-      uploadData.append('type', type);
+      console.log('📤 Sending upload request...');
 
-      console.log('EbookModal Upload starting:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: type,
-        component: 'EbookModal'
+      const response = await fetch("/api/upload-blob", {
+        method: "POST",
+        body: formData,
       });
 
-      const response = await fetch('/api/upload-blob', {
-        method: 'POST',
-        body: uploadData,
-      });
+      console.log('📥 Upload response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload request failed:', errorText);
+        throw new Error(`Upload failed with status ${response.status}`);
+      }
 
       const result = await response.json();
+      console.log('✅ Upload result:', result);
       
       if (result.success) {
-        monitor.end();
-        console.log('EbookModal Upload success:', {
-          url: result.data.url,
-          compressionInfo: result.data.compressionInfo,
-          performance: monitor.getMetrics(),
-          fileType: type
-        });
-
-        if (type === 'cover') {
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        setTimeout(() => {
+          setCoverImageUrl(result.data.url);
           form.setFieldsValue({
-            coverImageUrl: result.data.url
+            coverImageUrl: result.data.url,
           });
-          message.success(`อัปโหลดรูปปกสำเร็จ${result.data.compressionInfo?.wasCompressed ? ' (ถูกบีบอัดเพื่อคุณภาพที่เหมาะสม)' : ''}`);
-        }
+          message.success(`อัพโหลดรูปปกสำเร็จ`);
+          console.log('✅ Form field updated with URL:', result.data.url);
+          setUploadProgress(0);
+        }, 500);
       } else {
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('EbookModal Upload error:', error);
-      const handledError = errorHandler(error);
-      message.error(`เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ${handledError.userMessage}`);
+      console.error('❌ Upload error:', error);
+      message.error(`เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ${error.message}`);
+      setUploadProgress(0);
     } finally {
-      if (type === 'cover') {
-        setUploadingCover(false);
-      }
+      setUploadingCover(false);
     }
+    
+    return false; // Prevent default upload behavior
   };
 
   // Handle form submit
@@ -189,8 +142,10 @@ export default function EbookModal({
         ...editing,
         publishedAt: editing.publishedAt ? new Date(editing.publishedAt).toISOString().slice(0, 16) : null
       });
+      setCoverImageUrl(editing.coverImageUrl || "");
     } else if (open && !editing) {
       form.resetFields();
+      setCoverImageUrl("");
     }
   }, [open, editing, form]);
 
@@ -419,10 +374,7 @@ export default function EbookModal({
                   {/* Upload button */}
                   <Upload
                     accept="image/*"
-                    beforeUpload={(file) => {
-                      handleFileUploadWithConfirmation(file, 'cover');
-                      return false;
-                    }}
+                    beforeUpload={handleCoverUpload}
                     showUploadList={false}
                     disabled={uploadingCover}
                   >
@@ -430,21 +382,40 @@ export default function EbookModal({
                       icon={<UploadOutlined />} 
                       loading={uploadingCover}
                       style={{ width: '100%' }}
-                      type={getFieldValue('coverImageUrl') ? 'default' : 'dashed'}
+                      type={coverImageUrl || getFieldValue('coverImageUrl') ? 'default' : 'dashed'}
                     >
                       {uploadingCover ? 'กำลังอัปโหลด...' : 
-                       getFieldValue('coverImageUrl') ? 'เปลี่ยนรูปปก' : 'อัปโหลดรูปปก'}
+                       (coverImageUrl || getFieldValue('coverImageUrl')) ? 'เปลี่ยนรูปปก' : 'อัปโหลดรูปปก'}
                     </Button>
                   </Upload>
+
+                  {/* Upload Progress */}
+                  {uploadingCover && uploadProgress > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <Progress 
+                        percent={Math.round(uploadProgress)} 
+                        status="active"
+                        strokeColor={{
+                          '0%': '#108ee9',
+                          '100%': '#87d068',
+                        }}
+                        format={(percent) => `${percent}%`}
+                        size="small"
+                      />
+                      <Text type="secondary" style={{ fontSize: '12px', display: 'block', textAlign: 'center', marginTop: 4 }}>
+                        กำลังอัปโหลดรูปปก... กรุณารอสักครู่
+                      </Text>
+                    </div>
+                  )}
                   
                   {/* Image preview */}
-                  {getFieldValue('coverImageUrl') && (
+                  {(coverImageUrl || getFieldValue('coverImageUrl')) && (
                     <div style={{ marginTop: '12px', textAlign: 'center' }}>
                       <Text style={{ fontSize: '12px', color: '#666', marginBottom: '8px', display: 'block' }}>
                         ตัวอย่างรูปปก
                       </Text>
                       <Image 
-                        src={getFieldValue('coverImageUrl')} 
+                        src={coverImageUrl || getFieldValue('coverImageUrl')} 
                         alt="Cover preview"
                         width={80}
                         height={100}
