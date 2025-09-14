@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, DatePicker, Row, Col, Statistic, Spin, message, Space, Typography } from 'antd';
+import { Card, Select, DatePicker, Row, Col, Statistic, Spin, Space, Typography } from 'antd';
 import { Line } from '@ant-design/plots';
 import { DollarOutlined, ShoppingCartOutlined, BookOutlined, RiseOutlined, BarChartOutlined, CalendarOutlined, ReadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
+import { useMessage } from '@/hooks/useAntdApp';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -13,6 +14,7 @@ dayjs.locale('th');
 const SalesChart = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
+  const message = useMessage();
   const [period, setPeriod] = useState('daily');
   const [dateRange, setDateRange] = useState(null);
 

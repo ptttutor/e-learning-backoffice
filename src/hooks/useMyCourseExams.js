@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { message } from 'antd';
+import { useMessage } from './useAntdApp';
 
 export const useCourseExams = (courseId, userId) => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
+  const message = useMessage();
 
   const fetchExams = async () => {
     if (!courseId || !userId) return;

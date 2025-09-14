@@ -33,15 +33,15 @@ export async function POST(request) {
 
     // Define allowed file types based on upload type
     const allowedTypes = getAllowedTypes(type);
-    const maxSize = getMaxFileSize(type);
+    // No file size limit - let the system handle compression automatically
 
     console.log('🔍 Validation config:', {
       allowedTypes,
-      maxSizeMB: (maxSize / 1024 / 1024).toFixed(1)
+      sizeLimit: 'No limit (auto-compression enabled)'
     });
 
-    // Validate file
-    const validation = validateFile(file, allowedTypes, maxSize);
+    // Validate file type only (no size validation)
+    const validation = validateFile(file, allowedTypes);
     if (!validation.isValid) {
       console.error('❌ File validation failed:', validation.errors);
       return NextResponse.json(
@@ -133,23 +133,4 @@ function getAllowedTypes(type) {
   };
 
   return typeConfig[type] || [];
-}
-
-/**
- * Get maximum file size based on upload type
- * @param {string} type - Upload type
- * @returns {number} Maximum file size in bytes
- */
-function getMaxFileSize(type) {
-  const sizeConfig = {
-    'cover': 15 * 1024 * 1024, // 15MB
-    'ebook': 50 * 1024 * 1024, // 50MB
-    'exam': 50 * 1024 * 1024, // 50MB
-    'payment-slip': 15 * 1024 * 1024, // 15MB
-    'post-image': 15 * 1024 * 1024, // 15MB
-    'question-image': 15 * 1024 * 1024, // 15MB
-    'general': 15 * 1024 * 1024, // 15MB
-  };
-
-  return sizeConfig[type] || 15 * 1024 * 1024; // Default 15MB
 }

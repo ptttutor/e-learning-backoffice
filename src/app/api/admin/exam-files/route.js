@@ -35,11 +35,10 @@ export async function POST(request) {
       );
     }
 
-    // ตรวจสอบประเภทไฟล์และขนาด
+    // ตรวจสอบประเภทไฟล์เท่านั้น (ไม่จำกัดขนาด)
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif'];
-    const maxSize = 50 * 1024 * 1024; // 50MB สำหรับไฟล์ข้อสอบ
     
-    const validation = validateFile(file, allowedTypes, maxSize);
+    const validation = validateFile(file, allowedTypes);
     if (!validation.isValid) {
       return NextResponse.json(
         { success: false, error: validation.errors.join(', ') },

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { message } from 'antd';
+import { useMessage } from './useAntdApp';
 
 export const useCourseExams = (courseId) => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const message = useMessage();
   const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState({
     search: '',

@@ -21,11 +21,10 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type and size
+    // Validate file type only (no size limit)
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    const maxSize = 15 * 1024 * 1024; // 15MB for images
     
-    const validation = validateFile(file, allowedTypes, maxSize);
+    const validation = validateFile(file, allowedTypes);
     if (!validation.isValid) {
       return NextResponse.json(
         { success: false, error: validation.errors.join(', ') },

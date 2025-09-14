@@ -35,11 +35,10 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type
+    // Validate file type only (no size limit)
     const allowedTypes = ['application/pdf', 'application/epub+zip'];
-    const maxSize = 50 * 1024 * 1024; // 50MB สำหรับ eBook
     
-    const validation = validateFile(file, allowedTypes, maxSize);
+    const validation = validateFile(file, allowedTypes);
     if (!validation.isValid) {
       return NextResponse.json(
         { success: false, error: validation.errors.join(', ') },

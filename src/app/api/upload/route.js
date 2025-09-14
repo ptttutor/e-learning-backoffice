@@ -20,20 +20,17 @@ export async function POST(request) {
       );
     }
 
-    // Define allowed file types and max sizes based on type
+    // Define allowed file types based on type
     let allowedTypes = [];
-    let maxSize = 15 * 1024 * 1024; // Default 15MB
 
     if (type === 'ebook') {
       allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
-      maxSize = 50 * 1024 * 1024; // 50MB for ebooks
     } else if (type === 'cover' || type === 'question') {
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      maxSize = 15 * 1024 * 1024; // 15MB for images
     }
 
-    // Validate file
-    const validation = validateFile(file, allowedTypes, maxSize);
+    // Validate file type only (no size limit)
+    const validation = validateFile(file, allowedTypes);
     if (!validation.isValid) {
       return NextResponse.json(
         { success: false, error: validation.errors.join(', ') },

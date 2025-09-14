@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { message } from "antd";
+import { useMessage } from "./useAntdApp";
 
 export function useExamBank() {
   const [exams, setExams] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [catLoading, setCatLoading] = useState(false);
+  const message = useMessage();
 
   // Filter states
   const [searchInput, setSearchInput] = useState("");

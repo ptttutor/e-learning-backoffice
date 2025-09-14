@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Button, Card, Typography, Space, message } from "antd";
+import { Button, Card, Typography, Space } from "antd";
 import { UserOutlined, PlusOutlined } from "@ant-design/icons";
+import { useMessage } from "@/hooks/useAntdApp";
 
 // Components
 import UserFilters from "@/components/admin/users/UserFilters";
@@ -22,6 +23,7 @@ export default function UsersPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const message = useMessage();
 
   // Use custom hook for users data
   const {
