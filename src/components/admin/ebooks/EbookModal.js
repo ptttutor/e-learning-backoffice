@@ -109,7 +109,7 @@ export default function EbookModal({
         setUploadingCover(true);
       }
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload-blob', {
         method: 'POST',
         body: uploadData,
       });
@@ -119,7 +119,7 @@ export default function EbookModal({
       if (result.success) {
         if (type === 'cover') {
           form.setFieldsValue({
-            coverImageUrl: result.url
+            coverImageUrl: result.data.url
           });
           message.success('อัปโหลดรูปปกสำเร็จ');
         }

@@ -161,7 +161,7 @@ export default function QuestionModal({
     if (file.status === 'done') {
       // File uploaded successfully
       if (info.file.response && info.file.response.success) {
-        const imageUrl = info.file.response.url;
+        const imageUrl = info.file.response.data.url;
         setQuestionImage(imageUrl);
         setImagePreview(imageUrl);
         message.success('อัพโหลดรูปภาพสำเร็จ');
@@ -173,14 +173,14 @@ export default function QuestionModal({
     }
   };
 
-  // Custom upload function
+  // Custom upload function for Vercel Blob
   const customUpload = async ({ file, onSuccess, onError }) => {
     const formData = new FormData();
-    formData.append('questionImage', file);
-    formData.append('type', 'question');
+    formData.append('file', file);
+    formData.append('type', 'question-image');
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload-blob', {
         method: 'POST',
         body: formData,
       });

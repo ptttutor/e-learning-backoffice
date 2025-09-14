@@ -47,20 +47,48 @@ export default function UserModal({ open, editing, onCancel, onSubmit }) {
   };
 
   // Handle image upload
-  const handleImageUpload = (info) => {
+  const handleImageUpload = async (info) => {
+    if (info.file.status === 'uploading') {
+      return;
+    }
+    
     if (info.file.status === 'done') {
       // Handle successful upload
-      const imageUrl = info.file.response?.url || info.file.response?.secure_url;
+      const imageUrl = info.file.response?.data?.url || info.file.response?.url;
       if (imageUrl) {
         setImageUrl(imageUrl);
       }
     }
   };
 
+  // Custom upload function for Vercel Blob
+  const customUpload = async ({ file, onSuccess, onError }) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'general'); // User profile images
+
+      const response = await fetch('/api/upload-blob', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onSuccess(result, file);
+      } else {
+        onError(new Error(result.error || 'Upload failed'));
+      }
+    } catch (error) {
+      onError(error);
+    }
+  };
+
   // Upload props for image
   const uploadProps = {
     name: 'file',
-    action: '/api/upload/image', // You'll need to create this endpoint
+    customRequest: customUpload,
     showUploadList: false,
     onChange: handleImageUpload,
     beforeUpload: (file) => {

@@ -78,18 +78,17 @@ export default function PostModal({
     });
   };
 
-  // Upload image to Cloudinary
+  // Upload image to Vercel Blob
   const uploadImage = async (file, isMobile = false) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', 'post-image');
-    formData.append('isMobile', isMobile.toString());
 
     try {
       if (isMobile) setUploadingMobile(true);
       else setUploading(true);
 
-      const response = await fetch('/api/upload/post-image', {
+      const response = await fetch('/api/upload-blob', {
         method: 'POST',
         body: formData,
       });
@@ -99,10 +98,10 @@ export default function PostModal({
       if (data.success) {
         const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
         form.setFieldsValue({
-          [fieldName]: data.url
+          [fieldName]: data.data.url
         });
         message.success(`อัพโหลดรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
-        return data.url;
+        return data.data.url;
       } else {
         throw new Error(data.error || 'Upload failed');
       }
@@ -141,22 +140,17 @@ export default function PostModal({
     try {
       const fieldName = isMobile ? 'imageUrlMobileMode' : 'imageUrl';
       
-      // Extract public_id from URL
-      const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.\w+$/);
-      if (publicIdMatch) {
-        const publicId = publicIdMatch[1];
-        
-        const response = await fetch(`/api/upload/delete?publicId=${encodeURIComponent(publicId)}`, {
-          method: 'DELETE',
-        });
+      // Delete from Vercel Blob
+      const response = await fetch(`/api/upload-blob/delete?url=${encodeURIComponent(imageUrl)}`, {
+        method: 'DELETE',
+      });
 
-        const data = await response.json();
-        if (data.success) {
-          form.setFieldsValue({
-            [fieldName]: ''
-          });
-          message.success(`ลบรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
-        }
+      const data = await response.json();
+      if (data.success) {
+        form.setFieldsValue({
+          [fieldName]: ''
+        });
+        message.success(`ลบรูปภาพ${isMobile ? 'มือถือ' : 'เดสก์ท็อป'}สำเร็จ`);
       } else {
         // If can't extract public_id, just clear the field
         form.setFieldsValue({

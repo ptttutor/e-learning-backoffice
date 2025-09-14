@@ -50,17 +50,17 @@ export default function CourseModal({
     formData.append("type", "cover");
 
     try {
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload-blob", {
         method: "POST",
         body: formData,
       });
 
       const result = await response.json();
       if (result.success) {
-        setCoverImageUrl(result.url);
+        setCoverImageUrl(result.data.url);
         form.setFieldsValue({
-          coverImageUrl: result.url,
-          coverPublicId: result.public_id,
+          coverImageUrl: result.data.url,
+          coverPublicId: result.data.pathname,
         });
         message.success("อัพโหลดรูปปกสำเร็จ");
       } else {
