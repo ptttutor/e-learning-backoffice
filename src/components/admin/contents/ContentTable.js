@@ -176,6 +176,7 @@ export default function ContentTable({
   onDragStart,
   onDragEnd,
   onDragCancel,
+  disabled = false,
 }) {
   const getContentTypeIcon = (type) => {
     switch (type) {
@@ -304,6 +305,7 @@ export default function ContentTable({
             size="small"
             onClick={() => onEdit(record)}
             style={{ borderRadius: "6px" }}
+            disabled={disabled}
           >
             แก้ไข
           </Button>
@@ -313,6 +315,7 @@ export default function ContentTable({
             danger
             onClick={() => onDelete(record)}
             style={{ borderRadius: "6px" }}
+            disabled={disabled}
           >
             ลบ
           </Button>

@@ -330,6 +330,42 @@ export const useContents = (chapterId) => {
     setPagination(prev => ({ ...prev, page: 1, pageSize: size }));
   }, []);
 
+  // Helper functions for optimistic updates
+  const updateContentInList = useCallback((contentId, updatedData) => {
+    setContents(prevContents => 
+      prevContents.map(content => 
+        content.id === contentId 
+          ? { ...content, ...updatedData }
+          : content
+      )
+    );
+    setAllContents(prevContents => 
+      prevContents.map(content => 
+        content.id === contentId 
+          ? { ...content, ...updatedData }
+          : content
+      )
+    );
+  }, []);
+
+  const addContentToList = useCallback((newContent) => {
+    setContents(prevContents => [newContent, ...prevContents]);
+    setAllContents(prevContents => [newContent, ...prevContents]);
+    setPagination(prev => ({
+      ...prev,
+      totalCount: prev.totalCount + 1
+    }));
+  }, []);
+
+  const removeContentFromList = useCallback((contentId) => {
+    setContents(prevContents => prevContents.filter(content => content.id !== contentId));
+    setAllContents(prevContents => prevContents.filter(content => content.id !== contentId));
+    setPagination(prev => ({
+      ...prev,
+      totalCount: prev.totalCount - 1
+    }));
+  }, []);
+
   return {
     contents, // filtered contents สำหรับแสดงผล
     allContents, // contents ทั้งหมดสำหรับ drag & drop
@@ -355,5 +391,8 @@ export const useContents = (chapterId) => {
     handlePageChange,
     handlePageSizeChange,
     resetFilters,
+    updateContentInList,
+    addContentToList,
+    removeContentFromList,
   };
 };
