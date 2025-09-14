@@ -26,6 +26,7 @@ export default function PostCategoryTable({
   onEdit,
   onDelete,
   onTableChange,
+  deletingId,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -150,6 +151,7 @@ export default function PostCategoryTable({
             size="small"
             onClick={() => onDelete(record)}
             style={{ borderRadius: "6px" }}
+            loading={deletingId === record.id}
           >
             ลบ
           </Button>
@@ -163,13 +165,13 @@ export default function PostCategoryTable({
   return (
     <Table
       columns={columns}
-      dataSource={postCategories}
+      dataSource={postCategories || []}
       rowKey="id"
       loading={loading}
       pagination={{
-        current: pagination.page,
-        pageSize: pagination.pageSize,
-        total: pagination.totalCount,
+        current: pagination?.page || 1,
+        pageSize: pagination?.pageSize || 10,
+        total: pagination?.totalCount || 0,
         showSizeChanger: true,
         showQuickJumper: true,
         showTotal: (total, range) =>

@@ -32,7 +32,7 @@ export default function DeleteModal({
       open={open}
       onCancel={onCancel}
       footer={[
-        <Button key="cancel" onClick={onCancel} style={{ borderRadius: "6px" }}>
+        <Button key="cancel" onClick={onCancel} style={{ borderRadius: "6px" }} disabled={loading}>
           ยกเลิก
         </Button>,
         <Button

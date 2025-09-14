@@ -34,12 +34,12 @@ export function usePostCategories() {
 
     try {
       const params = new URLSearchParams({
-        page: currentPagination.page.toString(),
-        pageSize: currentPagination.pageSize.toString(),
-        search: currentFilters.search,
-        status: currentFilters.status,
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
+        page: (currentPagination?.page || 1).toString(),
+        pageSize: (currentPagination?.pageSize || 10).toString(),
+        search: currentFilters?.search || "",
+        status: currentFilters?.status || "ALL",
+        sortBy: currentFilters?.sortBy || "createdAt",
+        sortOrder: currentFilters?.sortOrder || "desc",
       });
 
       const res = await fetch(`/api/admin/post-types?${params}`);
@@ -117,6 +117,7 @@ export function usePostCategories() {
 
   return {
     postCategories,
+    setPostCategories,
     loading,
     filters,
     searchInput,

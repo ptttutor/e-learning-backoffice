@@ -23,6 +23,7 @@ export default function PostCategoryModal({
   editing,
   onCancel,
   onSubmit,
+  loading,
 }) {
   const [form] = Form.useForm();
 
@@ -89,6 +90,7 @@ export default function PostCategoryModal({
           <Input 
             placeholder="ใส่ชื่อหมวดหมู่" 
             prefix={<TagOutlined style={{ color: "#8c8c8c" }} />}
+            disabled={loading}
           />
         </Form.Item>
 
@@ -104,11 +106,12 @@ export default function PostCategoryModal({
             placeholder="รายละเอียดหมวดหมู่โพสต์ (ไม่บังคับ)"
             showCount
             maxLength={500}
+            disabled={loading}
           />
         </Form.Item>
 
         <Form.Item name="isActive" valuePropName="checked" initialValue={true}>
-          <Checkbox>เปิดใช้งาน</Checkbox>
+          <Checkbox disabled={loading}>เปิดใช้งาน</Checkbox>
         </Form.Item>
 
         <Form.Item>
@@ -118,10 +121,15 @@ export default function PostCategoryModal({
               htmlType="submit"
               icon={editing ? <EditOutlined /> : <PlusOutlined />}
               style={{ borderRadius: "6px" }}
+              loading={loading}
             >
               {editing ? "อัพเดท" : "สร้าง"}
             </Button>
-            <Button onClick={handleCancel} style={{ borderRadius: "6px" }}>
+            <Button 
+              onClick={handleCancel} 
+              style={{ borderRadius: "6px" }}
+              disabled={loading}
+            >
               ยกเลิก
             </Button>
           </Space>
