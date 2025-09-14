@@ -193,6 +193,7 @@ export function useShipping() {
   return {
     // Data
     shipments,
+    setShipments,
     loading,
     detailLoading,
     

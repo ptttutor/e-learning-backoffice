@@ -79,7 +79,7 @@ export default function ShippingModal({
             },
           ]}
         >
-          <Select placeholder="เลือกบริษัทขนส่ง" size="large">
+          <Select placeholder="เลือกบริษัทขนส่ง" size="large" disabled={loading}>
             <Option value="PENDING">รอเลือก</Option>
             <Option value="KERRY">Kerry Express</Option>
             <Option value="THAILAND_POST">ไปรษณีย์ไทย</Option>
@@ -100,7 +100,7 @@ export default function ShippingModal({
             },
           ]}
         >
-          <Select placeholder="เลือกสถานะ" size="large">
+          <Select placeholder="เลือกสถานะ" size="large" disabled={loading}>
             <Option value="PENDING">รอดำเนินการ</Option>
             <Option value="PROCESSING">กำลังเตรียม</Option>
             <Option value="SHIPPED">จัดส่งแล้ว</Option>
@@ -124,6 +124,7 @@ export default function ShippingModal({
             placeholder="กรอกเลขติดตาม (หากมี)"
             size="large"
             maxLength={50}
+            disabled={loading}
           />
         </Form.Item>
 
@@ -137,13 +138,14 @@ export default function ShippingModal({
             rows={4}
             maxLength={500}
             showCount
+            disabled={loading}
           />
         </Form.Item>
 
         {/* Submit Buttons */}
         <Form.Item style={{ marginBottom: 0, marginTop: "24px" }}>
           <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-            <Button onClick={handleCancel} size="large">
+            <Button onClick={handleCancel} size="large" disabled={loading}>
               ยกเลิก
             </Button>
             <Button

@@ -24,6 +24,7 @@ export default function ShippingTable({
   onViewDetail,
   onEdit,
   onTableChange,
+  updatingId,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -251,6 +252,7 @@ export default function ShippingTable({
             size="small"
             onClick={() => onEdit(record)}
             style={{ borderRadius: "6px" }}
+            loading={updatingId === record.id}
           >
             อัพเดท
           </Button>
