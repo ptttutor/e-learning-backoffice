@@ -195,7 +195,8 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
       details: {
         amount: { match: false, score: 0, message: "ไม่สามารถตรวจสอบจำนวนเงินได้" },
         date: { match: false, score: 0, message: "ไม่สามารถตรวจสอบวันที่ได้" },
-        bank: { match: false, score: 0, message: "ไม่สามารถตรวจสอบธนาคารได้" }
+        bank: { match: false, score: 0, message: "ไม่สามารถตรวจสอบธนาคารได้" },
+        account: { match: false, score: 0, message: "ไม่สามารถตรวจสอบบัญชีได้" }
       },
       shouldAutoApprove: false,
       message: "ไม่สามารถตรวจสอบอัตโนมัติได้"
@@ -206,7 +207,7 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
   let totalScore = 0;
   const details = {};
 
-  // ตรวจสอบจำนวนเงิน (40 คะแนน)
+  // ตรวจสอบจำนวนเงิน (30 คะแนน)
   if (slipData.amount && orderData.total) {
     const amountDiff = Math.abs(slipData.amount - orderData.total);
     const tolerance = Math.max(1, orderData.total * 0.01); // 1 บาท หรือ 1%
@@ -214,10 +215,10 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
     if (amountDiff <= tolerance) {
       details.amount = {
         match: true,
-        score: 40,
+        score: 30,
         message: `จำนวนเงินตรงกัน: ${slipData.amount} บาท`
       };
-      totalScore += 40;
+      totalScore += 30;
     } else {
       details.amount = {
         match: false,
@@ -233,7 +234,7 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
     };
   }
 
-  // ตรวจสอบวันที่ (30 คะแนน)
+  // ตรวจสอบวันที่ (25 คะแนน)
   if (slipData.transDate && orderData.createdAt) {
     try {
       const slipDate = new Date(slipData.transDate);
@@ -241,7 +242,7 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
       const daysDiff = Math.abs((slipDate - orderDate) / (1000 * 60 * 60 * 24));
       
       if (daysDiff <= 7) {
-        const score = Math.max(10, 30 - (daysDiff * 3)); // ลดคะแนนตามจำนวนวัน
+        const score = Math.max(10, 25 - (daysDiff * 2)); // ลดคะแนนตามจำนวนวัน
         details.date = {
           match: true,
           score: score,
@@ -270,14 +271,25 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
     };
   }
 
-  // ตรวจสอบธนาคาร (30 คะแนน)
+  // ตรวจสอบบัญชีผู้รับ (35 คะแนน)
+  const expectedAccount = {
+    number: "107-889-8751",
+    name: "นาย เชษฐา พวงบุบผา",
+    bank: "KBANK" // รหัสธนาคารกสิกรไทย
+  };
+
+  const accountVerification = verifyReceiverAccount(slipData, expectedAccount);
+  details.account = accountVerification;
+  totalScore += accountVerification.score;
+
+  // ตรวจสอบธนาคาร (10 คะแนน)
   if (slipData.sender?.bank || slipData.receiver?.bank) {
     details.bank = {
       match: true,
-      score: 30,
+      score: 10,
       message: `พบข้อมูลธนาคาร: ${slipData.sender?.bank || ''} -> ${slipData.receiver?.bank || ''}`
     };
-    totalScore += 30;
+    totalScore += 10;
   } else {
     details.bank = {
       match: false,
@@ -287,7 +299,7 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
   }
 
   // ตัดสินใจอนุมัติอัตโนมัติ
-  const shouldAutoApprove = totalScore >= 80;
+  const shouldAutoApprove = totalScore >= 80 && details.account.match;
 
   return {
     score: totalScore,
@@ -296,5 +308,127 @@ export const calculateSlipConfidence = (verificationResult, orderData) => {
     message: shouldAutoApprove 
       ? `ผ่านการตรวจสอบอัตโนมัติ (${totalScore}/100)`
       : `ต้องตรวจสอบด้วยตนเอง (${totalScore}/100)`
+  };
+};
+
+/**
+ * Verify receiver's bank account information
+ * @param {Object} slipData - Data extracted from slip
+ * @param {Object} expectedAccount - Expected account information
+ * @returns {Object} Verification result
+ */
+export const verifyReceiverAccount = (slipData, expectedAccount) => {
+  const receiver = slipData.receiver;
+  
+  if (!receiver) {
+    return {
+      match: false,
+      score: 0,
+      message: "ไม่พบข้อมูลบัญชีผู้รับในสลิป"
+    };
+  }
+
+  let score = 0;
+  const checks = [];
+
+  // ตรวจสอบเลขบัญชี (20 คะแนน)
+  if (receiver.account) {
+    // ลบเครื่องหมายขีดออกเพื่อเปรียบเทียบ
+    const slipAccount = receiver.account.replace(/[-\s]/g, '');
+    const expectedAccountNumber = expectedAccount.number.replace(/[-\s]/g, '');
+    
+    if (slipAccount === expectedAccountNumber) {
+      score += 20;
+      checks.push("✅ เลขบัญชีถูกต้อง");
+    } else {
+      checks.push(`❌ เลขบัญชีไม่ตรงกัน: พบ ${receiver.account}, ต้องการ ${expectedAccount.number}`);
+    }
+  } else {
+    checks.push("❌ ไม่พบเลขบัญชีผู้รับ");
+  }
+
+  // ตรวจสอบชื่อบัญชี (10 คะแนน)
+  if (receiver.name) {
+    // ตรวจสอบความคล้ายคลึงของชื่อ (อาจมีการเขียนต่างกัน)
+    const slipName = receiver.name.toLowerCase().replace(/\s+/g, '');
+    const expectedName = expectedAccount.name.toLowerCase().replace(/\s+/g, '');
+    
+    if (slipName.includes('เชษฐา') || slipName.includes('พวงบุบผา') || 
+        expectedName.includes(slipName) || slipName.includes(expectedName)) {
+      score += 10;
+      checks.push("✅ ชื่อบัญชีตรงกัน");
+    } else {
+      checks.push(`❌ ชื่อบัญชีไม่ตรงกัน: พบ ${receiver.name}, ต้องการ ${expectedAccount.name}`);
+    }
+  } else {
+    checks.push("❌ ไม่พบชื่อบัญชีผู้รับ");
+  }
+
+  // ตรวจสอบธนาคาร (5 คะแนน)
+  if (receiver.bank) {
+    const bankCodes = ['KBANK', 'กสิกรไทย', 'กสิกร', 'KASIKORN'];
+    const slipBank = receiver.bank.toUpperCase();
+    
+    if (bankCodes.some(code => slipBank.includes(code.toUpperCase()))) {
+      score += 5;
+      checks.push("✅ ธนาคารถูกต้อง (กสิกรไทย)");
+    } else {
+      checks.push(`❌ ธนาคารไม่ถูกต้อง: พบ ${receiver.bank}, ต้องการกสิกรไทย`);
+    }
+  } else {
+    checks.push("❌ ไม่พบข้อมูลธนาคารผู้รับ");
+  }
+
+  return {
+    match: score >= 30, // ต้องผ่านอย่างน้อย 30/35 คะแนน
+    score: score,
+    message: checks.join(', '),
+    details: {
+      found: {
+        account: receiver.account || 'ไม่พบ',
+        name: receiver.name || 'ไม่พบ',
+        bank: receiver.bank || 'ไม่พบ'
+      },
+      expected: expectedAccount,
+      checks: checks
+    }
+  };
+};
+
+/**
+ * Check if account number matches expected receiver account
+ * @param {string} accountNumber - Account number to check
+ * @param {string} accountName - Account name to check (optional)
+ * @returns {Object} Match result
+ */
+export const isExpectedReceiverAccount = (accountNumber, accountName = null) => {
+  const expectedAccount = {
+    number: "107-889-8751",
+    name: "นาย เชษฐา พวงบุบผา",
+    bank: "กสิกรไทย"
+  };
+
+  // ลบเครื่องหมายขีดออกเพื่อเปรียบเทียบ
+  const cleanAccountNumber = accountNumber?.replace(/[-\s]/g, '') || '';
+  const expectedCleanNumber = expectedAccount.number.replace(/[-\s]/g, '');
+
+  const accountMatch = cleanAccountNumber === expectedCleanNumber;
+  
+  let nameMatch = true; // ถ้าไม่ส่งชื่อมา ถือว่าผ่าน
+  if (accountName) {
+    const cleanName = accountName.toLowerCase().replace(/\s+/g, '');
+    nameMatch = cleanName.includes('เชษฐา') || cleanName.includes('พวงบุบผา');
+  }
+
+  return {
+    isValid: accountMatch && nameMatch,
+    accountMatch,
+    nameMatch,
+    expected: expectedAccount,
+    message: accountMatch && nameMatch 
+      ? "บัญชีถูกต้อง" 
+      : !accountMatch 
+        ? `เลขบัญชีไม่ถูกต้อง: ต้องการ ${expectedAccount.number}`
+        : "ชื่อบัญชีไม่ถูกต้อง"
   };
 };
