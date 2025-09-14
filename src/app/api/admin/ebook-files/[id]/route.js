@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { v2 as cloudinary } from 'cloudinary';
+import { deleteFromVercelBlob } from '@/lib/vercel-blob';
 
 const prisma = new PrismaClient();
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // DELETE - Remove ebook file
 export async function DELETE(request, { params }) {
@@ -35,18 +28,16 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Delete file from Cloudinary if exists
+    // Delete file from Vercel Blob if exists
     if (ebook.fileUrl) {
       try {
-        // Extract public_id from Cloudinary URL
-        const urlParts = ebook.fileUrl.split('/');
-        const fileWithExtension = urlParts[urlParts.length - 1];
-        const publicId = `ebooks/${fileWithExtension.split('.')[0]}`;
-        
-        await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
-      } catch (cloudinaryError) {
-        console.error('Error deleting file from Cloudinary:', cloudinaryError);
-        // Continue with database update even if Cloudinary deletion fails
+        const deleteResult = await deleteFromVercelBlob(ebook.fileUrl);
+        if (!deleteResult.success) {
+          console.error('Error deleting file from Vercel Blob:', deleteResult.error);
+        }
+      } catch (blobError) {
+        console.error('Error deleting file from Vercel Blob:', blobError);
+        // Continue with database update even if Blob deletion fails
       }
     }
 

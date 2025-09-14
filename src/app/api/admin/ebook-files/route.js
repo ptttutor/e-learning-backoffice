@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { v2 as cloudinary } from 'cloudinary';
+import {
+  uploadToVercelBlob,
+  generateUniqueFilename,
+  validateFile,
+  getFolderPath
+} from '@/lib/vercel-blob';
 
 const prisma = new PrismaClient();
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // POST - Upload ebook file
 export async function POST(request) {
@@ -37,39 +35,46 @@ export async function POST(request) {
       );
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/epub+zip'];
+    const maxSize = 50 * 1024 * 1024; // 50MB สำหรับ eBook
+    
+    const validation = validateFile(file, allowedTypes, maxSize);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { success: false, error: validation.errors.join(', ') },
+        { status: 400 }
+      );
+    }
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'raw', // สำคัญ: ต้องเป็น 'raw' เพื่อให้ Google Drive Viewer เปิดได้
-          folder: 'ebooks',
-          public_id: `${ebookId}_${Date.now()}`,
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(buffer);
-    });
+    // Generate unique filename and upload to Vercel Blob
+    const uniqueFilename = generateUniqueFilename(file.name, `ebook_${ebookId}`);
+    const folder = getFolderPath('ebook');
+
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folder);
+
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to upload file: ' + uploadResult.error },
+        { status: 500 }
+      );
+    }
 
     // Update ebook with file URL and metadata
     const updatedEbook = await prisma.ebook.update({
       where: { id: ebookId },
       data: {
-        fileUrl: uploadResult.secure_url,
-        fileSize: uploadResult.bytes,
+        fileUrl: uploadResult.url,
+        fileSize: file.size,
       }
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        fileUrl: uploadResult.secure_url,
-        fileSize: uploadResult.bytes,
+        fileUrl: uploadResult.url,
+        downloadUrl: uploadResult.downloadUrl,
+        fileSize: file.size,
         ebook: updatedEbook
       }
     });

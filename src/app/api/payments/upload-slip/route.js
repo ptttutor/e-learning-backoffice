@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { uploadToCloudinary } from "@/lib/cloudinary-utils";
+import { uploadToVercelBlob, validateFile, generateUniqueFilename } from "@/lib/vercel-blob";
 import { verifySlipWithEasySlip, calculateSlipConfidence } from "@/lib/easyslip";
 import { 
   sendPaymentSuccessNotification, 
@@ -42,16 +42,11 @@ export async function POST(request) {
 
     // ตรวจสอบไฟล์
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
+    const validation = validateFile(file, allowedTypes, 10 * 1024 * 1024);
+    
+    if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, error: "รองรับเฉพาะไฟล์ JPG, PNG, WEBP เท่านั้น" },
-        { status: 400 }
-      );
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { success: false, error: "ไฟล์ต้องมีขนาดไม่เกิน 10MB" },
+        { success: false, error: validation.errors.join(', ') },
         { status: 400 }
       );
     }
@@ -77,9 +72,10 @@ export async function POST(request) {
 
     console.log('📦 Order found:', order.id, order.orderNumber, order.total);
 
-    // อัปโหลดไฟล์ไปยัง Cloudinary
-    console.log('☁️ Uploading to Cloudinary...');
-    const uploadResult = await uploadToCloudinary(file, 'payment-slips');
+    // อัปโหลดไฟล์ไปยัง Vercel Blob
+    console.log('☁️ Uploading to Vercel Blob...');
+    const uniqueFilename = generateUniqueFilename(file.name, `slip_${orderId}`);
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, 'payment-slips');
 
     if (!uploadResult.success) {
       return NextResponse.json(
@@ -88,7 +84,7 @@ export async function POST(request) {
       );
     }
 
-    console.log('✅ Upload successful:', uploadResult.data.url);
+    console.log('✅ Upload successful:', uploadResult.url);
 
     // ตรวจสอบ slip ด้วย EasySlip API
     let verificationResult = null;
@@ -129,7 +125,7 @@ export async function POST(request) {
       method: paymentMethod,
       status: shouldAutoApprove ? 'COMPLETED' : 'PENDING_VERIFICATION',
       amount: order.total,
-      slipUrl: uploadResult.data.url,
+      slipUrl: uploadResult.url,
       uploadedAt: new Date(),
       verifiedAt: shouldAutoApprove ? new Date() : null,
       slipAnalysisData: verificationResult ? JSON.stringify(verificationResult) : null,
@@ -300,8 +296,8 @@ export async function POST(request) {
         confidenceDetails: confidenceCalculation?.details,
         autoApproved: shouldAutoApprove,
         upload: {
-          url: uploadResult.data.url,
-          publicId: uploadResult.data.publicId
+          url: uploadResult.url,
+          pathname: uploadResult.pathname
         },
         message: confidenceCalculation?.message || `อัปโหลด slip สำเร็จ กำลังรอการตรวจสอบ (0% confidence)`
       }

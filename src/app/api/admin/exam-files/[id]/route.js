@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { v2 as cloudinary } from 'cloudinary';
+import { deleteFromVercelBlob } from '@/lib/vercel-blob';
 
 const prisma = new PrismaClient();
-
-// ตั้งค่า Cloudinary จาก ENV
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // DELETE - ลบไฟล์ข้อสอบ
 export async function DELETE(request, { params }) {
@@ -32,26 +25,21 @@ export async function DELETE(request, { params }) {
 
     console.log('📄 Found file to delete:', examFile.fileName);
 
-    // ลบไฟล์จาก Cloudinary
+    // ลบไฟล์จาก Vercel Blob
     try {
-      // เลือก method ของการลบตาม URL
-      if (examFile.filePath.includes('cloudinary.com')) {
-        // ดึง public_id จาก URL
-        const urlParts = examFile.filePath.split('/');
-        const publicIdWithExt = urlParts[urlParts.length - 1];
-        const publicId = publicIdWithExt.split('.')[0];
-        const fullPublicId = `exams/${publicId}`;
+      if (examFile.filePath) {
+        console.log('🔍 Attempting to delete from Vercel Blob:', examFile.filePath);
         
-        console.log('🔍 Attempting to delete from Cloudinary:', fullPublicId);
-        
-        await cloudinary.uploader.destroy(fullPublicId, { resource_type: 'raw' });
-        console.log('✅ Cloudinary file deleted successfully');
-      } else {
-        console.log('⚠️ File appears to be local, skipping Cloudinary deletion');
+        const deleteResult = await deleteFromVercelBlob(examFile.filePath);
+        if (deleteResult.success) {
+          console.log('✅ Vercel Blob file deleted successfully');
+        } else {
+          console.log('⚠️ Error deleting from Vercel Blob:', deleteResult.error);
+        }
       }
-    } catch (cloudError) {
-      console.log('⚠️ Error deleting from Cloudinary:', cloudError.message);
-      // Continue with database deletion even if Cloudinary deletion fails
+    } catch (blobError) {
+      console.log('⚠️ Error deleting from Vercel Blob:', blobError.message);
+      // Continue with database deletion even if Blob deletion fails
     }
 
     // ลบข้อมูลไฟล์จากฐานข้อมูล

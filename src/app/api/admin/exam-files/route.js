@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { v2 as cloudinary } from 'cloudinary';
+import {
+  uploadToVercelBlob,
+  generateUniqueFilename,
+  validateFile,
+  getFolderPath
+} from '@/lib/vercel-blob';
 
 const prisma = new PrismaClient();
-
-// ตั้งค่า Cloudinary จาก ENV
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // POST - อัพโหลดไฟล์ข้อสอบ
 export async function POST(request) {
@@ -37,52 +35,38 @@ export async function POST(request) {
       );
     }
 
-    // ตรวจสอบประเภทไฟล์
+    // ตรวจสอบประเภทไฟล์และขนาด
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
+    const maxSize = 50 * 1024 * 1024; // 50MB สำหรับไฟล์ข้อสอบ
+    
+    const validation = validateFile(file, allowedTypes, maxSize);
+    if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, error: 'ประเภทไฟล์ไม่ถูกต้อง (รองรับเฉพาะ PDF, Word, รูปภาพ)' },
-        { status: 400 }
-      );
-    }
-
-    // ตรวจสอบขนาดไฟล์ (จำกัดที่ 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { success: false, error: 'ขนาดไฟล์เกิน 10MB' },
+        { success: false, error: validation.errors.join(', ') },
         { status: 400 }
       );
     }
 
     // สร้างชื่อไฟล์ใหม่
-    const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
-    const filename = `${examId}_${timestamp}.${fileExtension}`;
+    const uniqueFilename = generateUniqueFilename(file.name, `exam_${examId}`);
+    const folder = getFolderPath('exam');
 
-    // แปลงไฟล์เป็น buffer และสร้าง data URL
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    
-    // สร้าง data URL จาก buffer
-    const base64 = buffer.toString('base64');
-    const dataURI = `data:${file.type};base64,${base64}`;
+    // อัพโหลดไปยัง Vercel Blob
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folder);
 
-    // อัพโหลดไปยัง Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(dataURI, {
-      folder: "exams",
-      use_filename: true,
-      unique_filename: false,
-      public_id: `${examId}_${timestamp}`,
-      resource_type: 'raw' // สำหรับไฟล์ที่ไม่ใช่รูปภาพ
-    });
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'ไม่สามารถอัปโหลดไฟล์ได้: ' + uploadResult.error },
+        { status: 500 }
+      );
+    }
 
     // บันทึกข้อมูลลงฐานข้อมูล
     const examFile = await prisma.examFile.create({
       data: {
         examId: examId,
         fileName: file.name,
-        filePath: uploadResult.secure_url, // URL จาก Cloudinary
+        filePath: uploadResult.url, // URL จาก Vercel Blob
         fileType: file.type,
         fileSize: file.size
       }
