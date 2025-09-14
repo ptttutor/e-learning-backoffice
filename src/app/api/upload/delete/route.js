@@ -1,30 +1,29 @@
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
+import { deleteFromVercelBlob } from '@/lib/vercel-blob';
 
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const publicId = searchParams.get('publicId');
+    const url = searchParams.get('url');
 
-    if (!publicId) {
+    if (!url) {
       return NextResponse.json(
-        { success: false, error: 'Missing publicId parameter' },
+        { success: false, error: 'Missing file URL parameter' },
         { status: 400 }
       );
     }
 
-    // Delete from Cloudinary
-    const result = await cloudinary.uploader.destroy(publicId);
+    // Delete from Vercel Blob
+    const deleteResult = await deleteFromVercelBlob(url);
 
-    if (result.result === 'ok' || result.result === 'not found') {
+    if (deleteResult.success) {
       return NextResponse.json({
         success: true,
-        message: 'Image deleted successfully',
-        result: result
+        message: 'File deleted successfully'
       });
     } else {
       return NextResponse.json(
-        { success: false, error: 'Failed to delete image from Cloudinary' },
+        { success: false, error: 'Failed to delete file: ' + deleteResult.error },
         { status: 500 }
       );
     }

@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
+import {
+  uploadToVercelBlob,
+  deleteFromVercelBlob,
+  generateUniqueFilename,
+  validateFile,
+  getFolderPath
+} from '@/lib/vercel-blob';
 
 export async function POST(request) {
   try {
@@ -14,59 +20,46 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type
+    // Define allowed file types and max sizes based on type
+    let allowedTypes = [];
+    let maxSize = 15 * 1024 * 1024; // Default 15MB
+
     if (type === 'ebook') {
-      const allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
-      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|epub|mobi)$/i)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid file type. Only PDF, EPUB, and MOBI files are allowed.' },
-          { status: 400 }
-        );
-      }
+      allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
+      maxSize = 50 * 1024 * 1024; // 50MB for ebooks
     } else if (type === 'cover' || type === 'question') {
-      if (!file.type.startsWith('image/')) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid file type. Only image files are allowed.' },
-          { status: 400 }
-        );
-      }
+      allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      maxSize = 15 * 1024 * 1024; // 15MB for images
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Validate file
+    const validation = validateFile(file, allowedTypes, maxSize);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { success: false, error: validation.errors.join(', ') },
+        { status: 400 }
+      );
+    }
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadOptions = {
-        folder: type === 'ebook' ? 'e-learning/ebooks' : 
-                type === 'cover' ? 'e-learning/covers' : 'e-learning/questions',
-        resource_type: type === 'ebook' ? 'raw' : 'image',
-        public_id: `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
-      };
+    // Generate unique filename and get folder path
+    const uniqueFilename = generateUniqueFilename(file.name);
+    const folder = getFolderPath(type);
 
-      // For images, add transformation options
-      if (type === 'cover' || type === 'question') {
-        uploadOptions.transformation = [
-          { width: 800, height: 600, crop: 'limit' },
-          { quality: 'auto' },
-          { fetch_format: 'auto' }
-        ];
-      }
+    // Upload to Vercel Blob
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folder);
 
-      cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }).end(buffer);
-    });
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Upload failed: ' + uploadResult.error },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
+      url: uploadResult.url,
+      pathname: uploadResult.pathname,
+      downloadUrl: uploadResult.downloadUrl,
       filename: file.name,
       size: file.size,
       type: file.type,
@@ -82,25 +75,32 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const { publicId } = await request.json();
+    const { url } = await request.json();
 
-    if (!publicId) {
+    if (!url) {
       return NextResponse.json(
-        { success: false, error: 'Public ID is required' },
+        { success: false, error: 'File URL is required' },
         { status: 400 }
       );
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    const deleteResult = await deleteFromVercelBlob(url);
+
+    if (!deleteResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Delete failed: ' + deleteResult.error },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: result,
+      message: 'File deleted successfully',
     });
   } catch (error) {
     console.error('Delete error:', error);
     return NextResponse.json(
-      { success: false, error: 'Delete failed' },
+      { success: false, error: 'Delete failed: ' + error.message },
       { status: 500 }
     );
   }

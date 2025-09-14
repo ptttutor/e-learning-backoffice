@@ -118,7 +118,7 @@ export function generateUniqueFilename(originalName, prefix = '') {
  * @param {number} maxSize - Maximum file size in bytes
  * @returns {Object} Validation result
  */
-export function validateFile(file, allowedTypes = [], maxSize = 5 * 1024 * 1024) {
+export function validateFile(file, allowedTypes = [], maxSize = 15 * 1024 * 1024) {
   const errors = [];
 
   // Check file type

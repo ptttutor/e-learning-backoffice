@@ -99,14 +99,14 @@ function getAllowedTypes(type) {
  */
 function getMaxFileSize(type) {
   const sizeConfig = {
-    'cover': 5 * 1024 * 1024, // 5MB
+    'cover': 15 * 1024 * 1024, // 15MB
     'ebook': 50 * 1024 * 1024, // 50MB
     'exam': 50 * 1024 * 1024, // 50MB
-    'payment-slip': 5 * 1024 * 1024, // 5MB
-    'post-image': 5 * 1024 * 1024, // 5MB
-    'question-image': 2 * 1024 * 1024, // 2MB
-    'general': 10 * 1024 * 1024, // 10MB
+    'payment-slip': 15 * 1024 * 1024, // 15MB
+    'post-image': 15 * 1024 * 1024, // 15MB
+    'question-image': 15 * 1024 * 1024, // 15MB
+    'general': 15 * 1024 * 1024, // 15MB
   };
 
-  return sizeConfig[type] || 10 * 1024 * 1024; // Default 10MB
+  return sizeConfig[type] || 15 * 1024 * 1024; // Default 15MB
 }

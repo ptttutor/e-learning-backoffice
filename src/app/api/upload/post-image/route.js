@@ -21,7 +21,7 @@ export async function POST(request) {
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const validation = validateFile(file, allowedTypes, 5 * 1024 * 1024);
+    const validation = validateFile(file, allowedTypes, 15 * 1024 * 1024);
     
     if (!validation.isValid) {
       return NextResponse.json(

@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
+import {
+  uploadToVercelBlob,
+  generateUniqueFilename,
+  validateFile,
+  getFolderPath
+} from '@/lib/vercel-blob';
 
 export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file');
     const folder = formData.get('folder') || 'general'; // Optional folder parameter
-    const width = formData.get('width') || 800; // Optional width parameter
-    const height = formData.get('height') || 600; // Optional height parameter
+    const width = formData.get('width') || 800; // Optional width parameter (not used in Vercel Blob)
+    const height = formData.get('height') || 600; // Optional height parameter (not used in Vercel Blob)
 
     if (!file) {
       return NextResponse.json(
@@ -16,73 +21,42 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type
+    // Validate file type and size
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
+    const maxSize = 15 * 1024 * 1024; // 15MB for images
+    
+    const validation = validateFile(file, allowedTypes, maxSize);
+    if (!validation.isValid) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF files are allowed.' 
-        },
+        { success: false, error: validation.errors.join(', ') },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+    // Generate unique filename and get folder path
+    const uniqueFilename = generateUniqueFilename(file.name);
+    const folderPath = folder === 'general' ? 'uploads' : folder;
+
+    // Upload to Vercel Blob
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folderPath);
+
+    if (!uploadResult.success) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'File too large. Maximum size is 5MB.' 
-        },
-        { status: 400 }
+        { success: false, error: 'Upload failed: ' + uploadResult.error },
+        { status: 500 }
       );
     }
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadOptions = {
-        folder: `e-learning/${folder}`,
-        resource_type: 'image',
-        public_id: `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
-        transformation: [
-          { 
-            width: parseInt(width), 
-            height: parseInt(height), 
-            crop: 'limit',
-            quality: 'auto',
-            format: 'auto'
-          }
-        ]
-      };
-
-      cloudinary.uploader.upload_stream(
-        uploadOptions,
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            reject(error);
-          } else {
-            resolve(result);
-          }
-        }
-      ).end(buffer);
-    });
 
     return NextResponse.json({
       success: true,
       data: {
-        url: uploadResult.secure_url,
-        publicId: uploadResult.public_id,
-        width: uploadResult.width,
-        height: uploadResult.height,
-        format: uploadResult.format,
-        bytes: uploadResult.bytes
+        url: uploadResult.url,
+        pathname: uploadResult.pathname,
+        downloadUrl: uploadResult.downloadUrl,
+        filename: file.name,
+        size: file.size,
+        format: file.type,
+        folder: folderPath
       }
     });
 
@@ -102,26 +76,27 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const publicId = searchParams.get('publicId');
+    const url = searchParams.get('url');
 
-    if (!publicId) {
+    if (!url) {
       return NextResponse.json(
-        { success: false, error: 'Public ID is required' },
+        { success: false, error: 'File URL is required' },
         { status: 400 }
       );
     }
 
-    // Use cloudinary for deletion
-    const deleteResult = await cloudinary.uploader.destroy(publicId);
+    // Import deleteFromVercelBlob dynamically
+    const { deleteFromVercelBlob } = await import('@/lib/vercel-blob');
+    const deleteResult = await deleteFromVercelBlob(url);
 
-    if (deleteResult.result === 'ok') {
+    if (deleteResult.success) {
       return NextResponse.json({
         success: true,
         message: 'Image deleted successfully'
       });
     } else {
       return NextResponse.json(
-        { success: false, error: 'Failed to delete image' },
+        { success: false, error: 'Failed to delete image: ' + deleteResult.error },
         { status: 400 }
       );
     }
@@ -129,7 +104,7 @@ export async function DELETE(request) {
   } catch (error) {
     console.error('Image deletion error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete image' },
+      { success: false, error: 'Failed to delete image: ' + error.message },
       { status: 500 }
     );
   }

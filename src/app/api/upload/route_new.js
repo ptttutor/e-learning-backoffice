@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import cloudinary from '@/lib/cloudinary';
+import {
+  uploadToVercelBlob,
+  deleteFromVercelBlob,
+  generateUniqueFilename,
+  validateFile,
+  getFolderPath
+} from '@/lib/vercel-blob';
 
 export async function POST(request) {
   try {
@@ -14,60 +20,30 @@ export async function POST(request) {
       );
     }
 
-    // Validate file type
-    if (type === 'ebook') {
-      const allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
-      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|epub|mobi)$/i)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid file type. Only PDF, EPUB, and MOBI files are allowed.' },
-          { status: 400 }
-        );
-      }
-    } else if (type === 'cover' || type === 'question') {
-      if (!file.type.startsWith('image/')) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid file type. Only image files are allowed.' },
-          { status: 400 }
-        );
-      }
+    // Validate file with Vercel Blob constraints
+    const validation = validateFile(file, type);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { success: false, error: validation.error },
+        { status: 400 }
+      );
     }
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadOptions = {
-        folder: type === 'ebook' ? 'e-learning/ebooks' : 
-                type === 'cover' ? 'e-learning/covers' : 'e-learning/questions',
-        resource_type: type === 'ebook' ? 'raw' : 'image',
-        public_id: `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
-      };
-
-      // For images, add transformation options
-      if (type === 'cover' || type === 'question') {
-        uploadOptions.transformation = [
-          { width: 800, height: 600, crop: 'limit' },
-          { quality: 'auto' },
-          { fetch_format: 'auto' }
-        ];
-      }
-
-      cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }).end(buffer);
-    });
+    // Generate unique filename
+    const uniqueFilename = generateUniqueFilename(file.name);
+    
+    // Upload to Vercel Blob
+    const folderPath = getFolderPath(type);
+    const uploadResult = await uploadToVercelBlob(buffer, uniqueFilename, folderPath);
 
     return NextResponse.json({
       success: true,
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
-      filename: file.name,
+      url: uploadResult.url,
+      filename: uniqueFilename,
       size: file.size,
       type: file.type,
     });
@@ -82,16 +58,16 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const { publicId } = await request.json();
+    const { url } = await request.json();
 
-    if (!publicId) {
+    if (!url) {
       return NextResponse.json(
-        { success: false, error: 'Public ID is required' },
+        { success: false, error: 'File URL is required' },
         { status: 400 }
       );
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await deleteFromVercelBlob(url);
 
     return NextResponse.json({
       success: true,

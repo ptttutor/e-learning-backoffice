@@ -42,7 +42,7 @@ export async function POST(request) {
 
     // ตรวจสอบไฟล์
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    const validation = validateFile(file, allowedTypes, 10 * 1024 * 1024);
+    const validation = validateFile(file, allowedTypes, 15 * 1024 * 1024);
     
     if (!validation.isValid) {
       return NextResponse.json(
