@@ -44,11 +44,11 @@ export function useExamCategories() {
       const currentPagination = customPagination || paginationRef.current;
 
       const params = new URLSearchParams({
-        page: currentPagination.page.toString(),
-        pageSize: currentPagination.pageSize.toString(),
-        search: currentFilters.search,
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
+        page: (currentPagination.page || 1).toString(),
+        pageSize: (currentPagination.pageSize || 10).toString(),
+        search: currentFilters.search || "",
+        sortBy: currentFilters.sortBy || "createdAt",
+        sortOrder: currentFilters.sortOrder || "desc",
       });
 
       if (currentFilters.isActive !== "") {
@@ -268,6 +268,7 @@ export function useExamCategories() {
   return {
     // State
     examCategories,
+    setExamCategories,
     loading,
     filters,
     pagination,

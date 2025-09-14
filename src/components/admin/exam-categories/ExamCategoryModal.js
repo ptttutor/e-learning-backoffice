@@ -75,7 +75,7 @@ export default function ExamCategoryModal({
       onCancel={handleCancel}
       width={600}
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={loading}>
           ยกเลิก
         </Button>,
         <Button
@@ -118,6 +118,7 @@ export default function ExamCategoryModal({
             placeholder="เช่น วิทยาศาสตร์, คณิตศาสตร์, ภาษาอังกฤษ"
             maxLength={100}
             showCount
+            disabled={loading}
           />
         </Form.Item>
 
@@ -136,6 +137,7 @@ export default function ExamCategoryModal({
             rows={4}
             maxLength={500}
             showCount
+            disabled={loading}
           />
         </Form.Item>
 
@@ -148,6 +150,7 @@ export default function ExamCategoryModal({
           <Switch
             checkedChildren="เปิดใช้งาน"
             unCheckedChildren="ปิดใช้งาน"
+            disabled={loading}
           />
         </Form.Item>
       </Form>

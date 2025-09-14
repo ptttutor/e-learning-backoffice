@@ -19,6 +19,8 @@ export default function ExamCategoryTable({
   onDelete,
   onToggleStatus,
   onTableChange,
+  deletingId,
+  toggling,
 }) {
   const columns = [
     {
@@ -78,6 +80,7 @@ export default function ExamCategoryTable({
             checkedChildren="เปิด"
             unCheckedChildren="ปิด"
             size="small"
+            loading={toggling === record.id}
           />
         </Popconfirm>
       ),
@@ -174,6 +177,7 @@ export default function ExamCategoryTable({
                 size="small"
                 icon={<DeleteOutlined />}
                 disabled={record._count?.exams > 0}
+                loading={deletingId === record.id}
               />
             </Tooltip>
           </Popconfirm>
