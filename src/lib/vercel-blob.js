@@ -1,22 +1,104 @@
 import { put, del, list } from '@vercel/blob';
 
 /**
+ * Compress image if it's too large
+ * @param {File} file - Original image file
+ * @param {number} maxSizeBytes - Maximum file size in bytes
+ * @param {number} quality - Compression quality (0-1)
+ * @returns {Promise<File>} Compressed file or original if not needed
+ */
+async function compressImageIfNeeded(file, maxSizeBytes = 2 * 1024 * 1024, quality = 0.8) {
+  // Get settings from environment or use defaults
+  const compressionQuality = parseFloat(process.env.UPLOAD_COMPRESSION_QUALITY || '0.8');
+  const maxWidth = parseInt(process.env.UPLOAD_MAX_WIDTH || '1920');
+  const maxHeight = parseInt(process.env.UPLOAD_MAX_HEIGHT || '1080');
+  
+  // Only compress if file is an image and larger than max size
+  if (!file.type.startsWith('image/') || file.size <= maxSizeBytes) {
+    return file;
+  }
+
+  try {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          file.type,
+          quality || compressionQuality
+        );
+      };
+
+      img.onerror = () => {
+        // If compression fails, return original file
+        resolve(file);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  } catch (error) {
+    console.warn('Image compression failed, using original:', error);
+    return file;
+  }
+}
+
+/**
  * Upload file to Vercel Blob
  * @param {File|Buffer} file - File to upload
  * @param {string} filename - File name
  * @param {string} folder - Folder path (optional)
+ * @param {boolean} compressImage - Whether to compress images (default: true)
  * @returns {Promise<Object>} Upload result
  */
-export async function uploadToVercelBlob(file, filename, folder = '') {
+export async function uploadToVercelBlob(file, filename, folder = '', compressImage = true) {
   try {
+    let processedFile = file;
+    
+    // Compress image if it's a browser File object and compression is enabled
+    if (compressImage && typeof window !== 'undefined' && file instanceof File && file.type.startsWith('image/')) {
+      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+      processedFile = await compressImageIfNeeded(file);
+      console.log('Processed file size:', (processedFile.size / 1024 / 1024).toFixed(2), 'MB');
+    }
+
     let buffer;
     
-    // Convert file to buffer if it's a File object
-    if (file instanceof File) {
-      const arrayBuffer = await file.arrayBuffer();
+    // Convert file to buffer
+    if (processedFile instanceof File) {
+      const arrayBuffer = await processedFile.arrayBuffer();
       buffer = new Uint8Array(arrayBuffer);
-    } else if (Buffer.isBuffer(file)) {
-      buffer = file;
+    } else if (Buffer.isBuffer(processedFile)) {
+      buffer = processedFile;
     } else {
       throw new Error('Unsupported file type');
     }
@@ -24,11 +106,21 @@ export async function uploadToVercelBlob(file, filename, folder = '') {
     // Create full path with folder
     const pathname = folder ? `${folder}/${filename}` : filename;
 
-    // Upload to Vercel Blob
-    const blob = await put(pathname, buffer, {
+    console.log('Uploading to Vercel Blob:', pathname, 'Size:', buffer.length);
+
+    // Upload to Vercel Blob with timeout
+    const uploadPromise = put(pathname, buffer, {
       access: 'public',
       addRandomSuffix: false,
     });
+
+    // Add timeout to prevent hanging
+    const timeoutMs = parseInt(process.env.UPLOAD_TIMEOUT || '60000'); // Default 60 seconds
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Upload timeout after ${timeoutMs/1000} seconds`)), timeoutMs);
+    });
+
+    const blob = await Promise.race([uploadPromise, timeoutPromise]);
 
     return {
       success: true,
@@ -36,6 +128,9 @@ export async function uploadToVercelBlob(file, filename, folder = '') {
       pathname: blob.pathname,
       size: blob.size,
       downloadUrl: blob.downloadUrl,
+      originalSize: file.size,
+      compressedSize: processedFile.size,
+      compressed: file.size !== processedFile.size,
     };
   } catch (error) {
     console.error('Vercel Blob upload error:', error);

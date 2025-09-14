@@ -10,9 +10,19 @@ import {
 
 export async function POST(request) {
   try {
+    console.log('🚀 Starting file upload process...');
+    
     const formData = await request.formData();
     const file = formData.get('file');
     const type = formData.get('type') || 'general'; // 'cover', 'ebook', 'exam', 'payment-slip', etc.
+
+    console.log('📋 Upload request:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : 'Unknown',
+      fileType: file?.type,
+      uploadType: type
+    });
 
     if (!file) {
       return NextResponse.json(
@@ -25,9 +35,15 @@ export async function POST(request) {
     const allowedTypes = getAllowedTypes(type);
     const maxSize = getMaxFileSize(type);
 
+    console.log('🔍 Validation config:', {
+      allowedTypes,
+      maxSizeMB: (maxSize / 1024 / 1024).toFixed(1)
+    });
+
     // Validate file
     const validation = validateFile(file, allowedTypes, maxSize);
     if (!validation.isValid) {
+      console.error('❌ File validation failed:', validation.errors);
       return NextResponse.json(
         { success: false, error: validation.errors.join(', ') },
         { status: 400 }
@@ -40,15 +56,25 @@ export async function POST(request) {
     // Get appropriate folder
     const folder = getFolderPath(type);
 
-    // Upload to Vercel Blob
-    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folder);
+    console.log('☁️ Uploading to Vercel Blob:', { uniqueFilename, folder });
+
+    // Upload to Vercel Blob with compression for images
+    const uploadResult = await uploadToVercelBlob(file, uniqueFilename, folder, true);
 
     if (!uploadResult.success) {
+      console.error('❌ Upload failed:', uploadResult.error);
       return NextResponse.json(
         { success: false, error: uploadResult.error },
         { status: 500 }
       );
     }
+
+    console.log('✅ Upload successful:', {
+      url: uploadResult.url,
+      originalSize: uploadResult.originalSize,
+      finalSize: uploadResult.compressedSize,
+      compressed: uploadResult.compressed
+    });
 
     return NextResponse.json({
       success: true,
@@ -58,16 +84,33 @@ export async function POST(request) {
         pathname: uploadResult.pathname,
         filename: file.name,
         uniqueFilename: uniqueFilename,
-        size: file.size,
+        size: uploadResult.compressedSize || uploadResult.size,
+        originalSize: uploadResult.originalSize,
         type: file.type,
         folder: folder,
+        compressed: uploadResult.compressed || false,
       }
     });
 
   } catch (error) {
-    console.error('Vercel Blob upload error:', error);
+    console.error('❌ Vercel Blob upload error:', error);
+    
+    // Detailed error logging
+    const errorDetails = {
+      message: error.message,
+      name: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    };
+    
+    console.error('📋 Error details:', errorDetails);
+    
     return NextResponse.json(
-      { success: false, error: 'Upload failed: ' + error.message },
+      { 
+        success: false, 
+        error: 'Upload failed: ' + error.message,
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      },
       { status: 500 }
     );
   }

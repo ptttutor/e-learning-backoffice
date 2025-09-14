@@ -5,11 +5,29 @@ const nextConfig = {
     // ใช้ swc compiler
     forceSwcTransforms: true,
   },
+  // เพิ่ม API route timeout สำหรับการอัปโหลดไฟล์ขนาดใหญ่
+  serverRuntimeConfig: {
+    // จะใช้ได้เฉพาะใน server-side
+    apiTimeout: 300000, // 5 minutes
+  },
+  // กำหนดขนาดไฟล์สูงสุดสำหรับ API routes
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb', // เพิ่มจาก default เป็น 50MB
+    },
+    responseLimit: false,
+  },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.vercel-storage.com',
         port: '',
         pathname: '/**',
       },

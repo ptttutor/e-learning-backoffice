@@ -1,6 +1,7 @@
 import { Modal, Form, Input, Select, Upload, Avatar, Row, Col, Space, message } from "antd";
 import { UserOutlined, UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
+import { uploadDiagnostics } from "@/lib/upload-diagnostics";
 
 const { Option } = Select;
 
@@ -62,26 +63,75 @@ export default function UserModal({ open, editing, onCancel, onSubmit }) {
   };
 
   // Custom upload function for Vercel Blob
-  const customUpload = async ({ file, onSuccess, onError }) => {
+  const customUpload = async ({ file, onSuccess, onError, onProgress }) => {
+    const monitor = uploadDiagnostics.createPerformanceMonitor();
+    
     try {
+      monitor.start();
+      
+      // Log file info and check compatibility
+      uploadDiagnostics.logFileInfo(file, 'Upload ');
+      const compatibility = uploadDiagnostics.checkFileCompatibility(file);
+      
+      if (!compatibility.compatible) {
+        console.warn('⚠️ File compatibility issues detected, but proceeding:', compatibility.issues);
+      }
+      
+      console.log('🚀 Starting upload:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'general'); // User profile images
+
+      // Simulate progress
+      onProgress({ percent: 30 });
+      monitor.progress(30);
 
       const response = await fetch('/api/upload-blob', {
         method: 'POST',
         body: formData,
       });
 
+      onProgress({ percent: 70 });
+      monitor.progress(70);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload response error:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      onProgress({ percent: 90 });
+      monitor.progress(90);
+
+      console.log('📊 Upload result:', result);
 
       if (result.success) {
+        onProgress({ percent: 100 });
+        monitor.complete(result.data);
+        
+        // Show compression info if applicable
+        if (result.data.compressed) {
+          const originalSizeMB = (result.data.originalSize / 1024 / 1024).toFixed(2);
+          const finalSizeMB = (result.data.size / 1024 / 1024).toFixed(2);
+          message.success(`อัปโหลดสำเร็จ! บีบอัดจาก ${originalSizeMB}MB เป็น ${finalSizeMB}MB`);
+        } else {
+          message.success('อัปโหลดสำเร็จ!');
+        }
+        
         onSuccess(result, file);
       } else {
+        console.error('❌ Upload failed:', result.error);
+        monitor.error(new Error(result.error));
         onError(new Error(result.error || 'Upload failed'));
       }
     } catch (error) {
+      console.error('❌ Upload error:', error);
+      monitor.error(error);
+      onProgress({ percent: 0 });
       onError(error);
+      message.error(`การอัปโหลดล้มเหลว: ${error.message}`);
     }
   };
 
@@ -97,11 +147,16 @@ export default function UserModal({ open, editing, onCancel, onSubmit }) {
         message.error('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น!');
         return false;
       }
-      const isLt5M = file.size / 1024 / 1024 < 5;
-      if (!isLt5M) {
-        message.error('ขนาดไฟล์ต้องไม่เกิน 5MB!');
+      const isLt15M = file.size / 1024 / 1024 < 15;
+      if (!isLt15M) {
+        message.error('ขนาดไฟล์ต้องไม่เกิน 15MB!');
         return false;
       }
+      
+      // Show file info
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      console.log('📄 File info:', { name: file.name, size: sizeMB + 'MB', type: file.type });
+      
       return true;
     },
   };
