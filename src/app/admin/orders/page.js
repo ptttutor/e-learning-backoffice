@@ -54,8 +54,6 @@ export default function AdminOrdersPage() {
   const [analyzingSlip, setAnalyzingSlip] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [actionType, setActionType] = useState("");
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     paymentStatus: '',
@@ -206,57 +204,6 @@ export default function AdminOrdersPage() {
     setSelectedOrder(order);
     setActionType("reject");
     setConfirmModalVisible(true);
-  };
-
-  const handleBulkAction = async (action) => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('กรุณาเลือกคำสั่งซื้อที่ต้องการดำเนินการ');
-      return;
-    }
-
-    const actionText = {
-      'confirm_payment': 'ยืนยันการชำระเงิน',
-      'reject_payment': 'ปฏิเสธการชำระเงิน',
-      'cancel_orders': 'ยกเลิกคำสั่งซื้อ'
-    };
-
-    Modal.confirm({
-      title: `${actionText[action]}`,
-      content: `ต้องการ${actionText[action]}จำนวน ${selectedRowKeys.length} รายการหรือไม่?`,
-      okText: 'ดำเนินการ',
-      cancelText: 'ยกเลิก',
-      onOk: async () => {
-        setBulkActionLoading(true);
-        try {
-          const response = await fetch('/api/admin/orders/bulk', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orderIds: selectedRowKeys,
-              action: action,
-              notes: `${actionText[action]}แบบกลุ่ม`
-            }),
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            message.success(result.message);
-            setSelectedRowKeys([]);
-            fetchOrders();
-          } else {
-            message.error(result.error);
-          }
-        } catch (error) {
-          console.error('Bulk action error:', error);
-          message.error('เกิดข้อผิดพลาดในการดำเนินการ');
-        } finally {
-          setBulkActionLoading(false);
-        }
-      }
-    });
   };
 
   const executeAction = async () => {
@@ -643,66 +590,11 @@ export default function AdminOrdersPage() {
       </Card>
 
       <Card>
-        {/* Bulk Actions */}
-        {selectedRowKeys.length > 0 && (
-          <div style={{ 
-            marginBottom: '16px', 
-            padding: '12px', 
-            backgroundColor: '#f6ffed', 
-            border: '1px solid #b7eb8f',
-            borderRadius: '6px'
-          }}>
-            <Space wrap>
-              <Text strong>เลือกแล้ว {selectedRowKeys.length} รายการ</Text>
-              <Button
-                type="primary"
-                icon={<CheckOutlined />}
-                size="small"
-                loading={bulkActionLoading}
-                onClick={() => handleBulkAction('confirm_payment')}
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-              >
-                ยืนยันการชำระเงิน
-              </Button>
-              <Button
-                danger
-                icon={<CloseOutlined />}
-                size="small"
-                loading={bulkActionLoading}
-                onClick={() => handleBulkAction('reject_payment')}
-              >
-                ปฏิเสธการชำระเงิน
-              </Button>
-              <Button
-                icon={<CloseOutlined />}
-                size="small"
-                loading={bulkActionLoading}
-                onClick={() => handleBulkAction('cancel_orders')}
-              >
-                ยกเลิกคำสั่งซื้อ
-              </Button>
-              <Button
-                size="small"
-                onClick={() => setSelectedRowKeys([])}
-              >
-                ยกเลิกการเลือก
-              </Button>
-            </Space>
-          </div>
-        )}
-
         <Table
           columns={columns}
           dataSource={orders}
           loading={loading}
           rowKey="id"
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-            getCheckboxProps: (record) => ({
-              disabled: record.status === 'COMPLETED' && record.payment?.status === 'COMPLETED',
-            }),
-          }}
           scroll={{ x: 1200 }}
           pagination={{
             pageSize: 10,
