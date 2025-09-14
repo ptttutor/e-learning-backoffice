@@ -23,6 +23,7 @@ export default function ChapterModal({
   form,
   onCancel,
   onSubmit,
+  submitting = false,
 }) {
   const handleOk = async () => {
     try {
@@ -89,12 +90,18 @@ export default function ChapterModal({
               htmlType="submit"
               icon={editing ? <EditOutlined /> : <PlusOutlined />}
               style={{ borderRadius: "6px" }}
+              loading={submitting}
+              disabled={submitting}
             >
-              {editing ? "อัพเดท" : "สร้าง"}
+              {submitting 
+                ? (editing ? "กำลังอัพเดท..." : "กำลังสร้าง...") 
+                : (editing ? "อัพเดท" : "สร้าง")
+              }
             </Button>
             <Button
               onClick={onCancel}
               style={{ borderRadius: "6px" }}
+              disabled={submitting}
             >
               ยกเลิก
             </Button>

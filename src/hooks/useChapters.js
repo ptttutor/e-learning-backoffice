@@ -351,6 +351,42 @@ export const useChapters = (courseId) => {
     setPagination(prev => ({ ...prev, page: 1, pageSize: size }));
   }, []);
 
+  // Helper functions for optimistic updates
+  const updateChapterInList = useCallback((chapterId, updatedData) => {
+    setChapters(prevChapters => 
+      prevChapters.map(chapter => 
+        chapter.id === chapterId 
+          ? { ...chapter, ...updatedData }
+          : chapter
+      )
+    );
+    setAllChapters(prevChapters => 
+      prevChapters.map(chapter => 
+        chapter.id === chapterId 
+          ? { ...chapter, ...updatedData }
+          : chapter
+      )
+    );
+  }, []);
+
+  const addChapterToList = useCallback((newChapter) => {
+    setChapters(prevChapters => [newChapter, ...prevChapters]);
+    setAllChapters(prevChapters => [newChapter, ...prevChapters]);
+    setPagination(prev => ({
+      ...prev,
+      totalCount: prev.totalCount + 1
+    }));
+  }, []);
+
+  const removeChapterFromList = useCallback((chapterId) => {
+    setChapters(prevChapters => prevChapters.filter(chapter => chapter.id !== chapterId));
+    setAllChapters(prevChapters => prevChapters.filter(chapter => chapter.id !== chapterId));
+    setPagination(prev => ({
+      ...prev,
+      totalCount: prev.totalCount - 1
+    }));
+  }, []);
+
   return {
     chapters, // filtered chapters สำหรับแสดงผล
     allChapters, // chapters ทั้งหมดสำหรับ drag & drop
@@ -376,6 +412,9 @@ export const useChapters = (courseId) => {
     handlePageChange,
     handlePageSizeChange,
     resetFilters,
+    updateChapterInList,
+    addChapterToList,
+    removeChapterFromList,
   };
 };
 

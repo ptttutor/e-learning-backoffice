@@ -173,6 +173,7 @@ export default function ChapterTable({
   onDragStart,
   onDragEnd,
   onDragCancel,
+  disabled = false,
 }) {
   const columns = [
     {
@@ -216,6 +217,7 @@ export default function ChapterTable({
             size="small"
             onClick={() => onEdit(record)}
             style={{ borderRadius: "6px" }}
+            disabled={disabled}
           >
             แก้ไข
           </Button>
@@ -225,6 +227,7 @@ export default function ChapterTable({
             danger
             onClick={() => onDelete(record)}
             style={{ borderRadius: "6px" }}
+            disabled={disabled}
           >
             ลบ
           </Button>
@@ -234,6 +237,7 @@ export default function ChapterTable({
             type="link"
             onClick={() => onManageContent(record)}
             style={{ borderRadius: "6px" }}
+            disabled={disabled}
           >
             จัดการเนื้อหา
           </Button>
