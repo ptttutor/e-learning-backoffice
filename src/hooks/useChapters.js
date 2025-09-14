@@ -207,9 +207,8 @@ export const useChapters = (courseId) => {
       setInitialOrder(newInitOrder);
       setHasUnsavedChanges(false);
 
-      // Refresh data
-      await fetchChapters();
-      await fetchAllChapters();
+      // Refresh data และอัปเดต UI ทันที
+      await Promise.all([fetchChapters(), fetchAllChapters()]);
 
       message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
     } catch (error) {
@@ -318,6 +317,16 @@ export const useChapters = (courseId) => {
     );
 
     setAllChapters(newChapters);
+    
+    // อัปเดต chapters ด้วยเพื่อให้ pagination แสดงผลถูกต้อง
+    setChapters(prevChapters => {
+      // อัปเดตเฉพาะ chapters ที่อยู่ในหน้าปัจจุบัน
+      return prevChapters.map(chapter => {
+        const updatedChapter = newChapters.find(nc => nc.id === chapter.id);
+        return updatedChapter || chapter;
+      });
+    });
+    
     setHasUnsavedChanges(true); // แสดงว่ามีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
   };
 

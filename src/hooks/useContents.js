@@ -193,8 +193,8 @@ export const useContents = (chapterId) => {
 
       message.success("บันทึกการเปลี่ยนแปลงลำดับสำเร็จ");
       
-      // Refresh filtered contents
-      fetchContents();
+      // Refresh ข้อมูลทั้งหมดและอัปเดต UI ทันที
+      await Promise.all([fetchContents(), fetchAllContents()]);
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการบันทึกลำดับ");
     }
@@ -302,6 +302,16 @@ export const useContents = (chapterId) => {
     );
 
     setAllContents(newContents);
+    
+    // อัปเดต contents ด้วยเพื่อให้ pagination แสดงผลถูกต้อง
+    setContents(prevContents => {
+      // อัปเดตเฉพาะ contents ที่อยู่ในหน้าปัจจุบัน
+      return prevContents.map(content => {
+        const updatedContent = newContents.find(nc => nc.id === content.id);
+        return updatedContent || content;
+      });
+    });
+    
     setHasUnsavedChanges(true); // แสดงว่ามีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
   };
 

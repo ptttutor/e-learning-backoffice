@@ -339,7 +339,7 @@ export default function ContentTable({
       >
         <Table
           columns={columns}
-          dataSource={contents}
+          dataSource={allContents || contents}
           rowKey="id"
           loading={loading}
           scroll={{ x: 1000 }}

@@ -260,11 +260,11 @@ export default function ChapterTable({
       >
         <Table
           columns={columns}
-          dataSource={chapters}
+          dataSource={allChapters || chapters}
           rowKey="id"
           loading={loading}
           scroll={{ x: 800 }}
-          pagination={{
+          pagination={allChapters ? false : {
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
