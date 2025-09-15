@@ -135,6 +135,15 @@ export default function EbookModal({
     onCancel();
   };
 
+  // Handle file removal
+  const handleFileRemoval = (type) => {
+    if (type === 'cover') {
+      setCoverImageUrl(null);
+      form.setFieldsValue({ coverImageUrl: null });
+    }
+    // Add more file types if needed
+  };
+
   // Set form data when editing
   useEffect(() => {
     if (open && editing) {
