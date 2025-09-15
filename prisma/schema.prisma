@@ -22,6 +22,7 @@ model User {
   examAttempts ExamAttempt[]
   orders       Order[]
   posts        Post[]        @relation("AuthorPosts")
+  postContents PostContent[] @relation("PostContentAuthor")
   reviews      Review[]
   couponUsages CouponUsage[]
   downloads    EbookDownload[]
@@ -338,6 +339,23 @@ model Post {
   updatedAt           DateTime  @updatedAt
   author              User      @relation("AuthorPosts", fields: [authorId], references: [id])
   postType            PostType  @relation(fields: [postTypeId], references: [id])
+  postContents        PostContent[]
+}
+
+model PostContent {
+  id          String   @id @default(uuid())
+  urlImg      String?  // URL รูปภาพ
+  name        String?  // ชื่อรูปหรือ caption
+  description String?  // คำอธิบายรูป
+  authorId    String   // ผู้สร้าง content
+  postId      String   // เชื่อมกับ Post
+  createdAt   DateTime @default(now())
+  
+  author      User     @relation("PostContentAuthor", fields: [authorId], references: [id])
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([authorId])
 }
 
 // ระบบรีวิวสำหรับ Course และ Ebook

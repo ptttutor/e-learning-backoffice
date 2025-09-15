@@ -272,6 +272,7 @@ export function getFolderPath(type) {
     'exam': 'exams',
     'payment-slip': 'payment-slips',
     'post-image': 'posts',
+    'post-content': 'post-content',
     'question-image': 'questions',
     'general': 'uploads',
   };

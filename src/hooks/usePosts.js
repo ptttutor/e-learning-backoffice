@@ -71,7 +71,7 @@ export const usePosts = () => {
         sortBy: filters.sortBy,
       });
 
-      if (searchInput.trim()) {
+      if (searchInput && searchInput.trim()) {
         params.append('search', searchInput.trim());
       }
       if (filters.postTypeId) {
@@ -105,7 +105,7 @@ export const usePosts = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchInput, filters, pagination.page, pagination.pageSize]);
+  }, [searchInput, filters, pagination.page, pagination.pageSize, message]);
 
   // Fetch post types
   const fetchPostTypes = useCallback(async () => {
@@ -129,7 +129,7 @@ export const usePosts = () => {
     } finally {
       setPostTypesLoading(false);
     }
-  }, []);
+  }, [message]);
 
   // Fetch authors
   const fetchAuthors = useCallback(async () => {
@@ -153,7 +153,7 @@ export const usePosts = () => {
     } finally {
       setAuthorsLoading(false);
     }
-  }, []);
+  }, [message]);
 
   // Create or update post
   const savePost = async (postData, editingPost) => {
@@ -225,19 +225,19 @@ export const usePosts = () => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput, fetchPosts]);
+  }, [searchInput]);
 
-  // Fetch when filters or pagination change
+  // Fetch when filters or pagination change (exclude search from this effect)
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+  }, [filters, pagination.page, pagination.pageSize]);
 
-  // Initialize data
+  // Initialize data only once
   useEffect(() => {
     fetchPostTypes();
     fetchAuthors();
     fetchPosts();
-  }, [fetchPostTypes, fetchAuthors, fetchPosts]);
+  }, []);
 
   return {
     posts,

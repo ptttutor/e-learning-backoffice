@@ -19,6 +19,7 @@ import {
   CloseCircleOutlined,
   TagOutlined,
   LinkOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -28,6 +29,7 @@ export default function PostTable({
   loading,
   onEdit,
   onDelete,
+  onManageContent,
 }) {
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleString("th-TH") : "-";
@@ -157,6 +159,14 @@ export default function PostTable({
             แก้ไข
           </Button>
           <Button
+            icon={<FileImageOutlined />}
+            size="small"
+            onClick={() => onManageContent(record)}
+            style={{ borderRadius: "6px" }}
+          >
+            จัดการเนื้อหา
+          </Button>
+          <Button
             danger
             icon={<DeleteOutlined />}
             size="small"
@@ -167,7 +177,7 @@ export default function PostTable({
           </Button>
         </Space>
       ),
-      width: 150,
+      width: 200,
       fixed: "right",
     },
   ];

@@ -25,7 +25,7 @@ export async function POST(request) {
 
     if (type === 'ebook') {
       allowedTypes = ['application/pdf', 'application/epub+zip', 'application/x-mobipocket-ebook'];
-    } else if (type === 'cover' || type === 'question') {
+    } else if (type === 'cover' || type === 'question' || type === 'post-content') {
       allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     }
 
