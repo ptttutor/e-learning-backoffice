@@ -1,6 +1,65 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export async function GET(request, { params }) {
+  try {
+    const { id } = params;
+
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        postType: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        postContents: {
+          select: {
+            id: true,
+            urlImg: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      }
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch post' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request, { params }) {
   try {
     const { id } = params;
@@ -27,7 +86,26 @@ export async function PUT(request, { params }) {
             id: true,
             name: true
           }
-        }
+        },
+        postContents: {
+          select: {
+            id: true,
+            urlImg: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       }
     });
 

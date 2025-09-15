@@ -112,7 +112,26 @@ export async function GET(req) {
             id: true,
             name: true
           }
-        }
+        },
+        postContents: {
+          select: {
+            id: true,
+            urlImg: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
       orderBy,
       skip,
@@ -200,7 +219,26 @@ export async function POST(request) {
             id: true,
             name: true
           }
-        }
+        },
+        postContents: {
+          select: {
+            id: true,
+            urlImg: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       }
     });
 

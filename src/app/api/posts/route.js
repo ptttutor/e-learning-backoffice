@@ -48,6 +48,25 @@ export async function GET(request) {
             description: true,
           },
         },
+        postContents: {
+          select: {
+            id: true,
+            urlImg: true,
+            name: true,
+            description: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
       orderBy: [
         { isFeatured: "desc" },
