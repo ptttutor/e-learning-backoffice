@@ -7,6 +7,7 @@ import {
   Divider,
   Image,
   Button,
+  Flex,
 } from "antd";
 import {
   BankOutlined,
@@ -79,20 +80,20 @@ export default function PaymentInfoCard({
           <div>
             <Text strong style={{ fontSize: "16px" }}>
               {selectedOrder.payment?.status === "PENDING_VERIFICATION" ? (
-                <>
+                <Flex gap={8} align="center" style={{ color: "#856404" }}>
                   <WarningOutlined />
                   รอการตรวจสอบ
-                </>
+                </Flex>
               ) : selectedOrder.payment?.status === "COMPLETED" ? (
-                <>
+                <Flex gap={8} align="center" style={{ color: "#155724" }}>
                   <CheckCircleOutlined />
                   ตรวจสอบแล้ว
-                </>
+                </Flex>
               ) : selectedOrder.payment?.status === "REJECTED" ? (
-                <>
+                <Flex gap={8} align="center" style={{ color: "#721c24" }}>
                   <CloseOutlined />
                   ปฏิเสธแล้ว
-                </>
+                </Flex>
               ) : (
                 selectedOrder.payment?.status || "ไม่ระบุสถานะ"
               )}

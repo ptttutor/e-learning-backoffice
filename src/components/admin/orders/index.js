@@ -4,9 +4,9 @@ import {
   Button,
   Space,
   Tag,
-  message,
   Card,
   Typography,
+  App,
 } from "antd";
 import OrderTable from "./OrderTable";
 import ConfirmActionModal from "./ConfirmActionModal";
@@ -18,7 +18,26 @@ import OrderDetailModal from "./Detail/OrderDetailModal";
 
 const { Title, Text } = Typography;
 
+// Global error handler for unhandled fetch errors
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.message?.includes('Unexpected token')) {
+      console.error('Caught unhandled JSON parsing error:', event.reason);
+      event.preventDefault(); // Prevent console error
+    }
+  });
+}
+
 export default function OrdersManagement() {
+  return (
+    <App>
+      <OrdersManagementContent />
+    </App>
+  );
+}
+
+function OrdersManagementContent() {
+  const { message } = App.useApp();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -42,6 +61,13 @@ export default function OrdersManagement() {
       if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
       
       const response = await fetch(`/api/admin/orders?${params.toString()}`);
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
+      }
+      
       const result = await response.json();
 
       if (result.success) {
@@ -56,8 +82,8 @@ export default function OrdersManagement() {
           const searchTerm = filters.search.toLowerCase();
           filteredOrders = filteredOrders.filter(order => 
             order.id.toLowerCase().includes(searchTerm) ||
-            order.user.name.toLowerCase().includes(searchTerm) ||
-            order.user.email.toLowerCase().includes(searchTerm) ||
+            order.user?.name?.toLowerCase().includes(searchTerm) ||
+            order.user?.email?.toLowerCase().includes(searchTerm) ||
             (order.ebook?.title || order.course?.title || '').toLowerCase().includes(searchTerm)
           );
         }
@@ -68,14 +94,19 @@ export default function OrdersManagement() {
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
-      message.error("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      message.error(`เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, message]);
 
   useEffect(() => {
-    fetchOrders();
+    // Add small delay to ensure API routes are ready
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [fetchOrders]);
 
   const handleFilterChange = (key, value) => {
@@ -99,6 +130,13 @@ export default function OrdersManagement() {
 
     try {
       const response = await fetch(`/api/admin/orders/${order.id}`);
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
+      }
+      
       const result = await response.json();
 
       if (result.success) {
@@ -114,7 +152,7 @@ export default function OrdersManagement() {
       }
     } catch (error) {
       console.error("Error fetching order detail:", error);
-      message.error("เกิดข้อผิดพลาดในการโหลดรายละเอียด");
+      message.error(`เกิดข้อผิดพลาดในการโหลดรายละเอียด: ${error.message}`);
       setDetailModalVisible(false);
     } finally {
       setDetailLoading(false);
@@ -124,6 +162,14 @@ export default function OrdersManagement() {
   const loadSlipAnalysis = async (paymentId) => {
     try {
       const response = await fetch(`/api/admin/payments/analyze-slip?paymentId=${paymentId}`);
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn(`Slip analysis API returned ${contentType} instead of JSON`);
+        return; // Skip analysis if not JSON
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -131,6 +177,7 @@ export default function OrdersManagement() {
       }
     } catch (error) {
       console.error("Error loading slip analysis:", error);
+      // Don't show user error for optional slip analysis
     }
   };
 
@@ -152,6 +199,12 @@ export default function OrdersManagement() {
         }),
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -162,7 +215,7 @@ export default function OrdersManagement() {
       }
     } catch (error) {
       console.error('Error analyzing slip:', error);
-      message.error('เกิดข้อผิดพลาดในการวิเคราะห์สลิป');
+      message.error(`เกิดข้อผิดพลาดในการวิเคราะห์สลิป: ${error.message}`);
     } finally {
       setAnalyzingSlip(false);
     }
@@ -194,6 +247,12 @@ export default function OrdersManagement() {
         }),
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}. Response status: ${response.status}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -216,7 +275,7 @@ export default function OrdersManagement() {
       }
     } catch (error) {
       console.error("Error updating order:", error);
-      message.error("เกิดข้อผิดพลาดในการอัพเดทคำสั่งซื้อ");
+      message.error(`เกิดข้อผิดพลาดในการอัพเดทคำสั่งซื้อ: ${error.message}`);
     }
   };
 
