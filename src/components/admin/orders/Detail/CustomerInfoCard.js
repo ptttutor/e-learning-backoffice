@@ -3,7 +3,8 @@ import { UserOutlined, FileTextOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
-export default function CustomerInfoCard({ user }) {
+export default function CustomerInfoCard({ selectedOrder }) {
+  const user = selectedOrder?.user;
   return (
     <Card
       title={
