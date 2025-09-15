@@ -188,6 +188,7 @@ export default function EbookModal({
           price: 0,
           discountPrice: 0,
           pageCount: 0,
+          publishedYear: new Date().getFullYear(),
           weight: 0
         }}
       >
@@ -242,6 +243,18 @@ export default function EbookModal({
             label="ISBN"
           >
             <Input placeholder="978-0123456789" />
+          </Form.Item>
+
+          <Form.Item
+            name="publishedYear"
+            label="ปีที่ตีพิมพ์"
+          >
+            <InputNumber 
+              placeholder="2025" 
+              style={{ width: '100%' }}
+              min={1900}
+              max={new Date().getFullYear() + 10}
+            />
           </Form.Item>
 
           <Form.Item

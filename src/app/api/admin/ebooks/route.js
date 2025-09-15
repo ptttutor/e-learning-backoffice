@@ -143,6 +143,7 @@ export async function POST(request) {
     if (data.fileUrl) ebookData.fileUrl = data.fileUrl;
     if (data.fileSize) ebookData.fileSize = parseInt(data.fileSize);
     if (data.pageCount) ebookData.pageCount = parseInt(data.pageCount);
+    if (data.publishedYear) ebookData.publishedYear = parseInt(data.publishedYear);
     if (data.weight) ebookData.weight = parseFloat(data.weight);
     if (data.dimensions) ebookData.dimensions = data.dimensions;
     if (data.categoryId) ebookData.categoryId = data.categoryId;

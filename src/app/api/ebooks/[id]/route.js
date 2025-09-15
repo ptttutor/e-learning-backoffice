@@ -59,6 +59,7 @@ export async function GET(request, { params }) {
     const publicEbook = {
       ...ebook,
       averageRating,
+      publishedYear: ebook.publishedYear, // เพิ่ม publishedYear ให้แสดงผล
       fileUrl: undefined // ซ่อนลิงก์ดาวน์โหลดจริง
     };
 

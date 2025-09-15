@@ -412,6 +412,7 @@ model Ebook {
   isActive        Boolean       @default(true)
   isFeatured      Boolean       @default(false)
   publishedAt     DateTime?
+  publishedYear   Int?          // ปีที่หนังสือถูกตีพิมพ์ เช่น 2025
   categoryId      String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

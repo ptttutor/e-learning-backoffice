@@ -157,6 +157,12 @@ export default function EbookTable({
               {record.pageCount} หน้า
             </Text>
           )}
+          {record.publishedYear && (
+            <Text type="secondary" style={{ fontSize: "11px" }}>
+              <CalendarOutlined style={{ marginRight: "4px" }} />
+              ปี {record.publishedYear}
+            </Text>
+          )}
         </Space>
       ),
       width: 100,

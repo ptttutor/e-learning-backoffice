@@ -70,6 +70,7 @@ export async function GET(request) {
       averageRating: ebook.reviews.length > 0 
         ? ebook.reviews.reduce((sum, review) => sum + review.rating, 0) / ebook.reviews.length
         : 0,
+      publishedYear: ebook.publishedYear, // เพิ่ม publishedYear ให้แสดงผล
       _count: {
         reviews: ebook.reviews.length
       },
