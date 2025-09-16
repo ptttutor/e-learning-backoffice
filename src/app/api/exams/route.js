@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -7,20 +7,20 @@ const prisma = new PrismaClient();
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 12;
-    const search = searchParams.get('search') || '';
-    const categoryId = searchParams.get('categoryId');
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 12;
+    const search = searchParams.get("search") || "";
+    const categoryId = searchParams.get("categoryId");
 
     const where = {
       isActive: true,
       ...(search && {
         title: {
           contains: search,
-          mode: 'insensitive'
-        }
+          mode: "insensitive",
+        },
       }),
-      ...(categoryId && { categoryId })
+      ...(categoryId && { categoryId }),
     };
 
     const exams = await prisma.examBank.findMany({
@@ -29,16 +29,16 @@ export async function GET(request) {
         category: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         _count: {
-          select: { files: true }
-        }
+          select: { files: true },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "asc" },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     });
 
     const totalCount = await prisma.examBank.count({ where });
@@ -50,14 +50,13 @@ export async function GET(request) {
         page,
         limit,
         total: totalCount,
-        pages: Math.ceil(totalCount / limit)
-      }
+        pages: Math.ceil(totalCount / limit),
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching exams:', error);
+    console.error("Error fetching exams:", error);
     return NextResponse.json(
-      { success: false, error: 'เกิดข้อผิดพลาดในการดึงข้อมูลข้อสอบ' },
+      { success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูลข้อสอบ" },
       { status: 500 }
     );
   }
