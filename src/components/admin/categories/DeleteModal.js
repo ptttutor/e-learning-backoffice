@@ -86,11 +86,11 @@ export default function DeleteModal({
           </div>
 
           <div>
-            <Text>คุณต้องการลบหมวดหมู่ "</Text>
+            <Text>คุณต้องการลบหมวดหมู่ &quot;</Text>
             <Text strong style={{ color: "#ff4d4f" }}>
               {category.name}
             </Text>
-            <Text>" ใช่หรือไม่?</Text>
+            <Text>&quot; ใช่หรือไม่?</Text>
           </div>
         </Space>
       </div>

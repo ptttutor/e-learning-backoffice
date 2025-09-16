@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Button,
   Space,
@@ -34,7 +34,7 @@ export default function EbookCategoriesManagement() {
   const [form] = Form.useForm();
 
   // Fetch categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/admin/ebook-categories");
@@ -46,11 +46,11 @@ export default function EbookCategoriesManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [message]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   // Optimistic update functions
   const updateCategoryInList = (categoryId, updatedData) => {

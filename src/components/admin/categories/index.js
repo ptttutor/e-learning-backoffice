@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Button,
   Space,
@@ -34,7 +34,7 @@ export default function CategoriesManagement() {
   const [form] = Form.useForm();
 
   // Fetch categories
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/categories");
@@ -44,11 +44,11 @@ export default function CategoriesManagement() {
       message.error("โหลดข้อมูลหมวดหมู่ไม่สำเร็จ");
     }
     setLoading(false);
-  };
+  }, [message]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   // Helper functions for optimistic updates
   const updateCategoryInList = (categoryId, updatedData) => {

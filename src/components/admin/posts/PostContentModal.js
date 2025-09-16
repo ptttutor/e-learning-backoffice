@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   Form,
@@ -44,7 +44,7 @@ export default function PostContentModal({
   const [fetchingContents, setFetchingContents] = useState(false);
 
   // Fetch existing content when modal opens
-  const fetchExistingContents = async () => {
+  const fetchExistingContents = useCallback(async () => {
     if (!postId) return;
     
     try {
@@ -62,7 +62,7 @@ export default function PostContentModal({
     } finally {
       setFetchingContents(false);
     }
-  };
+  }, [postId]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function PostContentModal({
         fetchExistingContents();
       }
     }
-  }, [visible, postId]);
+  }, [visible, postId, fetchExistingContents]);
 
   // Handle image upload
   const handleImageUpload = async (file, itemId) => {
