@@ -36,7 +36,7 @@ export async function GET(request) {
           select: { files: true },
         },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: {  title: "asc" },
       skip: (page - 1) * limit,
       take: limit,
     });
