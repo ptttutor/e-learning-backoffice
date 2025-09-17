@@ -1,6 +1,6 @@
 'use client';
 
-import DashboardOverview from '@/components/admin/DashboardOverview';
+import DashboardOverview from '@/components/admin/dashboard/DashboardOverview';
 
 export default function AdminDashboard() {
   return (

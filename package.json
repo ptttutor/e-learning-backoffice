@@ -16,6 +16,7 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@ant-design/charts": "^2.6.4",
     "@ant-design/icons": "^6.0.0",
     "@ant-design/nextjs-registry": "^1.1.0",
     "@ant-design/plots": "^2.6.4",
