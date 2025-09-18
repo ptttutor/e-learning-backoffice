@@ -84,7 +84,7 @@ export async function GET(request, { params }) {
             orderBy: { order: 'asc' }
           }
         },
-        orderBy: { order: 'asc' }
+        orderBy: { createdAt: 'asc' }
       });
 
       return NextResponse.json({
@@ -118,7 +118,7 @@ export async function GET(request, { params }) {
           orderBy: { order: 'asc' }
         }
       },
-      orderBy: { order: 'asc' }
+      orderBy: { createdAt: 'asc' }
     });
 
     const totalQuestions = questions.length;
