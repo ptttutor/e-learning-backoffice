@@ -124,31 +124,57 @@ export async function GET(request, { params }) {
     const totalQuestions = questions.length;
     const totalMarks = questions.reduce((sum, q) => sum + q.marks, 0);
 
-    const attempt = await prisma.examAttempt.create({
-      data: {
-        examId,
-        userId,
-        totalQuestions,
-        totalMarks,
+      // Double-check for existing attempt before creating
+      const doubleCheckAttempt = await prisma.examAttempt.findFirst({
+        where: {
+          examId,
+          userId,
+        }
+      });
+      if (doubleCheckAttempt) {
+        // If found, return the existing attempt (prevent duplicate)
+        return NextResponse.json({
+          success: true,
+          data: {
+            exam,
+            questions: questions.map(q => ({
+              id: q.id,
+              questionText: q.questionText,
+              questionImage: q.questionImage,
+              questionType: q.questionType,
+              marks: q.marks,
+              options: q.options,
+            })),
+            attemptId: doubleCheckAttempt.id,
+            startedAt: doubleCheckAttempt.startedAt,
+          }
+        });
       }
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        exam,
-        questions: questions.map(q => ({
-          id: q.id,
-          questionText: q.questionText,
-          questionImage: q.questionImage,
-          questionType: q.questionType,
-          marks: q.marks,
-          options: q.options,
-        })),
-        attemptId: attempt.id,
-        startedAt: attempt.startedAt,
-      }
-    });
+      // If not found, create new attempt
+      const attempt = await prisma.examAttempt.create({
+        data: {
+          examId,
+          userId,
+          totalQuestions,
+          totalMarks,
+        }
+      });
+      return NextResponse.json({
+        success: true,
+        data: {
+          exam,
+          questions: questions.map(q => ({
+            id: q.id,
+            questionText: q.questionText,
+            questionImage: q.questionImage,
+            questionType: q.questionType,
+            marks: q.marks,
+            options: q.options,
+          })),
+          attemptId: attempt.id,
+          startedAt: attempt.startedAt,
+        }
+      });
 
   } catch (error) {
     console.error('Error starting exam:', error);

@@ -55,11 +55,6 @@ export async function GET(request, { params }) {
                 }
               }
             }
-          },
-          orderBy: {
-            question: {
-              order: 'asc'
-            }
           }
         }
       }
@@ -72,7 +67,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    // จัดรูปแบบข้อมูล
+    // จัดรูปแบบข้อมูล และเรียง answers ตาม question.order
     const formattedData = {
       id: attempt.id,
       status: attempt.status,
@@ -85,31 +80,37 @@ export async function GET(request, { params }) {
       percentage: attempt.percentage,
       passed: attempt.passed,
       exam: attempt.exam,
-      answers: attempt.answers.map(answer => {
-        const question = answer.question;
-        let selectedOption = null;
-        
-        if (answer.optionId) {
-          selectedOption = question.options.find(opt => opt.id === answer.optionId);
-        }
-
-        return {
-          questionId: question.id,
-          questionText: question.questionText,
-          questionImage: question.questionImage,
-          questionType: question.questionType,
-          marks: question.marks,
-          explanation: question.explanation,
-          options: question.options,
-          studentAnswer: {
-            optionId: answer.optionId,
-            textAnswer: answer.textAnswer,
-            selectedOption: selectedOption,
-            isCorrect: answer.isCorrect,
-            obtainedMarks: answer.marks,
+      answers: attempt.answers
+        .slice() // copy array
+        .sort((a, b) => {
+          // If question.order exists, sort by it, otherwise by createdAt or id
+          const orderA = a.question.order ?? 0;
+          const orderB = b.question.order ?? 0;
+          return orderA - orderB;
+        })
+        .map(answer => {
+          const question = answer.question;
+          let selectedOption = null;
+          if (answer.optionId) {
+            selectedOption = question.options.find(opt => opt.id === answer.optionId);
           }
-        };
-      })
+          return {
+            questionId: question.id,
+            questionText: question.questionText,
+            questionImage: question.questionImage,
+            questionType: question.questionType,
+            marks: question.marks,
+            explanation: question.explanation,
+            options: question.options,
+            studentAnswer: {
+              optionId: answer.optionId,
+              textAnswer: answer.textAnswer,
+              selectedOption: selectedOption,
+              isCorrect: answer.isCorrect,
+              obtainedMarks: answer.marks,
+            }
+          };
+        })
     };
 
     return NextResponse.json({
