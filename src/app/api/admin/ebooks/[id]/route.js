@@ -131,7 +131,7 @@ export async function DELETE(request, { params }) {
     }
 
     // ลบ reviews ก่อน
-    await prisma.ebookReview.deleteMany({
+    await prisma.review.deleteMany({
       where: { ebookId: id }
     });
 
