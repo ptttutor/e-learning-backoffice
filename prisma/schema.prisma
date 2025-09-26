@@ -69,12 +69,13 @@ model VerificationToken {
 model Course {
   id           String       @id @default(uuid())
   title        String
-    description  String?      @db.Text
+  description  String?      @db.Text
   price        Float        @default(0)
   discountPrice Float?      // ราคาหลังส่วนลด
   sampleVideo  String?      // URL วิดีโอตัวอย่าง
   duration     Int?
   isFree       Boolean      @default(false)
+  isRecommended Boolean     @default(false) // คอร์สแนะนำ
   status       CourseStatus @default(DRAFT)
   instructorId String
   categoryId   String?

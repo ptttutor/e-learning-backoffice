@@ -17,6 +17,38 @@ import { useMessage } from "@/hooks/useAntdApp";
 const { Title, Text } = Typography;
 
 export default function CoursesManagement() {
+  // Confirm delete course
+  const confirmDelete = async () => {
+    if (!courseToDelete?.id) {
+      message.error("ไม่พบ ID ของคอร์ส");
+      return;
+    }
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/courses/${courseToDelete.id}`, {
+        method: "DELETE"
+      });
+      const data = await response.json();
+      if (data.success) {
+        message.success("ลบคอร์สสำเร็จ");
+        setDeleteModalOpen(false);
+        setCourseToDelete(null);
+        await fetchCourses();
+      } else {
+        message.error(data.error || "เกิดข้อผิดพลาดในการลบคอร์ส");
+      }
+    } catch (error) {
+      console.error("Delete course error:", error);
+      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+  // Handle delete course
+  const handleDelete = (course) => {
+    setCourseToDelete(course);
+    setDeleteModalOpen(true);
+  };
   const router = useRouter();
   const message = useMessage();
   
@@ -53,94 +85,41 @@ export default function CoursesManagement() {
     setSubmitting(true);
     try {
       let res;
+      // Ensure isRecommended is boolean
+      const payload = { ...courseData, isRecommended: !!courseData.isRecommended };
       if (editing) {
         res = await fetch(`/api/admin/courses/${editing.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(courseData),
+          body: JSON.stringify(payload),
         });
       } else {
         res = await fetch("/api/admin/courses", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(courseData),
+          body: JSON.stringify(payload),
         });
       }
 
-      const data = await res.json();
+      const result = await res.json();
 
-      if (data.success) {
+      if (result.success) {
         message.success(editing ? "แก้ไขคอร์สสำเร็จ" : "สร้างคอร์สสำเร็จ");
         setModalOpen(false);
         setEditing(null);
-        
         // Optimistic update without full page refresh
         if (editing) {
-          // Update existing course in the list
-          updateCourseInList(editing.id, data.data);
+          updateCourseInList(editing.id, result.data);
         } else {
-          // Add new course to the list
-          addCourseToList(data.data);
+          addCourseToList(result.data);
         }
       } else {
-        message.error(data.error || "เกิดข้อผิดพลาด");
-      }
-    } catch (e) {
-      message.error("เกิดข้อผิดพลาด");
-      // On error, refresh the data to ensure consistency
-      fetchCourses();
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Handle delete
-  const handleDelete = (record) => {
-    setCourseToDelete(record);
-    setDeleteModalOpen(true);
-  };
-
-  // Confirm delete
-  const confirmDelete = async () => {
-    if (!courseToDelete?.id) {
-      message.error("ไม่พบ ID ของคอร์ส");
-      return;
-    }
-
-    setDeleting(true);
-
-    try {
-      const response = await fetch(`/api/admin/courses/${courseToDelete.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...courseToDelete,
-          status: "DELETED",
-          deletedAt: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        message.success("ลบคอร์สสำเร็จ");
-        setDeleteModalOpen(false);
-        setCourseToDelete(null);
-        await fetchCourses();
-      } else {
-        message.error(data.error || "เกิดข้อผิดพลาดในการลบคอร์ส");
+        message.error(result.error || "เกิดข้อผิดพลาด");
       }
     } catch (error) {
-      console.error("Delete course error:", error);
-      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
+      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     } finally {
-      setDeleting(false);
+      setSubmitting(false);
     }
   };
 

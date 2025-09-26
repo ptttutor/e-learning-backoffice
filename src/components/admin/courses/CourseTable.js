@@ -10,6 +10,7 @@ import {
   DollarOutlined,
   PictureOutlined,
   FileTextOutlined,
+  StarFilled,
 } from "@ant-design/icons";
 import { getSubjectLabel } from "@/lib/constants";
 
@@ -56,6 +57,17 @@ export default function CourseTable({
   };
 
   const columns = [
+    {
+      title: "แนะนำ",
+      dataIndex: "isRecommended",
+      key: "isRecommended",
+      align: "center",
+      render: (isRecommended) =>
+        isRecommended ? (
+          <Tag color="gold" style={{ fontWeight: "bold" }}><StarFilled/> แนะนำ</Tag>
+        ) : null,
+      width: 90,
+    },
     {
       title: "รูปปก",
       dataIndex: "coverImageUrl",

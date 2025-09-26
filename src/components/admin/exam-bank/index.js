@@ -199,13 +199,8 @@ export default function ExamBankManagement() {
       setExamFiles(optimisticFiles);
 
       // Perform actual deletion
-      const formData = new FormData();
-      formData.append('fileId', file.id);
-      formData.append('examId', selectedExam.id);
-
-      const response = await fetch('/api/exam-files/delete', {
-        method: 'DELETE',
-        body: formData
+      const response = await fetch(`/api/admin/exam-files/${file.id}`, {
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -215,7 +210,6 @@ export default function ExamBankManagement() {
       message.success('ลบไฟล์สำเร็จ');
     } catch (error) {
       console.error('Error deleting file:', error);
-      
       // Rollback: restore file to UI
       setExamFiles(examFiles);
       message.error('เกิดข้อผิดพลาดในการลบไฟล์');

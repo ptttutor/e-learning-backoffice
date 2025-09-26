@@ -142,6 +142,7 @@ export async function POST(req) {
         sampleVideo: body.sampleVideo,
         duration: body.duration,
         isFree: body.isFree ?? false,
+        isRecommended: body.isRecommended ?? false,
         status: body.status ?? "DRAFT",
         instructorId: body.instructorId,
         categoryId: body.categoryId,

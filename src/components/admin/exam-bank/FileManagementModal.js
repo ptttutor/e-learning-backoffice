@@ -358,7 +358,7 @@ export default function FileManagementModal({
                         danger
                         size="small"
                         icon={<DeleteOutlined />}
-                        onClick={() => onDeleteFile(file.id, file.fileName)}
+                        onClick={() => onDeleteFile(file)}
                         style={{ borderRadius: "6px" }}
                         loading={deletingFileId === file.id}
                         disabled={deletingFileId !== null}

@@ -155,6 +155,7 @@ export default function CourseModal({
         isPhysical: editing.isPhysical,
         weight: editing.weight,
         dimensions: editing.dimensions,
+        isRecommended: editing.isRecommended ?? false,
       };
 
       setTimeout(() => {
@@ -338,7 +339,11 @@ export default function CourseModal({
           </Select>
         </Form.Item>
 
-        <Form.Item name="subject" label="วิชา">
+  <Form.Item name="subject" label="วิชา">
+        {/* Recommended Course Section */}
+        <Form.Item name="isRecommended" valuePropName="checked">
+          <Checkbox>คอร์สแนะนำ (Recommended)</Checkbox>
+        </Form.Item>
           <Select
             placeholder="เลือกวิชา"
             allowClear

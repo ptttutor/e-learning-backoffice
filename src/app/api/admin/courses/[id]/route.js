@@ -76,6 +76,7 @@ export async function PUT(req, { params }) {
         sampleVideo: body.sampleVideo,
         duration: body.duration,
         isFree: body.isFree,
+        isRecommended: body.isRecommended ?? false,
         status: body.status,
         instructorId: body.instructorId,
         categoryId: body.categoryId,
