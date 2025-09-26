@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
     const course = await prisma.course.findUnique({
       where: { 
         id: id,
-        status: 'PUBLISHED' // Only show published courses to public
+        status: 'PUBLISHED'
       },
       include: {
         instructor: {
@@ -49,6 +49,29 @@ export async function GET(req, { params }) {
             enrollments: true
           }
         }
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        discountPrice: true,
+        sampleVideo: true,
+        duration: true,
+        isFree: true,
+        isRecommended: true,
+        status: true,
+        instructor: true,
+        category: true,
+        coverImageUrl: true,
+        coverPublicId: true,
+        isPhysical: true,
+        weight: true,
+        dimensions: true,
+        chapters: true,
+        _count: true,
+        createdAt: true,
+        updatedAt: true,
       }
     });
 
