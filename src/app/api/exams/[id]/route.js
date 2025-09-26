@@ -27,7 +27,8 @@ export async function GET(request, { params }) {
             filePath: true,
             fileType: true,
             fileSize: true,
-            uploadedAt: true
+            uploadedAt: true,
+            isDownload: true
           },
           orderBy: { uploadedAt: 'desc' }
         }

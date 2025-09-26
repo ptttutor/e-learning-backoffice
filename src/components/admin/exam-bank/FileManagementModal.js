@@ -12,6 +12,7 @@ import {
   Avatar,
   Badge,
   Divider,
+  Switch,
 } from "antd";
 import {
   CloudUploadOutlined,
@@ -34,6 +35,7 @@ export default function FileManagementModal({
   onCancel,
   onFileUpload,
   onDeleteFile,
+  onToggleDownload,
   deletingFileId = null,
 }) {
   const formatDate = (dateString) => {
@@ -232,6 +234,17 @@ export default function FileManagementModal({
                               </span>
                             </Space>
                           </Text>
+                        </div>
+                        <div>
+                          <Space>
+                            <Switch
+                              checked={file.isDownload}
+                              checkedChildren="ดาวน์โหลดได้"
+                              unCheckedChildren="ห้ามดาวน์โหลด"
+                              onChange={checked => onToggleDownload(file.id, checked)}
+                              style={{ marginRight: 8 }}
+                            />
+                          </Space>
                         </div>
                       </div>
                     </div>

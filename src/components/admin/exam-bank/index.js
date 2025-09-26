@@ -52,6 +52,26 @@ export default function ExamBankManagement() {
     deleteExamFile,
   } = useExamBank();
 
+  // Toggle isDownload for a file
+  const handleToggleDownload = async (fileId, isDownload) => {
+    try {
+      const response = await fetch(`/api/admin/exam-files/${fileId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDownload }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setExamFiles(prevFiles => prevFiles.map(f => f.id === fileId ? { ...f, isDownload } : f));
+        message.success(isDownload ? "เปิดให้ดาวน์โหลดไฟล์นี้" : "ปิดการดาวน์โหลดไฟล์นี้");
+      } else {
+        message.error(result.error || "เกิดข้อผิดพลาดในการอัปเดตสถานะดาวน์โหลด");
+      }
+    } catch (error) {
+      message.error("เกิดข้อผิดพลาดในการอัปเดตสถานะดาวน์โหลด");
+    }
+  };
+
   // Create or update exam with optimistic update
   const handleSubmitExam = async (examData) => {
     setSubmitting(true);
@@ -304,6 +324,7 @@ export default function ExamBankManagement() {
         }}
         onFileUpload={handleFileUpload}
         onDeleteFile={handleDeleteFile}
+        onToggleDownload={handleToggleDownload}
         deletingFileId={fileToDelete?.id}
       />
 

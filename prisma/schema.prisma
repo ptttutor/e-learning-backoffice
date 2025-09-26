@@ -488,6 +488,7 @@ model ExamFile {
   filePath   String
   fileType   String?
   fileSize   Int?
+  isDownload Boolean  @default(true)
   uploadedAt DateTime @default(now())
   exam       ExamBank @relation(fields: [examId], references: [id], onDelete: Cascade)
 }

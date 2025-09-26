@@ -1,3 +1,24 @@
+// PATCH - อัปเดต isDownload
+export async function PATCH(request, { params }) {
+  const prisma = new PrismaClient();
+  try {
+    const { id } = params;
+    const body = await request.json();
+    const { isDownload } = body;
+    if (typeof isDownload !== "boolean") {
+      return NextResponse.json({ success: false, error: "isDownload ต้องเป็น boolean" }, { status: 400 });
+    }
+    const updated = await prisma.examFile.update({
+      where: { id },
+      data: { isDownload },
+    });
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { deleteFromVercelBlob } from '@/lib/vercel-blob';
