@@ -59,14 +59,23 @@ export async function GET(req) {
       });
     }
     
-    // แปลงข้อมูลให้เหมาะสม
-    const courses = enrolledCourses.map(enrollment => ({
-      ...enrollment.course,
-      enrolledAt: enrollment.enrolledAt,
-      progress: enrollment.progress,
-      enrollmentId: enrollment.id,
-      enrollmentStatus: enrollment.status
-    }));
+
+    // แปลงข้อมูลให้เหมาะสม พร้อมเช็คหมดอายุ 6 เดือน
+   
+    const courses = enrolledCourses.map(enrollment => {
+      const enrolledAt = new Date(enrollment.enrolledAt); // can remove
+      const now = new Date(); // can remove
+      const sixMonthsMs = 6 * 30 * 24 * 60 * 60 * 1000;  // can remove
+      const isExpire = (now - enrolledAt) > sixMonthsMs; // can remove
+      return {
+        ...enrollment.course,
+        enrolledAt: enrollment.enrolledAt,
+        progress: enrollment.progress,
+        enrollmentId: enrollment.id,
+        enrollmentStatus: enrollment.status,
+        isExpire // can remove
+      };
+    });
 
     return NextResponse.json({ 
       success: true, 
