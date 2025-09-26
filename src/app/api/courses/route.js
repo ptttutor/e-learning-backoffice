@@ -26,28 +26,6 @@ export async function GET() {
     // Get paged courses
     const courses = await prisma.course.findMany({
       where,
-      include: {
-        instructor: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-            description: true
-          }
-        },
-        _count: {
-          select: {
-            enrollments: true,
-            chapters: true
-          }
-        }
-      },
       orderBy: {
         createdAt: "desc"
       },
@@ -62,14 +40,31 @@ export async function GET() {
         isFree: true,
         isRecommended: true,
         status: true,
-        instructor: true,
-        category: true,
+        instructor: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        },
         coverImageUrl: true,
         coverPublicId: true,
         isPhysical: true,
         weight: true,
         dimensions: true,
-        _count: true,
+        _count: {
+          select: {
+            enrollments: true,
+            chapters: true
+          }
+        },
         createdAt: true,
         updatedAt: true,
       },

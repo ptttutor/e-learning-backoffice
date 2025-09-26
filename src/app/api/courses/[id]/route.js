@@ -11,7 +11,17 @@ export async function GET(req, { params }) {
         id: id,
         status: 'PUBLISHED'
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        discountPrice: true,
+        sampleVideo: true,
+        duration: true,
+        isFree: true,
+        isRecommended: true,
+        status: true,
         instructor: {
           select: {
             id: true,
@@ -26,8 +36,16 @@ export async function GET(req, { params }) {
             description: true
           }
         },
+        coverImageUrl: true,
+        coverPublicId: true,
+        isPhysical: true,
+        weight: true,
+        dimensions: true,
         chapters: {
-          include: {
+          select: {
+            id: true,
+            title: true,
+            order: true,
             contents: {
               select: {
                 id: true,
@@ -48,28 +66,7 @@ export async function GET(req, { params }) {
           select: {
             enrollments: true
           }
-        }
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        price: true,
-        discountPrice: true,
-        sampleVideo: true,
-        duration: true,
-        isFree: true,
-        isRecommended: true,
-        status: true,
-        instructor: true,
-        category: true,
-        coverImageUrl: true,
-        coverPublicId: true,
-        isPhysical: true,
-        weight: true,
-        dimensions: true,
-        chapters: true,
-        _count: true,
+        },
         createdAt: true,
         updatedAt: true,
       }
