@@ -1,23 +1,23 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 // GET: /api/courses - get published courses for public
-export async function GET() {
+export async function GET(request) {
   try {
     // Read query params for pagination and filter
-    const { searchParams } = new URL(globalThis?.location?.href || "http://localhost");
-    // fallback for edge runtime
+
+    const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 12;
     const skip = (page - 1) * limit;
     const isRecommended = searchParams.get("isRecommended");
 
     // Build where condition
-    const where = { status: "PUBLISHED" };
+    let where = { status: "PUBLISHED" };
     if (isRecommended === "true") {
-      where.isRecommended = true;
+      where = { ...where, isRecommended: true };
     } else if (isRecommended === "false") {
-      where.isRecommended = false;
+      where = { ...where, isRecommended: false };
     }
 
     // Get total count
@@ -27,7 +27,7 @@ export async function GET() {
     const courses = await prisma.course.findMany({
       where,
       orderBy: {
-        createdAt: "desc"
+        createdAt: "desc",
       },
       select: {
         id: true,
@@ -44,15 +44,15 @@ export async function GET() {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         category: {
           select: {
             id: true,
             name: true,
-            description: true
-          }
+            description: true,
+          },
         },
         coverImageUrl: true,
         coverPublicId: true,
@@ -62,14 +62,14 @@ export async function GET() {
         _count: {
           select: {
             enrollments: true,
-            chapters: true
-          }
+            chapters: true,
+          },
         },
         createdAt: true,
         updatedAt: true,
       },
       skip,
-      take: limit
+      take: limit,
     });
 
     return NextResponse.json({
@@ -79,8 +79,8 @@ export async function GET() {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
