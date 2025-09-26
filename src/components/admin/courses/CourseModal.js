@@ -339,11 +339,7 @@ export default function CourseModal({
           </Select>
         </Form.Item>
 
-  <Form.Item name="subject" label="วิชา">
-        {/* Recommended Course Section */}
-        <Form.Item name="isRecommended" valuePropName="checked">
-          <Checkbox>คอร์สแนะนำ (Recommended)</Checkbox>
-        </Form.Item>
+        <Form.Item name="subject" label="วิชา">
           <Select
             placeholder="เลือกวิชา"
             allowClear
@@ -359,6 +355,11 @@ export default function CourseModal({
               </Option>
             ))}
           </Select>
+        </Form.Item>
+
+        {/* Recommended Course Section */}
+        <Form.Item name="isRecommended" valuePropName="checked">
+          <Checkbox>คอร์สแนะนำ (Recommended)</Checkbox>
         </Form.Item>
 
         {/* Physical Product Section */}
