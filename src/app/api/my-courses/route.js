@@ -21,7 +21,7 @@ export async function GET(req) {
     const enrolledCourses = await prisma.enrollment.findMany({
       where: { 
         userId: userId,
-        status: 'ACTIVE'
+        status: { in: ['ACTIVE', 'COMPLETED'] }
       },
       include: {
         course: {
@@ -60,20 +60,21 @@ export async function GET(req) {
     }
     
 
-    // แปลงข้อมูลให้เหมาะสม พร้อมเช็คหมดอายุ 6 เดือน
-   
+    // แปลงข้อมูลให้เหมาะสม พร้อมเช็คหมดอายุจาก accessDuration (วัน)
     const courses = enrolledCourses.map(enrollment => {
-      const enrolledAt = new Date(enrollment.enrolledAt); // can remove
-      const now = new Date(); // can remove
-      const sixMonthsMs = 6 * 30 * 24 * 60 * 60 * 1000;  // can remove
-      const isExpire = (now - enrolledAt) > sixMonthsMs; // can remove
+      const enrolledAt = new Date(enrollment.enrolledAt);
+      const now = new Date();
+      // ใช้ accessDuration จากคอร์ส ถ้าไม่กำหนดใช้ default 60 วัน
+      const accessDuration = enrollment.course.accessDuration ?? 60;
+      const expireMs = accessDuration * 24 * 60 * 60 * 1000;
+      const isExpire = (now - enrolledAt) > expireMs;
       return {
         ...enrollment.course,
         enrolledAt: enrollment.enrolledAt,
         progress: enrollment.progress,
         enrollmentId: enrollment.id,
         enrollmentStatus: enrollment.status,
-        isExpire // can remove
+        isExpire
       };
     });
 

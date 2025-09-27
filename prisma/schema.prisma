@@ -74,6 +74,8 @@ model Course {
   discountPrice Float?      // ราคาหลังส่วนลด
   sampleVideo  String?      // URL วิดีโอตัวอย่าง
   duration     Int?
+  accessDuration Int?       @default(60) // ระยะเวลาที่เรียนได้ (วัน)
+  accessHours    Int?       @default(120) // จำนวนชั่วโมงที่เรียนได้ (ถ้าต้องการจำกัดเป็นชั่วโมง)
   isFree       Boolean      @default(false)
   isRecommended Boolean     @default(false) // คอร์สแนะนำ
   status       CourseStatus @default(DRAFT)
