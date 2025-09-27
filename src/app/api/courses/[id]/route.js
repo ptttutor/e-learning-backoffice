@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 // GET: /api/courses/[id] - get single course for public
 export async function GET(req, { params }) {
@@ -7,9 +7,9 @@ export async function GET(req, { params }) {
     const { id } = params;
 
     const course = await prisma.course.findUnique({
-      where: { 
+      where: {
         id: id,
-        status: 'PUBLISHED'
+        status: "PUBLISHED",
       },
       select: {
         id: true,
@@ -19,6 +19,8 @@ export async function GET(req, { params }) {
         discountPrice: true,
         sampleVideo: true,
         duration: true,
+        accessDuration: true,
+        accessHours: true,
         isFree: true,
         isRecommended: true,
         status: true,
@@ -26,15 +28,15 @@ export async function GET(req, { params }) {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         category: {
           select: {
             id: true,
             name: true,
-            description: true
-          }
+            description: true,
+          },
         },
         coverImageUrl: true,
         coverPublicId: true,
@@ -51,43 +53,42 @@ export async function GET(req, { params }) {
                 id: true,
                 title: true,
                 contentType: true,
-                order: true
+                order: true,
               },
               orderBy: {
-                order: 'asc'
-              }
-            }
+                order: "asc",
+              },
+            },
           },
           orderBy: {
-            order: 'asc'
-          }
+            order: "asc",
+          },
         },
         _count: {
           select: {
-            enrollments: true
-          }
+            enrollments: true,
+          },
         },
         createdAt: true,
         updatedAt: true,
-      }
+      },
     });
 
     if (!course) {
       return NextResponse.json(
-        { success: false, error: 'ไม่พบคอร์สที่ระบุ' },
+        { success: false, error: "ไม่พบคอร์สที่ระบุ" },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      data: course
+      data: course,
     });
-
   } catch (error) {
-    console.error('Error fetching course:', error);
+    console.error("Error fetching course:", error);
     return NextResponse.json(
-      { success: false, error: 'เกิดข้อผิดพลาดในการดึงข้อมูลคอร์ส' },
+      { success: false, error: "เกิดข้อผิดพลาดในการดึงข้อมูลคอร์ส" },
       { status: 500 }
     );
   }

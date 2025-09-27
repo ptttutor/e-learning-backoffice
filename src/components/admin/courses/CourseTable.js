@@ -64,7 +64,9 @@ export default function CourseTable({
       align: "center",
       render: (isRecommended) =>
         isRecommended ? (
-          <Tag color="gold" style={{ fontWeight: "bold" }}><StarFilled/> แนะนำ</Tag>
+          <Tag color="gold" style={{ fontWeight: "bold" }}>
+            <StarFilled /> แนะนำ
+          </Tag>
         ) : null,
       width: 90,
     },
@@ -195,6 +197,22 @@ export default function CourseTable({
         <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
       ),
       width: 120,
+    },
+    {
+      title: "จำนวนวัน",
+      dataIndex: "accessDuration",
+      key: "accessDuration",
+      align: "center",
+      render: (val) => (val ? `${val} วัน` : "-"),
+      width: 90,
+    },
+    {
+      title: "จำนวนชั่วโมง",
+      dataIndex: "accessHours",
+      key: "accessHours",
+      align: "center",
+      render: (val) => (val ? `${val} ชม.` : "-"),
+      width: 90,
     },
     {
       title: "ผู้สอน",

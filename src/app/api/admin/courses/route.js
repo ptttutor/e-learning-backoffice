@@ -141,6 +141,8 @@ export async function POST(req) {
         discountPrice: body.discountPrice,
         sampleVideo: body.sampleVideo,
         duration: body.duration,
+        accessDuration: body.accessDuration,
+        accessHours: body.accessHours,
         isFree: body.isFree ?? false,
         isRecommended: body.isRecommended ?? false,
         status: body.status ?? "DRAFT",

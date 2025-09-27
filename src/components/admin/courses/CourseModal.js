@@ -156,7 +156,18 @@ export default function CourseModal({
         weight: editing.weight,
         dimensions: editing.dimensions,
         isRecommended: editing.isRecommended ?? false,
+        accessDuration: editing.accessDuration,
+        accessHours: editing.accessHours,
       };
+        {/* Access Duration */}
+        <Form.Item name="accessDuration" label="จำนวนวันที่เรียนได้ (accessDuration)">
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="60" />
+        </Form.Item>
+
+        {/* Access Hours */}
+        <Form.Item name="accessHours" label="จำนวนชั่วโมงที่เรียนได้ (accessHours)">
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="120" />
+        </Form.Item>
 
       setTimeout(() => {
         form.setFieldsValue(formData);
@@ -181,9 +192,17 @@ export default function CourseModal({
       footer={null}
       width={600}
       style={{ top: 20 }}
-      
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        {/* Access Duration */}
+        <Form.Item name="accessDuration" label="จำนวนวันที่เรียนได้ (accessDuration)">
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="60" />
+        </Form.Item>
+
+        {/* Access Hours */}
+        <Form.Item name="accessHours" label="จำนวนชั่วโมงที่เรียนได้ (accessHours)">
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="120" />
+        </Form.Item>
         <Form.Item
           name="title"
           label="ชื่อคอร์ส"
