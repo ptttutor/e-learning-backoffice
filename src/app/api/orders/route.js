@@ -67,14 +67,13 @@ export async function POST(request) {
     // Calculate prices
     let itemPrice = 0;
     if (itemType === "course") {
-      itemPrice = item.price || 0;
+      itemPrice = item.discountPrice || item.price || 0;
     } else {
       itemPrice = item.discountPrice || item.price || 0;
     }
 
-    // Calculate shipping fee for physical items
-    const shippingFee = ((itemType === "ebook" && item.isPhysical) || 
-                        (itemType === "course" && item.isPhysical)) ? 50 : 0;
+    // Shipping fee always 0
+    const shippingFee = 0;
     let couponDiscount = 0;
     let couponId = null;
 
