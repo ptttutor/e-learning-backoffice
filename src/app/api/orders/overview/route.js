@@ -22,21 +22,23 @@ export async function GET(request) {
         ...(type ? { orderType: type.toUpperCase() } : {}),
       },
       include: {
-        ebook: { select: { title: true } },
-        course: { select: { title: true } },
+        items: true,
         payment: { select: { amount: true, paidAt: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    // สร้างข้อมูลสำหรับตาราง
-    const data = orders.map((order) => ({
-      orderId: order.id,
-      type: order.orderType,
-      name: order.course?.title || order.ebook?.title || "-",
-      amount: order.payment?.amount || order.total,
-      date: order.payment?.paidAt || order.createdAt,
-    }));
+    // สร้างข้อมูลสำหรับตาราง (แยกตาม OrderItem)
+    const data = orders.flatMap((order) =>
+      order.items.map((item) => ({
+        orderId: order.id,
+        type: item.itemType,
+        name: item.title || '-',
+        amount: item.totalPrice || item.unitPrice || 0,
+        quantity: item.quantity,
+        date: order.payment?.paidAt || order.createdAt,
+      }))
+    );
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

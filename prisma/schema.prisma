@@ -1,3 +1,26 @@
+// ระบบตะกร้าสินค้า (Cart)
+model Cart {
+  id        String      @id @default(uuid())
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     CartItem[]
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  itemType  ItemType
+  itemId    String
+  title     String?
+  quantity  Int      @default(1)
+  unitPrice Float?
+  createdAt DateTime @default(now())
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+}
 generator client {
   provider = "prisma-client-js"
 }
@@ -28,6 +51,7 @@ model User {
   downloads    EbookDownload[]
   accounts     Account[]
   sessions     Session[]
+  carts        Cart[]
 }
 
 // NextAuth.js required models

@@ -21,7 +21,8 @@ export async function GET(req, { params }) {
         course: true,
         ebook: true,
         payment: true,
-        shipping: true
+        shipping: true,
+        items: true // คืน OrderItem ทั้งหมดใน order
       }
     });
 
