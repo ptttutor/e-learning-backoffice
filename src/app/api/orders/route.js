@@ -196,6 +196,7 @@ export async function GET(request) {
         },
         payment: true,
         shipping: true,
+        items: true,
       },
       orderBy: { createdAt: "desc" },
     });
