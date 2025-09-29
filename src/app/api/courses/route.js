@@ -11,6 +11,8 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get("limit")) || 12;
     const skip = (page - 1) * limit;
     const isRecommended = searchParams.get("isRecommended");
+    const categoryId = searchParams.get("categoryId");
+    const subject = searchParams.get("subject");
 
     // Build where condition
     let where = { status: "PUBLISHED" };
@@ -18,6 +20,12 @@ export async function GET(request) {
       where = { ...where, isRecommended: true };
     } else if (isRecommended === "false") {
       where = { ...where, isRecommended: false };
+    }
+    if (categoryId) {
+      where = { ...where, categoryId };
+    }
+    if (subject) {
+      where = { ...where, subject };
     }
 
     // Get total count
