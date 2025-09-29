@@ -12,7 +12,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'สามารถเพิ่มสินค้าแต่ละชิ้นได้ครั้งละ 1 เท่านั้น' }, { status: 400 });
     }
     // หา cart ของ user หรือสร้างใหม่
-    let cart = await prisma.cart.findUnique({ where: { userId } });
+  let cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) {
       cart = await prisma.cart.create({ data: { userId } });
     }
@@ -39,7 +39,7 @@ export async function GET(req) {
     if (!userId) {
       return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });
     }
-    const cart = await prisma.cart.findUnique({
+    const cart = await prisma.cart.findFirst({
       where: { userId },
       include: { items: true }
     });
