@@ -110,6 +110,26 @@ export async function POST(request) {
         ref: total === 0 ? `FREE${Date.now()}` : `ORD${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`
       }
     });
+
+    // Clear only cartItems that were ordered
+    try {
+      const cart = await prisma.cart.findFirst({ where: { userId: user.id } });
+      if (cart && orderItems.length > 0) {
+        const deleteConditions = orderItems.map(item => ({
+          cartId: cart.id,
+          itemType: item.itemType,
+          itemId: item.itemId
+        }));
+        // Prisma does not support deleteMany with OR array directly, so use transaction
+        await prisma.$transaction(
+          deleteConditions.map(cond =>
+            prisma.cartItem.deleteMany({ where: cond })
+          )
+        );
+      }
+    } catch (cartError) {
+      console.error("Error clearing cart after order:", cartError);
+    }
     // Enrollment for free course(s)
     if (total === 0) {
       for (const item of orderItems) {

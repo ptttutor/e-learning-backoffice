@@ -1,3 +1,25 @@
+// DELETE /api/cart - ลบสินค้าออกจากตะกร้า (ตาม userId, itemType, itemId)
+export async function DELETE(req) {
+  try {
+    const { userId, itemType, itemId } = await req.json();
+    if (!userId || !itemType || !itemId) {
+      return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
+    }
+    const cart = await prisma.cart.findFirst({ where: { userId } });
+    if (!cart) {
+      return NextResponse.json({ success: false, error: 'ไม่พบตะกร้า' }, { status: 404 });
+    }
+    const deleted = await prisma.cartItem.deleteMany({
+      where: { cartId: cart.id, itemType, itemId }
+    });
+    if (deleted.count === 0) {
+      return NextResponse.json({ success: false, error: 'ไม่พบสินค้านี้ในตะกร้า' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, deletedCount: deleted.count });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
