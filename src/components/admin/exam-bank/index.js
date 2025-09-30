@@ -17,7 +17,7 @@ const { Title, Text } = Typography;
 
 export default function ExamBankManagement() {
   const { message } = App.useApp();
-  
+
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -62,10 +62,16 @@ export default function ExamBankManagement() {
       });
       const result = await response.json();
       if (result.success) {
-        setExamFiles(prevFiles => prevFiles.map(f => f.id === fileId ? { ...f, isDownload } : f));
-        message.success(isDownload ? "เปิดให้ดาวน์โหลดไฟล์นี้" : "ปิดการดาวน์โหลดไฟล์นี้");
+        setExamFiles((prevFiles) =>
+          prevFiles.map((f) => (f.id === fileId ? { ...f, isDownload } : f))
+        );
+        message.success(
+          isDownload ? "เปิดให้ดาวน์โหลดไฟล์นี้" : "ปิดการดาวน์โหลดไฟล์นี้"
+        );
       } else {
-        message.error(result.error || "เกิดข้อผิดพลาดในการอัปเดตสถานะดาวน์โหลด");
+        message.error(
+          result.error || "เกิดข้อผิดพลาดในการอัปเดตสถานะดาวน์โหลด"
+        );
       }
     } catch (error) {
       message.error("เกิดข้อผิดพลาดในการอัปเดตสถานะดาวน์โหลด");
@@ -80,11 +86,13 @@ export default function ExamBankManagement() {
       if (success) {
         setModalOpen(false);
         setEditing(null);
-        message.success(editing ? 'อัพเดทข้อสอบสำเร็จ' : 'สร้างข้อสอบสำเร็จ');
+        message.success(editing ? "อัพเดทข้อสอบสำเร็จ" : "สร้างข้อสอบสำเร็จ");
       }
     } catch (error) {
       console.error("Error submitting exam:", error);
-      message.error(editing ? 'เกิดข้อผิดพลาดในการอัพเดท' : 'เกิดข้อผิดพลาดในการสร้างข้อสอบ');
+      message.error(
+        editing ? "เกิดข้อผิดพลาดในการอัพเดท" : "เกิดข้อผิดพลาดในการสร้างข้อสอบ"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -109,11 +117,11 @@ export default function ExamBankManagement() {
       if (success) {
         setDeleteModalOpen(false);
         setExamToDelete(null);
-        message.success('ลบข้อสอบสำเร็จ');
+        message.success("ลบข้อสอบสำเร็จ");
       }
     } catch (error) {
       console.error("Error deleting exam:", error);
-      message.error('เกิดข้อผิดพลาดในการลบข้อสอบ');
+      message.error("เกิดข้อผิดพลาดในการลบข้อสอบ");
     } finally {
       setDeleting(false);
     }
@@ -141,7 +149,7 @@ export default function ExamBankManagement() {
   // Handle file upload with optimistic update
   const handleFileUpload = async (options) => {
     const { file, onSuccess, onError } = options;
-    
+
     try {
       if (!selectedExam?.id) {
         onError("ไม่พบข้อมูลข้อสอบ");
@@ -155,10 +163,10 @@ export default function ExamBankManagement() {
         fileType: file.type,
         fileSize: file.size,
         uploadedAt: new Date().toISOString(),
-        uploading: true
+        uploading: true,
       };
-      
-      setExamFiles(prevFiles => [...prevFiles, tempFile]);
+
+      setExamFiles((prevFiles) => [...prevFiles, tempFile]);
 
       const success = await uploadExamFile(selectedExam.id, file);
       if (success) {
@@ -167,24 +175,30 @@ export default function ExamBankManagement() {
         const files = await fetchExamFiles(selectedExam.id);
         setExamFiles(files);
         message.success("อัพโหลดไฟล์สำเร็จ");
-        
+
         // Update exam's file count in exams list
-        setExams(prevExams => 
-          prevExams.map(exam => 
-            exam.id === selectedExam.id 
-              ? { ...exam, fileCount: files.length, _count: { files: files.length } }
+        setExams((prevExams) =>
+          prevExams.map((exam) =>
+            exam.id === selectedExam.id
+              ? {
+                  ...exam,
+                  fileCount: files.length,
+                  _count: { files: files.length },
+                }
               : exam
           )
         );
       } else {
         // Remove temp file on error
-        setExamFiles(prevFiles => prevFiles.filter(f => f.id !== tempFile.id));
+        setExamFiles((prevFiles) =>
+          prevFiles.filter((f) => f.id !== tempFile.id)
+        );
         onError("อัพโหลดไฟล์ไม่สำเร็จ");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
       // Remove temp file on error
-      setExamFiles(prevFiles => prevFiles.filter(f => f.uploading));
+      setExamFiles((prevFiles) => prevFiles.filter((f) => f.uploading));
       onError(error.message || "เกิดข้อผิดพลาดในการอัพโหลดไฟล์");
     }
   };
@@ -195,26 +209,49 @@ export default function ExamBankManagement() {
       setFileToDelete(file);
 
       // Optimistic update - remove file from UI immediately
-      const optimisticFiles = examFiles.filter(f => f.id !== file.id);
+      const optimisticFiles = examFiles.filter((f) => f.id !== file.id);
       setExamFiles(optimisticFiles);
 
       // Perform actual deletion
       const response = await fetch(`/api/admin/exam-files/${file.id}`, {
-        method: 'DELETE'
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete file');
+        throw new Error("Failed to delete file");
       }
 
-      message.success('ลบไฟล์สำเร็จ');
+      message.success("ลบไฟล์สำเร็จ");
     } catch (error) {
-      console.error('Error deleting file:', error);
+      console.error("Error deleting file:", error);
       // Rollback: restore file to UI
       setExamFiles(examFiles);
-      message.error('เกิดข้อผิดพลาดในการลบไฟล์');
+      message.error("เกิดข้อผิดพลาดในการลบไฟล์");
     } finally {
       setFileToDelete(null);
+    }
+  };
+  const handleRefreshFiles = async () => {
+    if (!selectedExam?.id) return;
+
+    try {
+      const files = await fetchExamFiles(selectedExam.id);
+      setExamFiles(files);
+
+      // อัพเดทจำนวนไฟล์ใน exam list
+      setExams((prevExams) =>
+        prevExams.map((exam) =>
+          exam.id === selectedExam.id
+            ? {
+                ...exam,
+                fileCount: files.length,
+                _count: { files: files.length },
+              }
+            : exam
+        )
+      );
+    } catch (error) {
+      console.error("Error refreshing files:", error);
     }
   };
 
@@ -316,12 +353,12 @@ export default function ExamBankManagement() {
           setSelectedExam(null);
           setExamFiles([]);
         }}
+        onRefresh={handleRefreshFiles}
         onFileUpload={handleFileUpload}
         onDeleteFile={handleDeleteFile}
         onToggleDownload={handleToggleDownload}
         deletingFileId={fileToDelete?.id}
       />
-
     </div>
   );
 }
