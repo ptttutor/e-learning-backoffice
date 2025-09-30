@@ -1,5 +1,14 @@
 "use client";
-import { Modal, Descriptions, Card, Space, Typography, Tag, Spin } from "antd";
+import {
+  Modal,
+  Descriptions,
+  Card,
+  Space,
+  Typography,
+  Tag,
+  Spin,
+  Button,
+} from "antd";
 import {
   EyeOutlined,
   UserOutlined,
@@ -14,6 +23,7 @@ import {
   ThunderboltOutlined,
   InboxOutlined,
   CarOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -98,14 +108,72 @@ export default function ShippingDetailModal({
     }
   };
 
+  // ฟังก์ชันรวมข้อมูลทั้งหมดเป็นข้อความเดียว
+  const getAllShippingText = () => {
+    if (!shipment) return "";
+    let lines = [];
+    lines.push(`ชื่อผู้รับ: ${shipment.recipientName || "-"}`);
+    lines.push(`เบอร์โทร: ${shipment.recipientPhone || "-"}`);
+    lines.push(`ที่อยู่: ${shipment.address || "-"}`);
+    lines.push(`ตำบล/แขวง: ${shipment.district || "-"}`);
+    lines.push(`จังหวัด: ${shipment.province || "-"}`);
+    lines.push(`รหัสไปรษณีย์: ${shipment.postalCode || "-"}`);
+    lines.push(`ประเทศ: ${shipment.country || "-"}`);
+    lines.push(`บริษัทขนส่ง: ${getCompanyName(shipment.shippingMethod)}`);
+    lines.push(`สถานะ: ${getStatusText(shipment.status)}`);
+    lines.push(`เลขติดตาม: ${shipment.trackingNumber || "-"}`);
+    lines.push(`วันที่จัดส่ง: ${formatDate(shipment.shippedAt)}`);
+    lines.push(`วันที่ส่งถึง: ${formatDate(shipment.deliveredAt)}`);
+    lines.push(`หมายเหตุ: ${shipment.notes || "-"}`);
+    if (shipment.order) {
+      lines.push(`รหัสคำสั่งซื้อ: #${shipment.order.id?.slice(-8)}`);
+      lines.push(`ลูกค้า: ${shipment.order.user?.name || "-"}`);
+      lines.push(
+        `สินค้า: ${shipment.order.ebook?.title || shipment.order.course?.title || "-"}`
+      );
+      lines.push(
+        `ประเภท: ${
+          shipment.order.ebook
+            ? "E-book"
+            : shipment.order.course
+            ? "Course"
+            : "อื่นๆ"
+        }`
+      );
+      lines.push(`วันที่สั่งซื้อ: ${formatDate(shipment.order.createdAt)}`);
+      lines.push(`สถานะคำสั่งซื้อ: ${shipment.order.status || "-"}`);
+    }
+    return lines.join("\n");
+  };
+
+  // ฟังก์ชัน copy
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getAllShippingText());
+    } catch (e) {
+      alert("คัดลอกข้อมูลไม่สำเร็จ");
+    }
+  };
+
   return (
     <Modal
       title={
         <Space>
           <EyeOutlined />
           <Text strong>
-            รายละเอียดการจัดส่ง #{shipment?.orderId?.slice(-8) || "..."}
+            รายละเอียดการจัดส่ง #{shipment?.orderId?.slice(-8) || "..."}{" "}
           </Text>
+          {/* ปุ่มคัดลอก */}
+          {shipment && (
+            <Button
+              icon={<CopyOutlined />}
+              size="small"
+              onClick={handleCopy}
+              style={{ marginLeft: 8 }}
+            >
+              คัดลอกข้อมูล
+            </Button>
+          )}
         </Space>
       }
       open={open}
@@ -297,11 +365,21 @@ export default function ShippingDetailModal({
                         {shipment.order.ebook?.title ||
                           shipment.order.course?.title}
                       </Text>
-                      <Tag 
-                        color={shipment.order.ebook ? "blue" : shipment.order.course ? "green" : "default"}
+                      <Tag
+                        color={
+                          shipment.order.ebook
+                            ? "blue"
+                            : shipment.order.course
+                            ? "green"
+                            : "default"
+                        }
                         style={{ fontSize: "11px" }}
                       >
-                        {shipment.order.ebook ? "📚 E-book" : shipment.order.course ? "🎓 Course" : "อื่นๆ"}
+                        {shipment.order.ebook
+                          ? "📚 E-book"
+                          : shipment.order.course
+                          ? "🎓 Course"
+                          : "อื่นๆ"}
                       </Tag>
                     </Space>
                   </Space>

@@ -55,7 +55,6 @@ export default function ShippingModal({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnClose
     >
       <Form
         form={form}
@@ -79,7 +78,11 @@ export default function ShippingModal({
             },
           ]}
         >
-          <Select placeholder="เลือกบริษัทขนส่ง" size="large" disabled={loading}>
+          <Select
+            placeholder="เลือกบริษัทขนส่ง"
+            size="large"
+            disabled={loading}
+          >
             <Option value="PENDING">รอเลือก</Option>
             <Option value="KERRY">Kerry Express</Option>
             <Option value="THAILAND_POST">ไปรษณีย์ไทย</Option>
@@ -129,10 +132,7 @@ export default function ShippingModal({
         </Form.Item>
 
         {/* Notes */}
-        <Form.Item
-          label={<Text strong>หมายเหตุ</Text>}
-          name="notes"
-        >
+        <Form.Item label={<Text strong>หมายเหตุ</Text>} name="notes">
           <TextArea
             placeholder="หมายเหตุเพิ่มเติม (หากมี)"
             rows={4}
