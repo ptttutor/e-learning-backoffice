@@ -35,7 +35,7 @@ export default function OrderFilters({
             allowClear
           />
         </Col>
-        <Col xs={24} sm={12} md={4}>
+        {/* <Col xs={24} sm={12} md={4}>
           <Select
             placeholder="สถานะคำสั่งซื้อ"
             value={filters.status}
@@ -48,7 +48,7 @@ export default function OrderFilters({
             <Option value="COMPLETED">สำเร็จ</Option>
             <Option value="CANCELLED">ยกเลิก</Option>
           </Select>
-        </Col>
+        </Col> */}
         <Col xs={24} sm={12} md={4}>
           <Select
             placeholder="สถานะการชำระเงิน"
@@ -61,7 +61,7 @@ export default function OrderFilters({
             <Option value="PENDING_VERIFICATION">รอตรวจสอบ</Option>
             <Option value="COMPLETED">ชำระแล้ว</Option>
             <Option value="REJECTED">ปฏิเสธ</Option>
-            <Option value="FREE">ฟรี</Option>
+            {/* <Option value="FREE">ฟรี</Option> */}
           </Select>
         </Col>
         <Col xs={24} sm={12} md={4}>

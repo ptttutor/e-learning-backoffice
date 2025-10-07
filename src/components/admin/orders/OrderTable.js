@@ -17,6 +17,7 @@ import {
   ReadOutlined,
   DollarOutlined,
   CalendarOutlined,
+  FileDoneOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -24,6 +25,7 @@ const { Text } = Typography;
 export default function OrderTable({
   orders,
   loading,
+  actionLoading = false,
   onViewDetail,
   onConfirmPayment,
   onRejectPayment,
@@ -212,7 +214,7 @@ export default function OrderTable({
           {payment?.slipUrl && (
             <div style={{ marginTop: "2px" }}>
               <Tag color="blue" size="small">
-                📄 มีสลิป
+                <FileDoneOutlined/> มีสลิป
               </Tag>
             </div>
           )}
@@ -241,6 +243,7 @@ export default function OrderTable({
             type="primary"
             icon={<EyeOutlined />}
             size="small"
+            disabled={actionLoading}
             onClick={() => onViewDetail(record)}
             style={{ borderRadius: "6px" }}
           >
@@ -253,6 +256,7 @@ export default function OrderTable({
                 type="primary"
                 icon={<CheckOutlined />}
                 size="small"
+                disabled={actionLoading}
                 style={{
                   backgroundColor: "#52c41a",
                   borderColor: "#52c41a",
@@ -266,6 +270,7 @@ export default function OrderTable({
                 danger
                 icon={<CloseOutlined />}
                 size="small"
+                disabled={actionLoading}
                 style={{ borderRadius: "6px" }}
                 onClick={() => onRejectPayment(record)}
               >

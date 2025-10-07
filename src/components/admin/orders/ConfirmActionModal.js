@@ -8,6 +8,7 @@ export default function ConfirmActionModal({
   visible,
   actionType,
   selectedOrder,
+  loading = false,
   onOk,
   onCancel,
 }) {
@@ -33,6 +34,7 @@ export default function ConfirmActionModal({
       okText={actionType === "confirm" ? "ยืนยัน" : "ปฏิเสธ"}
       cancelText="ยกเลิก"
       okButtonProps={{
+        loading: loading,
         danger: actionType === "reject",
         style: {
           backgroundColor: actionType === "confirm" ? "#52c41a" : undefined,
@@ -41,6 +43,7 @@ export default function ConfirmActionModal({
         },
       }}
       cancelButtonProps={{
+        disabled: loading,
         style: { borderRadius: "6px" },
       }}
     >

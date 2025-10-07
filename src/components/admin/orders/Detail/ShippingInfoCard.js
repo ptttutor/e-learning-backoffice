@@ -1,18 +1,45 @@
-import { Card, Space, Typography, Descriptions, Tag } from "antd";
+import { Card, Space, Typography, Descriptions, Tag, Button, App } from "antd";
 import {
   EnvironmentOutlined,
   UserOutlined,
   PhoneOutlined,
   FileTextOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
 
 export default function ShippingInfoCard({ selectedOrder }) {
+  const { message } = App.useApp();
+  
   // Only render if shipping exists
   if (!selectedOrder.shipping) {
     return null;
   }
+
+  // ฟังก์ชันรวมข้อมูลการจัดส่งทั้งหมดเป็นข้อความเดียว
+  const getShippingText = () => {
+    const shipping = selectedOrder.shipping;
+    let lines = [];
+    lines.push(`ผู้รับ: ${shipping.recipientName || "-"}`);
+    lines.push(`เบอร์โทร: ${shipping.recipientPhone || "-"}`);
+    lines.push(`ที่อยู่: ${shipping.address || "-"}, ${shipping.district || "-"}, ${shipping.province || "-"} ${shipping.postalCode || "-"}`);
+    lines.push(`สถานะการจัดส่ง: ${shipping.status || "-"}`);
+    if (shipping.trackingNumber) {
+      lines.push(`เลขติดตาม: ${shipping.trackingNumber}`);
+    }
+    return lines.join("\n");
+  };
+
+  // ฟังก์ชัน copy
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getShippingText());
+      message.success("คัดลอกข้อมูลการจัดส่งสำเร็จ");
+    } catch (e) {
+      message.error("คัดลอกข้อมูลไม่สำเร็จ");
+    }
+  };
 
   return (
     <Card
@@ -21,6 +48,16 @@ export default function ShippingInfoCard({ selectedOrder }) {
           <EnvironmentOutlined style={{ color: "#1890ff" }} />
           <Text strong>ข้อมูลการจัดส่ง</Text>
         </Space>
+      }
+      extra={
+        <Button
+          icon={<CopyOutlined />}
+          size="small"
+          onClick={handleCopy}
+          style={{ borderRadius: "6px" }}
+        >
+          คัดลอก
+        </Button>
       }
       size="small"
     >

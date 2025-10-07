@@ -47,6 +47,7 @@ function OrdersManagementContent() {
   const [analyzingSlip, setAnalyzingSlip] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [actionType, setActionType] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     paymentStatus: '',
@@ -55,6 +56,7 @@ function OrdersManagementContent() {
   });
 
   const fetchOrders = useCallback(async () => {
+    setLoading(true); // เพิ่ม loading state เมื่อเริ่มเรียก API
     try {
       const params = new URLSearchParams();
       if (filters.status) params.append('status', filters.status);
@@ -110,10 +112,12 @@ function OrdersManagementContent() {
   }, [fetchOrders]);
 
   const handleFilterChange = (key, value) => {
+    setLoading(true); // เพิ่ม loading เมื่อมีการเปลี่ยน filter
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const resetFilters = () => {
+    setLoading(true); // เพิ่ม loading เมื่อ reset filters
     setFilters({
       status: '',
       paymentStatus: '',
@@ -234,6 +238,7 @@ function OrdersManagementContent() {
   };
 
   const executeAction = async () => {
+    setActionLoading(true); // เพิ่ม loading เมื่อทำการอัปเดต order
     try {
       const response = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
         method: "PATCH",
@@ -276,6 +281,8 @@ function OrdersManagementContent() {
     } catch (error) {
       console.error("Error updating order:", error);
       message.error(`เกิดข้อผิดพลาดในการอัพเดทคำสั่งซื้อ: ${error.message}`);
+    } finally {
+      setActionLoading(false); // ปิด loading เมื่อเสร็จสิ้น
     }
   };
 
@@ -385,6 +392,7 @@ function OrdersManagementContent() {
         <OrderTable
           orders={orders}
           loading={loading}
+          actionLoading={actionLoading}
           onViewDetail={handleViewDetail}
           onConfirmPayment={handleConfirmPayment}
           onRejectPayment={handleRejectPayment}
@@ -416,6 +424,7 @@ function OrdersManagementContent() {
         visible={confirmModalVisible}
         actionType={actionType}
         selectedOrder={selectedOrder}
+        loading={actionLoading}
         onOk={executeAction}
         onCancel={() => setConfirmModalVisible(false)}
       />
