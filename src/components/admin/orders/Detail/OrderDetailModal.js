@@ -3,6 +3,7 @@ import { Modal, Space, Typography, Button } from "antd";
 import { EyeOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import CustomerInfoCard from "./CustomerInfoCard";
 import ProductInfoCard from "./ProductInfoCard";
+import CourseInfoCard from "./CourseInfoCard";
 import PaymentInfoCard from "./PaymentInfoCard";
 import CouponInfoCard from "./CouponInfoCard";
 import OrderSummaryCard from "./OrderSummaryCard";
@@ -49,7 +50,7 @@ export default function OrderDetailModal({
               }}
               onClick={() => {
                 onCancel();
-                onConfirmPayment(selectedOrder.id);
+                onConfirmPayment(selectedOrder);
               }}
             >
               ยืนยันการชำระเงิน
@@ -61,7 +62,7 @@ export default function OrderDetailModal({
                 const reason = prompt("เหตุผลการปฏิเสธ:");
                 if (reason) {
                   onCancel();
-                  onRejectPayment(selectedOrder.id, reason);
+                  onRejectPayment(selectedOrder);
                 }
               }}
             >
@@ -90,6 +91,14 @@ export default function OrderDetailModal({
             selectedOrder={selectedOrder} 
             formatPrice={formatPrice} 
           />
+          
+          {/* Course Specific Information */}
+          {selectedOrder.orderType === "COURSE" && selectedOrder.course && (
+            <CourseInfoCard
+              selectedOrder={selectedOrder}
+              formatPrice={formatPrice}
+            />
+          )}
           
           <PaymentInfoCard
             selectedOrder={selectedOrder}

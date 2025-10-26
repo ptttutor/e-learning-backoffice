@@ -12,6 +12,14 @@ export default function ConfirmActionModal({
   onOk,
   onCancel,
 }) {
+  // Debug logging
+  console.log("ConfirmActionModal props:", {
+    visible,
+    actionType,
+    selectedOrder,
+    loading
+  });
+
   return (
     <Modal
       title={
@@ -50,12 +58,12 @@ export default function ConfirmActionModal({
       <div style={{ padding: "16px 0" }}>
         <Text style={{ fontSize: "16px" }}>
           {actionType === "confirm"
-            ? `ต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อ #${selectedOrder?.id?.slice(
-                -8
-              )} หรือไม่?`
-            : `ต้องการปฏิเสธการชำระเงินสำหรับคำสั่งซื้อ #${selectedOrder?.id?.slice(
-                -8
-              )} หรือไม่?`}
+            ? `ต้องการยืนยันการชำระเงินสำหรับคำสั่งซื้อ #${
+                selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"
+              } หรือไม่?`
+            : `ต้องการปฏิเสธการชำระเงินสำหรับคำสั่งซื้อ #${
+                selectedOrder?.id ? selectedOrder.id.slice(-8) : "N/A"
+              } หรือไม่?`}
         </Text>
 
         <div

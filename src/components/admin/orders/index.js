@@ -226,18 +226,38 @@ function OrdersManagementContent() {
   };
 
   const handleConfirmPayment = (order) => {
+    console.log("handleConfirmPayment called with:", order);
+    if (!order || !order.id) {
+      console.error("Invalid order object:", order);
+      message.error("ไม่พบข้อมูลคำสั่งซื้อ");
+      return;
+    }
     setSelectedOrder(order);
     setActionType("confirm");
     setConfirmModalVisible(true);
   };
 
   const handleRejectPayment = (order) => {
+    console.log("handleRejectPayment called with:", order);
+    if (!order || !order.id) {
+      console.error("Invalid order object:", order);
+      message.error("ไม่พบข้อมูลคำสั่งซื้อ");
+      return;
+    }
     setSelectedOrder(order);
     setActionType("reject");
     setConfirmModalVisible(true);
   };
 
   const executeAction = async () => {
+    console.log("executeAction called with selectedOrder:", selectedOrder);
+    if (!selectedOrder || !selectedOrder.id) {
+      console.error("No selectedOrder or selectedOrder.id:", selectedOrder);
+      message.error("ไม่พบข้อมูลคำสั่งซื้อที่เลือก");
+      setConfirmModalVisible(false);
+      return;
+    }
+
     setActionLoading(true); // เพิ่ม loading เมื่อทำการอัปเดต order
     try {
       const response = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
