@@ -111,143 +111,173 @@ export default function OrderTable({
       dataIndex: "id",
       key: "id",
       render: (id) => `#${id.slice(-8)}`,
-      width: 120,
+      width: "10%",
+      ellipsis: true,
     },
     {
       title: "ลูกค้า",
       dataIndex: "user",
       key: "customer",
       render: (user) => (
-        <Space size={12}>
-          <Avatar icon={<UserOutlined />} size="default" />
-          <div>
+        <Space size={8}>
+          <Avatar icon={<UserOutlined />} size="small" />
+          <div style={{ minWidth: 0 }}>
             <div>
-              <Text strong>{user.name}</Text>
+              <Text strong style={{ fontSize: "13px" }} ellipsis>
+                {user.name}
+              </Text>
             </div>
             <div>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
+              <Text type="secondary" style={{ fontSize: "11px" }} ellipsis>
                 {user.email}
               </Text>
             </div>
           </div>
         </Space>
       ),
-      width: 200,
+      width: "20%",
+      ellipsis: true,
     },
     {
       title: "สินค้า",
       key: "product",
-      render: (_, record) => (
-        <Space size={12}>
-          {record.ebook?.coverImageUrl ? (
-            <Image
-              src={record.ebook.coverImageUrl}
-              alt={record.ebook.title}
-              width={40}
-              height={40}
-              style={{ objectFit: "cover", borderRadius: "6px" }}
-              preview={false}
-            />
-          ) : (
-            <Avatar
-              icon={
-                record.orderType === "EBOOK" ? (
-                  <ReadOutlined />
-                ) : (
-                  <BookOutlined />
-                )
-              }
-              size={40}
-              style={{ backgroundColor: "#1890ff" }}
-            />
-          )}
-          <div>
-            <div>
-              <Text strong style={{ fontSize: "14px" }}>
-                {record.ebook?.title || record.course?.title}
-              </Text>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                {record.orderType === "EBOOK" ? "หนังสือ" : "คอร์ส"}
-              </Text>
-            </div>
+      render: (_, record) => {
+        // Display items from OrderItem array if available, otherwise fallback to course/ebook
+        const items = record.items && record.items.length > 0 ? record.items : [
+          {
+            title: record.ebook?.title || record.course?.title,
+            itemType: record.orderType,
+            quantity: 1,
+            unitPrice: record.total
+          }
+        ];
+
+        return (
+          <div style={{ minWidth: 0 }}>
+            {items.map((item, index) => (
+              <div key={index} style={{ marginBottom: index < items.length - 1 ? "4px" : 0 }}>
+                <Space size={6}>
+                  <Avatar
+                    icon={
+                      item.itemType === "EBOOK" ? (
+                        <ReadOutlined />
+                      ) : (
+                        <BookOutlined />
+                      )
+                    }
+                    size={24}
+                    style={{ backgroundColor: item.itemType === "EBOOK" ? "#722ed1" : "#1890ff" }}
+                  />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div>
+                      <Text strong style={{ fontSize: "12px" }} ellipsis title={item.title}>
+                        {item.title}
+                      </Text>
+                      {item.quantity > 1 && (
+                        <Text type="secondary" style={{ fontSize: "11px", marginLeft: "4px" }}>
+                          x{item.quantity}
+                        </Text>
+                      )}
+                    </div>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: "10px" }}>
+                        {item.itemType === "EBOOK" ? "หนังสือ" : "คอร์ส"}
+                        {item.unitPrice && (
+                          <span style={{ marginLeft: "4px" }}>
+                            {formatPrice(item.unitPrice)}
+                          </span>
+                        )}
+                      </Text>
+                    </div>
+                  </div>
+                </Space>
+              </div>
+            ))}
+            {items.length > 1 && (
+              <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: "1px solid #f0f0f0" }}>
+                <Text type="secondary" style={{ fontSize: "10px" }}>
+                  รวม {items.length} รายการ
+                </Text>
+              </div>
+            )}
           </div>
-        </Space>
-      ),
-      width: 250,
+        );
+      },
+      width: "25%",
+      ellipsis: true,
     },
     {
       title: "ยอดรวม",
       dataIndex: "total",
       key: "total",
       render: (total) => (
-        <Space size={8}>
-          <DollarOutlined style={{ color: "#52c41a", fontSize: "16px" }} />
-          <Text strong style={{ color: "#52c41a", fontSize: "14px" }}>
+        <div>
+          <DollarOutlined style={{ color: "#52c41a", fontSize: "14px", marginRight: "4px" }} />
+          <Text strong style={{ color: "#52c41a", fontSize: "13px" }}>
             {formatPrice(total)}
           </Text>
-        </Space>
+        </div>
       ),
-      width: 120,
+      width: "12%",
     },
     {
-      title: "สถานะคำสั่งซื้อ",
+      title: "สถานะ",
       dataIndex: "status",
       key: "orderStatus",
       render: (status) => (
-        <Tag color={getOrderStatusColor(status)}>
+        <Tag color={getOrderStatusColor(status)} style={{ fontSize: "11px" }}>
           {getOrderStatusText(status)}
         </Tag>
       ),
-      width: 120,
+      width: "10%",
     },
     {
-      title: "สถานะการชำระเงิน",
+      title: "การชำระ",
       dataIndex: "payment",
       key: "paymentStatus",
       render: (payment) => (
         <div>
-          <Tag color={getPaymentStatusColor(payment?.status)}>
+          <Tag color={getPaymentStatusColor(payment?.status)} style={{ fontSize: "11px" }}>
             {getPaymentStatusText(payment?.status)}
           </Tag>
           {payment?.slipUrl && (
             <div style={{ marginTop: "2px" }}>
-              <Tag color="blue" size="small">
-                <FileDoneOutlined/> มีสลิป
+              <Tag color="blue" size="small" style={{ fontSize: "10px" }}>
+                <FileDoneOutlined style={{ fontSize: "10px" }}/> สลิป
               </Tag>
             </div>
           )}
         </div>
       ),
-      width: 130,
+      width: "10%",
     },
     {
-      title: "วันที่สั่งซื้อ",
+      title: "วันที่",
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date) => (
-        <Space size={8}>
-          <CalendarOutlined style={{ color: "#8c8c8c" }} />
-          <Text style={{ fontSize: "13px" }}>{formatDate(date)}</Text>
-        </Space>
+        <div>
+          <CalendarOutlined style={{ color: "#8c8c8c", fontSize: "12px", marginRight: "4px" }} />
+          <Text style={{ fontSize: "12px" }}>{formatDate(date)}</Text>
+        </div>
       ),
-      width: 150,
+      width: "13%",
+      ellipsis: true,
     },
     {
       title: "การดำเนินการ",
       key: "actions",
       render: (_, record) => (
-        <Space size={8} wrap>
+        <Space size={4} wrap>
           <Button
             type="primary"
             icon={<EyeOutlined />}
             size="small"
             disabled={actionLoading}
             onClick={() => onViewDetail(record)}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: "4px" }}
           >
-            ดูรายละเอียด
+            ดู
           </Button>
 
           {record.payment?.status === "PENDING_VERIFICATION" && (
@@ -260,7 +290,7 @@ export default function OrderTable({
                 style={{
                   backgroundColor: "#52c41a",
                   borderColor: "#52c41a",
-                  borderRadius: "6px",
+                  borderRadius: "4px",
                 }}
                 onClick={() => onConfirmPayment(record)}
               >
@@ -271,7 +301,7 @@ export default function OrderTable({
                 icon={<CloseOutlined />}
                 size="small"
                 disabled={actionLoading}
-                style={{ borderRadius: "6px" }}
+                style={{ borderRadius: "4px" }}
                 onClick={() => onRejectPayment(record)}
               >
                 ปฏิเสธ
@@ -280,8 +310,7 @@ export default function OrderTable({
           )}
         </Space>
       ),
-      width: 200,
-      fixed: "right",
+      width: "20%",
     },
   ];
 
@@ -291,7 +320,6 @@ export default function OrderTable({
       dataSource={orders}
       loading={loading}
       rowKey="id"
-      scroll={{ x: 1200 }}
       pagination={{
         pageSize: 10,
         showSizeChanger: true,
@@ -300,6 +328,7 @@ export default function OrderTable({
           `${range[0]}-${range[1]} จาก ${total} รายการ`,
       }}
       size="middle"
+      tableLayout="fixed"
     />
   );
 }
