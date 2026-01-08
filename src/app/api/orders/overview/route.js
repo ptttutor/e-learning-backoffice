@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET - รายละเอียดออร์เดอร์ course/ebook ที่ถูกขายแต่ละครั้ง
 export async function GET(request) {

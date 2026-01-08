@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import {
   uploadToVercelBlob,
   generateUniqueFilename,
   validateFile,
   getFolderPath
 } from '@/lib/vercel-blob';
-
-const prisma = new PrismaClient();
 
 // POST - Upload ebook file
 export async function POST(request) {

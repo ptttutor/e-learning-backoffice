@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET - ดึงรายการ ebooks ทั้งหมด พร้อม filtering และ pagination
 export async function GET(request) {

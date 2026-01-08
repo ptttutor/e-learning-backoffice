@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { deleteFromVercelBlob } from '@/lib/vercel-blob';
-
-const prisma = new PrismaClient();
 
 // DELETE - Remove ebook file
 export async function DELETE(request, { params }) {

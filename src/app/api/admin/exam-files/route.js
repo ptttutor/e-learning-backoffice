@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import {
   generateUniqueFilename,
   validateFile,
   getFolderPath,
 } from "@/lib/vercel-blob";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-
-const prisma = new PrismaClient();
 
 // Cloudflare R2 config (เก็บใน env)
 const s3Client = new S3Client({

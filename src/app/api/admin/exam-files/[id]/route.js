@@ -1,6 +1,10 @@
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { deleteFromVercelBlob } from '@/lib/vercel-blob';
+
 // PATCH - อัปเดต isDownload
 export async function PATCH(request, { params }) {
-  const prisma = new PrismaClient();
   try {
     const { id } = params;
     const body = await request.json();
@@ -15,15 +19,8 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { deleteFromVercelBlob } from '@/lib/vercel-blob';
-
-const prisma = new PrismaClient();
 
 // DELETE - ลบไฟล์ข้อสอบ
 export async function DELETE(request, { params }) {
