@@ -71,7 +71,6 @@ export async function GET(request) {
         dimensions: true,
         _count: {
           select: {
-            enrollments: true,
             chapters: true,
           },
         },
@@ -82,9 +81,34 @@ export async function GET(request) {
       take: limit,
     });
 
+    // นับจำนวนผู้เรียนจาก orders ที่มี payment.status = "COMPLETED"
+    const coursesWithEnrollmentCount = await Promise.all(
+      courses.map(async (course) => {
+        const enrollmentCount = await prisma.orderItem.count({
+          where: {
+            itemType: "COURSE",
+            itemId: course.id,
+            order: {
+              payment: {
+                status: "COMPLETED"
+              }
+            }
+          }
+        });
+
+        return {
+          ...course,
+          _count: {
+            ...course._count,
+            enrollments: enrollmentCount
+          }
+        };
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      data: courses,
+      data: coursesWithEnrollmentCount,
       pagination: {
         page,
         limit,
