@@ -60,6 +60,9 @@ function LoginPageContent() {
         router.push(redirectUrl);
       } else if (user.role === 'ADMIN') {
         router.push('/admin/dashboard');
+      } else if (user.role === 'INSTRUCTOR') {
+        // ถ้าเป็น instructor ไปหน้า instructor dashboard
+        router.push('/instructor/dashboard');
       } else {
         router.push(redirectUrl || "/dashboard");
       }
