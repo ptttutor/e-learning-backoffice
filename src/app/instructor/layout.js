@@ -52,11 +52,11 @@ export default function InstructorLayout({ children }) {
   // Show loading screen while checking authentication
   if (loading || authChecking) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh' 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh'
       }}>
         <div>กำลังโหลด...</div>
       </div>
@@ -66,10 +66,10 @@ export default function InstructorLayout({ children }) {
   // Show access denied if not instructor or admin
   if (!user || (user.role !== 'INSTRUCTOR' && user.role !== 'ADMIN')) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '100vh',
         flexDirection: 'column',
         gap: '16px'
@@ -145,7 +145,7 @@ export default function InstructorLayout({ children }) {
             onLogout={handleLogout}
           />
         </Header>
-
+        {/* new cmmit */}
         {/* Content */}
         <Content
           style={{
