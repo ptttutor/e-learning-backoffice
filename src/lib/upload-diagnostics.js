@@ -47,12 +47,14 @@ export const uploadDiagnostics = {
     }
     
     // Name checks
-    if (file.name.length > 100) {
-      issues.push('Very long filename');
+    if (file.name.length > 200) {
+      issues.push('Filename is extremely long (over 200 characters)');
     }
     
-    if (!/^[a-zA-Z0-9._-]+$/.test(file.name.replace(/\.[^.]+$/, ''))) {
-      issues.push('Filename contains special characters');
+    // Note: Special characters are automatically sanitized during upload
+    // Only check for truly problematic names
+    if (!file.name || file.name.trim() === '') {
+      issues.push('Empty filename');
     }
 
     const result = {
