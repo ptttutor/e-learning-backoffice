@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
 import { useMessage } from './useAntdApp';
+import { apiFetch } from '@/lib/api-utils';
 
 export const usePosts = () => {
   const message = useMessage();
@@ -87,7 +88,7 @@ export const usePosts = () => {
         params.append('dateTo', filters.dateTo);
       }
 
-      const response = await fetch(`/api/admin/posts?${params.toString()}`);
+      const response = await apiFetch(`/api/admin/posts?${params.toString()}`);
       const data = await response.json();
       
       if (data.success) {
@@ -112,7 +113,7 @@ export const usePosts = () => {
     try {
       setPostTypesLoading(true);
       // ดึงข้อมูลทั้งหมดโดยไม่ใช้ pagination
-      const response = await fetch('/api/admin/post-types?pageSize=1000&status=ALL');
+      const response = await apiFetch('/api/admin/post-types?pageSize=1000&status=ALL');
       const data = await response.json();
       
       console.log('Post types API response:', data); // Debug log
@@ -136,7 +137,7 @@ export const usePosts = () => {
     try {
       setAuthorsLoading(true);
 
-      const response = await fetch('/api/admin/users?pageSize=1000&status=all&role=all');
+      const response = await apiFetch('/api/admin/users?pageSize=1000&status=all&role=all');
       const data = await response.json();
       
       console.log('Authors API response:', data); // Debug log
@@ -161,7 +162,7 @@ export const usePosts = () => {
       const url = editingPost ? `/api/admin/posts/${editingPost.id}` : '/api/admin/posts';
       const method = editingPost ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export const usePosts = () => {
   // Delete post
   const deletePost = async (id) => {
     try {
-      const response = await fetch(`/api/admin/posts/${id}`, {
+      const response = await apiFetch(`/api/admin/posts/${id}`, {
         method: 'DELETE',
       });
       

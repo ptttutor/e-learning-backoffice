@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 // GET - ดึงรายการข้อสอบทั้งหมด
 export async function GET(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page')) || 1;
     const pageSize = parseInt(searchParams.get('pageSize')) || 10;
@@ -125,6 +130,10 @@ export async function GET(request) {
 // POST - สร้างข้อสอบใหม่
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const body = await request.json();
     const { title, description, categoryId } = body;
 

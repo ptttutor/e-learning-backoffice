@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api-utils';
 
 export const useInstructorDashboardStats = (instructorId, period = 30) => {
   const [stats, setStats] = useState(null);
@@ -14,7 +15,7 @@ export const useInstructorDashboardStats = (instructorId, period = 30) => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/instructor/dashboard/stats?instructorId=${instructorId}&period=${period}`);
+        const response = await apiFetch(`/api/instructor/dashboard/stats?instructorId=${instructorId}&period=${period}`);
         const data = await response.json();
         
         if (data.success) {
@@ -49,7 +50,7 @@ export const useInstructorCourseSales = (instructorId, period = 30) => {
     const fetchCourseSales = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/instructor/dashboard/course-sales?instructorId=${instructorId}&period=${period}`);
+        const response = await apiFetch(`/api/instructor/dashboard/course-sales?instructorId=${instructorId}&period=${period}`);
         const data = await response.json();
         
         if (data.success) {

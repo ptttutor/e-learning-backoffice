@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useMessage } from './useAntdApp';
+import { apiFetch } from '@/lib/api-utils';
 
 export const useExams = () => {
   const message = useMessage();
@@ -12,7 +13,7 @@ export const useExams = () => {
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/admin/exam-bank");
+      const response = await apiFetch("/api/admin/exam-bank");
       const result = await response.json();
 
       if (result.success) {
@@ -31,7 +32,7 @@ export const useExams = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/admin/exam-categories");
+      const response = await apiFetch("/api/admin/exam-categories");
       const result = await response.json();
 
       if (result.success) {
@@ -51,7 +52,7 @@ export const useExams = () => {
 
       const method = editingExam ? "PUT" : "POST";
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ export const useExams = () => {
   // Delete exam
   const deleteExam = async (id) => {
     try {
-      const response = await fetch(`/api/admin/exam-bank/${id}`, {
+      const response = await apiFetch(`/api/admin/exam-bank/${id}`, {
         method: "DELETE",
       });
 
@@ -103,7 +104,7 @@ export const useExams = () => {
   // File management functions
   const fetchExamFiles = async (examId) => {
     try {
-      const response = await fetch(`/api/admin/exam-files?examId=${examId}`);
+      const response = await apiFetch(`/api/admin/exam-files?examId=${examId}`);
       const result = await response.json();
 
       if (result.success) {
@@ -125,7 +126,7 @@ export const useExams = () => {
       formData.append("file", file);
       formData.append("examId", examId);
 
-      const response = await fetch("/api/admin/exam-files", {
+      const response = await apiFetch("/api/admin/exam-files", {
         method: "POST",
         body: formData,
       });
@@ -149,7 +150,7 @@ export const useExams = () => {
 
   const deleteExamFile = async (fileId) => {
     try {
-      const response = await fetch(`/api/admin/exam-files/${fileId}`, {
+      const response = await apiFetch(`/api/admin/exam-files/${fileId}`, {
         method: "DELETE",
       });
 

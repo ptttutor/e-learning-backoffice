@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
 
 // GET - Get single user
 export async function GET(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
 
     const user = await prisma.user.findUnique({
@@ -57,6 +62,10 @@ export async function GET(request, { params }) {
 // PUT - Update user
 export async function PUT(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
     const body = await request.json();
     const { name, email, role, lineId, image, password } = body;
@@ -163,6 +172,10 @@ export async function PUT(request, { params }) {
 // DELETE - Delete user
 export async function DELETE(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
 
     // Check if user exists

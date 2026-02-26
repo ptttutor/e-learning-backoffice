@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export async function GET(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
 
     const post = await prisma.post.findUnique({
@@ -62,6 +67,10 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
     const data = await request.json();
     
@@ -121,6 +130,10 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = params;
     console.log('🗑️ Attempting to delete post with ID:', id);
 

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 import {
   KeyboardSensor,
   PointerSensor,
@@ -95,7 +96,7 @@ export const useChapters = (courseId) => {
         params.append('minOrder', currentFilters.minOrder.toString());
       }
 
-      const res = await fetch(`/api/admin/chapters?${params.toString()}`);
+      const res = await apiFetch(`/api/admin/chapters?${params.toString()}`);
       const data = await res.json();
       
       if (data.success) {
@@ -140,7 +141,7 @@ export const useChapters = (courseId) => {
     if (!courseId) return;
     
     try {
-      const res = await fetch(`/api/admin/chapters?courseId=${courseId}&pageSize=1000&sortBy=order_asc`);
+      const res = await apiFetch(`/api/admin/chapters?courseId=${courseId}&pageSize=1000&sortBy=order_asc`);
       const data = await res.json();
       if (data.success) {
         setAllChapters(data.data || []);

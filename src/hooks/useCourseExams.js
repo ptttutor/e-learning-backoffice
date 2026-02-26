@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMessage } from './useAntdApp';
+import { apiFetch } from '@/lib/api-utils';
 
 export const useCourseExams = (courseId) => {
   const [exams, setExams] = useState([]);
@@ -37,7 +38,7 @@ export const useCourseExams = (courseId) => {
         sortOrder: filters.sortOrder,
       });
 
-      const response = await fetch(`/api/admin/course-exams?${queryParams}`);
+      const response = await apiFetch(`/api/admin/course-exams?${queryParams}`);
       const data = await response.json();
 
       if (data.success) {

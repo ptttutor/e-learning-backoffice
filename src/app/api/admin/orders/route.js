@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 // GET - ดึงรายการ orders ทั้งหมดสำหรับ admin
 export async function GET(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const paymentStatus = searchParams.get('paymentStatus');

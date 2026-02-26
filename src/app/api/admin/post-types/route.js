@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export async function GET(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { searchParams } = new URL(request.url);
     
     // Pagination parameters
@@ -82,6 +87,10 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const data = await request.json();
     
     const postType = await prisma.postType.create({

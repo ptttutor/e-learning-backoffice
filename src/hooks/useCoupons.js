@@ -37,7 +37,7 @@ export const useCoupons = () => {
         applicable: filters.applicable || ''
       });
 
-      const response = await fetch(`/api/admin/coupons?${params}`);
+      const response = await apiFetch(`/api/admin/coupons?${params}`);
       
       if (!response.ok) {
         throw new Error('เกิดข้อผิดพลาดในการดึงข้อมูล');

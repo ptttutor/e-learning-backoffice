@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMessage } from './useAntdApp';
+import { apiFetch } from '@/lib/api-utils';
 
 export const useExamQuestions = (examId) => {
   const [questions, setQuestions] = useState([]);
@@ -35,7 +36,7 @@ export const useExamQuestions = (examId) => {
         sortOrder: filters.sortOrder,
       });
 
-      const response = await fetch(`/api/admin/exam-questions?${queryParams}`);
+      const response = await apiFetch(`/api/admin/exam-questions?${queryParams}`);
       const data = await response.json();
 
       if (data.success) {

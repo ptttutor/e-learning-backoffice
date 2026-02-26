@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useMessage } from './useAntdApp';
+import { apiFetch } from '@/lib/api-utils';
 
 export function useEbooks() {
   const message = useMessage();
@@ -75,7 +76,7 @@ export function useEbooks() {
         sortOrder: filtersToUse.sortOrder || 'desc',
       });
 
-      const response = await fetch(`/api/admin/ebooks?${params}`);
+      const response = await apiFetch(`/api/admin/ebooks?${params}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         console.error('API Error:', errorData);
@@ -112,7 +113,7 @@ export function useEbooks() {
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/ebook-categories');
+      const response = await apiFetch('/api/admin/ebook-categories');
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error fetching categories:', errorData);
@@ -186,7 +187,7 @@ export function useEbooks() {
       const url = editingEbook ? `/api/admin/ebooks/${editingEbook.id}` : '/api/admin/ebooks';
       const method = editingEbook ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +214,7 @@ export function useEbooks() {
     try {
       console.log('Deleting ebook with ID:', id);
       
-      const response = await fetch(`/api/admin/ebooks/${id}`, {
+      const response = await apiFetch(`/api/admin/ebooks/${id}`, {
         method: 'DELETE',
       });
 
@@ -292,7 +293,7 @@ export function useEbooks() {
   const fetchEbookFile = useCallback(async (ebookId) => {
     try {
       console.log('fetchEbookFile called with ebookId:', ebookId);
-      const response = await fetch(`/api/admin/ebooks/${ebookId}`);
+      const response = await apiFetch(`/api/admin/ebooks/${ebookId}`);
       const result = await response.json();
       console.log('fetchEbookFile response:', response.ok, result);
       
@@ -324,7 +325,7 @@ export function useEbooks() {
       formData.append('file', file);
       formData.append('ebookId', ebookId);
 
-      const response = await fetch("/api/admin/ebook-files", {
+      const response = await apiFetch("/api/admin/ebook-files", {
         method: "POST",
         body: formData,
       });
@@ -346,7 +347,7 @@ export function useEbooks() {
   // Delete ebook file
   const deleteEbookFile = useCallback(async (ebookId) => {
     try {
-      const response = await fetch(`/api/admin/ebook-files/${ebookId}`, {
+      const response = await apiFetch(`/api/admin/ebook-files/${ebookId}`, {
         method: "DELETE",
       });
 

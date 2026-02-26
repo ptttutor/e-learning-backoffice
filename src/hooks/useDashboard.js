@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api-utils';
 
 // Utility function to calculate dashboard statistics from orders
 const calculateOrderStats = (orders) => {
@@ -75,7 +76,7 @@ export function useDashboardStats(period = 30) {
       setError(null);
       
       // Fetch all orders for calculation
-      const response = await fetch('/api/admin/orders');
+      const response = await apiFetch('/api/admin/orders');
       const data = await response.json();
       
       if (!response.ok) {
@@ -149,7 +150,7 @@ export function useCourseSales(period = 30) {
       setError(null);
       
       // Fetch all orders
-      const response = await fetch('/api/admin/orders');
+      const response = await apiFetch('/api/admin/orders');
       const data = await response.json();
       
       if (!response.ok) {
@@ -207,7 +208,7 @@ export function useEbookSales(period = 30) {
       setError(null);
       
       // Fetch all orders
-      const response = await fetch('/api/admin/orders');
+      const response = await apiFetch('/api/admin/orders');
       const data = await response.json();
       
       if (!response.ok) {
@@ -264,7 +265,7 @@ export function useRevenueAnalytics(period = 12) {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/admin/dashboard/revenue-analytics?period=${period}`);
+      const response = await apiFetch(`/api/admin/dashboard/revenue-analytics?period=${period}`);
       const data = await response.json();
       
       if (!response.ok) {

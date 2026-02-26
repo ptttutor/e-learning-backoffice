@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export function usePostCategories() {
   const message = useMessage();
@@ -42,7 +43,7 @@ export function usePostCategories() {
         sortOrder: currentFilters?.sortOrder || "desc",
       });
 
-      const res = await fetch(`/api/admin/post-types?${params}`);
+      const res = await apiFetch(`/api/admin/post-types?${params}`);
       const data = await res.json();
 
       if (data.success) {

@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-utils';
 
 export async function POST(req) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
     const body = await req.json();
+    
+    // ตรวจสอบว่า userId ตรงกับ session
+    if (session.user.role !== "ADMIN" && session.user.id !== body.userId) {
+      return NextResponse.json(
+        { success: false, error: "คุณไม่มีสิทธิ์สร้างรีวิวให้ผู้ใช้คนอื่น" }, 
+        { status: 403 }
+      );
+    }
     
     // Validate required fields
     if (!body.userId) {

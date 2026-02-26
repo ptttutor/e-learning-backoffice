@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export function useExamBank() {
   const [exams, setExams] = useState([]);
@@ -51,7 +52,7 @@ export function useExamBank() {
       if (currentFilters.maxFiles)
         params.append("maxFiles", currentFilters.maxFiles);
 
-      const res = await fetch(`/api/admin/exam-bank?${params}`);
+      const res = await apiFetch(`/api/admin/exam-bank?${params}`);
       const data = await res.json();
 
       if (data.success) {
@@ -80,7 +81,7 @@ export function useExamBank() {
   const fetchCategories = async () => {
     setCatLoading(true);
     try {
-      const res = await fetch("/api/admin/exam-categories");
+      const res = await apiFetch("/api/admin/exam-categories");
       const data = await res.json();
       setCategories(data.success ? data.data || [] : []);
     } catch (e) {
@@ -177,7 +178,7 @@ export function useExamBank() {
       
       const method = editingExam ? "PUT" : "POST";
       
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(examData),
@@ -257,7 +258,7 @@ export function useExamBank() {
     }));
 
     try {
-      const response = await fetch(`/api/admin/exam-bank/${examId}`, {
+      const response = await apiFetch(`/api/admin/exam-bank/${examId}`, {
         method: "DELETE",
       });
 
@@ -295,7 +296,7 @@ export function useExamBank() {
   // Fetch exam files
   const fetchExamFiles = async (examId) => {
     try {
-      const response = await fetch(`/api/admin/exam-files?examId=${examId}`);
+      const response = await apiFetch(`/api/admin/exam-files?examId=${examId}`);
       const result = await response.json();
       
       if (result.success) {
@@ -319,7 +320,7 @@ export function useExamBank() {
       formData.append('file', file);
       formData.append('examId', examId);
 
-      const response = await fetch("/api/admin/exam-files", {
+      const response = await apiFetch("/api/admin/exam-files", {
         method: "POST",
         body: formData, // Use FormData instead of JSON
       });
@@ -344,7 +345,7 @@ export function useExamBank() {
   const deleteExamFile = async (fileId) => {
     console.log('Attempting to delete file with ID:', fileId);
     try {
-      const response = await fetch(`/api/admin/exam-files/${fileId}`, {
+      const response = await apiFetch(`/api/admin/exam-files/${fileId}`, {
         method: "DELETE",
       });
 

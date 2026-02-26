@@ -73,12 +73,16 @@ function LoginPageContent() {
     setLoading(true);
     setError("");
 
+    console.log('🔵 [Login Page] Submitting login...');
     const result = await login(values.email, values.password);
+    console.log('🔵 [Login Page] Login result:', result);
 
     if (result.success) {
+      console.log('✅ [Login Page] Login successful, waiting for redirect...');
       // Redirect logic จะถูกจัดการใน useEffect
       // ไม่จำเป็นต้องทำ redirect ที่นี่ เพราะจะทำซ้ำ
     } else {
+      console.error('❌ [Login Page] Login failed:', result.error);
       setError(result.error);
     }
 

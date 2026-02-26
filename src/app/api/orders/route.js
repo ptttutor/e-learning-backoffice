@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-utils';
 
 // POST - สร้าง order ใหม่
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
     const body = await request.json();
     const { userId, items, couponCode, shippingAddress } = body;
+    
+    // ตรวจสอบว่า userId ตรงกับ session
+    if (session.user.role !== "ADMIN" && session.user.id !== userId) {
+      return NextResponse.json(
+        { success: false, error: "คุณไม่มีสิทธิ์สร้างคำสั่งซื้อให้ผู้ใช้คนอื่น" }, 
+        { status: 403 }
+      );
+    }
+    
     if (!userId || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
     }

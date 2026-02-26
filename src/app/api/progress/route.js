@@ -1,12 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-utils';
 
 // GET: /api/progress?userId=xxx&courseId=xxx - ดึงข้อมูล progress
 export async function GET(req) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const courseId = searchParams.get('courseId');
+    
+    // ตรวจสอบว่า userId ตรงกับ session
+    if (session.user.role !== "ADMIN" && session.user.id !== userId) {
+      return NextResponse.json(
+        { success: false, error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" }, 
+        { status: 403 }
+      );
+    }
     
     if (!userId || !courseId) {
       return NextResponse.json(
@@ -78,7 +91,19 @@ export async function GET(req) {
 // PUT: /api/progress - รีเซ็ต progress
 export async function PUT(req) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
     const { userId, courseId, progress = 0 } = await req.json();
+    
+    // ตรวจสอบว่า userId ตรงกับ session
+    if (session.user.role !== "ADMIN" && session.user.id !== userId) {
+      return NextResponse.json(
+        { success: false, error: "คุณไม่มีสิทธิ์อัพเดทข้อมูลนี้" }, 
+        { status: 403 }
+      );
+    }
     
     if (!userId || !courseId) {
       return NextResponse.json(

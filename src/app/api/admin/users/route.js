@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
 
 // GET - List users with filtering and pagination
 export async function GET(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
     const { searchParams } = new URL(request.url);
     
     // Get query parameters
@@ -110,6 +114,10 @@ export async function GET(request) {
 // POST - Create new user
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const body = await request.json();
     const { name, email, role, password, lineId, image } = body;
 

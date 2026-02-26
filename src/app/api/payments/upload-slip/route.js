@@ -7,10 +7,15 @@ import {
   sendPaymentFailureNotification,
   sendPaymentPendingNotification 
 } from "@/lib/email";
+import { requireAuth } from '@/lib/auth-utils';
 
 // POST - อัปโหลด slip และตรวจสอบอัตโนมัติ
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+    
     console.log('🚀 Starting payment slip upload process...');
 
     const formData = await request.formData();

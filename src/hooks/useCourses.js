@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export function useCourses() {
   const message = useMessage();
@@ -71,7 +72,7 @@ export function useCourses() {
       if (currentFilters.maxPrice)
         params.append("maxPrice", currentFilters.maxPrice);
 
-      const res = await fetch(`/api/admin/courses?${params}`);
+      const res = await apiFetch(`/api/admin/courses?${params}`);
       const data = await res.json();
 
       if (data.success) {
@@ -99,7 +100,7 @@ export function useCourses() {
   const fetchCategories = useCallback(async () => {
     setCatLoading(true);
     try {
-      const res = await fetch("/api/admin/categories");
+      const res = await apiFetch("/api/admin/categories");
       const data = await res.json();
       setCategories(data.data || []);
     } catch (e) {
@@ -112,7 +113,7 @@ export function useCourses() {
   const fetchInstructors = useCallback(async () => {
     setInstLoading(true);
     try {
-      const res = await fetch("/api/admin/users?role=INSTRUCTOR");
+      const res = await apiFetch("/api/admin/users?role=INSTRUCTOR");
       const data = await res.json();
       console.log('data :>> ', data);
       setInstructors(data.data?.users || []);

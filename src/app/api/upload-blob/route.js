@@ -7,9 +7,14 @@ import {
   isImageFile,
   isPdfFile
 } from '@/lib/vercel-blob';
+import { requireAuth } from '@/lib/auth-utils';
 
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+    
     console.log('🚀 Starting file upload process...');
     
     const formData = await request.formData();

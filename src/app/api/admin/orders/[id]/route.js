@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 // GET - ดึงข้อมูล order ตาม ID สำหรับ admin
 export async function GET(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = await params;
     
     if (!id) {
@@ -168,6 +173,10 @@ export async function GET(request, { params }) {
 // PATCH - อัพเดทสถานะ order และ payment
 export async function PATCH(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = await params;
     
     if (!id) {
@@ -335,6 +344,10 @@ export async function PATCH(request, { params }) {
 // DELETE - ยกเลิกคำสั่งซื้อ
 export async function DELETE(request, { params }) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { id } = await params;
 
     // Update order status to cancelled

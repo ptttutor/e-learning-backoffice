@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-utils";
 
 // GET - ดึงรายการคูปอง
 export async function GET(request) {
   try {
-    // สำหรับการทดสอบ - ข้าม authentication check ชั่วคราว
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page")) || 1;
@@ -106,11 +103,9 @@ export async function GET(request) {
 // POST - สร้างคูปองใหม่
 export async function POST(request) {
   try {
-    // สำหรับการทดสอบ - ข้าม authentication check ชั่วคราว
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
 
     const body = await request.json();
     const {

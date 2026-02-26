@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export const useUsers = () => {
   const message = useMessage();
@@ -47,7 +48,7 @@ export const useUsers = () => {
         sortOrder: filters.sortOrder || "desc",
       });
 
-      const response = await fetch(`/api/admin/users?${params}`);
+      const response = await apiFetch(`/api/admin/users?${params}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

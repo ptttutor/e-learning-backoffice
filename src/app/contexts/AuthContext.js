@@ -43,26 +43,37 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      console.log('🔵 [Admin] Attempting login with NextAuth credentials...');
+      
+      // ใช้ NextAuth signIn แทน custom API call
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false, // ไม่ redirect อัตโนมัติ
       });
 
-      const result = await response.json();
+      console.log('🔵 [Admin] NextAuth signIn result:', result);
 
-      if (result.success) {
-        const userData = result.data;
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-        return { success: true, user: userData };
-      } else {
-        return { success: false, error: result.error };
+      if (result?.error) {
+        console.error('❌ [Admin] Login failed:', result.error);
+        return { 
+          success: false, 
+          error: result.error === 'CredentialsSignin' 
+            ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' 
+            : result.error 
+        };
       }
+
+      if (result?.ok) {
+        console.log('✅ [Admin] Login successful, session will be created');
+        // Session จะถูกสร้างโดย NextAuth อัตโนมัติ
+        // useEffect จะดึง session มาเก็บใน user state
+        return { success: true };
+      }
+
+      return { success: false, error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ" };
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ [Admin] Login error:", error);
       return { success: false, error: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ" };
     }
   };

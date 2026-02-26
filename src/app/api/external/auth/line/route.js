@@ -6,8 +6,12 @@ import { createExternalToken } from '@/lib/jwt';
 export async function POST(request) {
   try {
     const { code, redirectUri } = await request.json();
+    console.log('🟢 [Backend] LINE login request received');
+    console.log('🟢 [Backend] Code:', code?.substring(0, 20) + '...');
+    console.log('🟢 [Backend] Redirect URI:', redirectUri);
     
     if (!code) {
+      console.error('❌ [Backend] Missing authorization code');
       return NextResponse.json(
         { success: false, error: 'Authorization code is required' },
         { status: 400 }
@@ -15,7 +19,7 @@ export async function POST(request) {
     }
 
     // 1. แลก code กับ access token
-    console.log('🔄 Exchanging code for access token...');
+    console.log('🔄 [Backend] Exchanging code for access token...');
     const tokenResponse = await fetch('https://api.line.me/oauth2/v2.1/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -30,7 +34,7 @@ export async function POST(request) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('❌ Token exchange failed:', errorText);
+      console.error('❌ [Backend] Token exchange failed:', errorText);
       return NextResponse.json(
         { success: false, error: 'Failed to exchange authorization code' },
         { status: 400 }
@@ -38,7 +42,7 @@ export async function POST(request) {
     }
 
     const tokens = await tokenResponse.json();
-    console.log('✅ Got access token');
+    console.log('✅ [Backend] Got access token');
 
     // 2. ดึงข้อมูล LINE profile
     const profileResponse = await fetch('https://api.line.me/v2/profile', {
@@ -46,7 +50,7 @@ export async function POST(request) {
     });
 
     if (!profileResponse.ok) {
-      console.error('❌ Failed to fetch LINE profile');
+      console.error('❌ [Backend] Failed to fetch LINE profile');
       return NextResponse.json(
         { success: false, error: 'Failed to fetch user profile' },
         { status: 400 }
@@ -54,7 +58,7 @@ export async function POST(request) {
     }
 
     const lineProfile = await profileResponse.json();
-    console.log('✅ Got LINE profile:', lineProfile.displayName);
+    console.log('✅ [Backend] Got LINE profile:', lineProfile.displayName, `(${lineProfile.userId})`);
 
     // 3. สร้างหรือค้นหา user ในระบบ
     let user = await prisma.user.findUnique({
@@ -72,7 +76,7 @@ export async function POST(request) {
           role: 'STUDENT', // แก้ไขจาก 'USER' เป็น 'STUDENT'
         }
       });
-      console.log('✅ Created new user:', user.email);
+      console.log('✅ [Backend] Created new user:', user.email, `(ID: ${user.id})`);
     } else {
       // อัพเดทข้อมูล user
       user = await prisma.user.update({
@@ -82,11 +86,13 @@ export async function POST(request) {
           image: lineProfile.pictureUrl,
         }
       });
-      console.log('✅ Updated existing user:', user.email);
+      console.log('✅ [Backend] Updated existing user:', user.email, `(ID: ${user.id})`);
     }
 
     // 4. สร้าง JWT token สำหรับ external frontend
+    console.log('🟢 [Backend] Creating JWT token for user:', user.id);
     const externalToken = createExternalToken(user);
+    console.log('✅ [Backend] JWT token created successfully');
 
     // 5. ส่งข้อมูลกลับ
     return NextResponse.json({

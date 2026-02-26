@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-utils";
 
 // GET - ดึงข้อมูลคูปองรายการ
 export async function GET(request, { params }) {
   try {
-    // สำหรับการทดสอบ - ข้าม authentication check ชั่วคราว
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
 
     const { id } = params;
 
@@ -73,11 +70,9 @@ export async function GET(request, { params }) {
 // PUT - แก้ไขคูปอง
 export async function PUT(request, { params }) {
   try {
-    // สำหรับการทดสอบ - ข้าม authentication check ชั่วคราว
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
 
     const { id } = params;
     const body = await request.json();
@@ -162,11 +157,9 @@ export async function PUT(request, { params }) {
 // DELETE - ลบคูปอง
 export async function DELETE(request, { params }) {
   try {
-    // สำหรับการทดสอบ - ข้าม authentication check ชั่วคราว
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
 
     const { id } = params;
 

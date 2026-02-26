@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export function useShipping() {
   const message = useMessage();
@@ -60,7 +61,7 @@ export function useShipping() {
         sortOrder: currentFilters.sortOrder || "desc",
       });
 
-      const response = await fetch(`/api/admin/shipping?${params}`);
+      const response = await apiFetch(`/api/admin/shipping?${params}`);
       const result = await response.json();
 
       if (result.success) {
@@ -85,7 +86,7 @@ export function useShipping() {
   const fetchShipmentDetail = useCallback(async (id) => {
     setDetailLoading(true);
     try {
-      const response = await fetch(`/api/admin/shipping/${id}`);
+      const response = await apiFetch(`/api/admin/shipping/${id}`);
       const result = await response.json();
 
       if (result.success) {
@@ -106,7 +107,7 @@ export function useShipping() {
   // Update shipment
   const updateShipment = useCallback(async (id, updateData) => {
     try {
-      const response = await fetch(`/api/admin/shipping/${id}`, {
+      const response = await apiFetch(`/api/admin/shipping/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

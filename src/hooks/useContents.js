@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 import {
   KeyboardSensor,
   PointerSensor,
@@ -97,7 +98,7 @@ export const useContents = (chapterId) => {
         params.append('contentType', filters.contentType);
       }
 
-      const res = await fetch(`/api/admin/contents?${params.toString()}`);
+      const res = await apiFetch(`/api/admin/contents?${params.toString()}`);
       const data = await res.json();
       
       if (data.success) {
@@ -120,7 +121,7 @@ export const useContents = (chapterId) => {
     if (!chapterId) return;
     
     try {
-      const res = await fetch(`/api/admin/contents?chapterId=${chapterId}&pageSize=1000&sortBy=order_asc`);
+      const res = await apiFetch(`/api/admin/contents?chapterId=${chapterId}&pageSize=1000&sortBy=order_asc`);
       const data = await res.json();
       
       if (data.success) {

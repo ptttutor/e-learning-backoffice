@@ -1,10 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-utils';
 
 // POST: /api/update-progress - อัพเดทความคืบหน้าการเรียน
 export async function POST(req) {
   try {
+    // ตรวจสอบสิทธิ์ authenticated user
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
     const { userId, courseId, contentId } = await req.json();
+    
+    // ตรวจสอบว่า userId ตรงกับ session
+    if (session.user.role !== "ADMIN" && session.user.id !== userId) {
+      return NextResponse.json(
+        { success: false, error: "คุณไม่มีสิทธิ์อัพเดทควาวคืบหน้าของผู้ใช้คนอื่น" }, 
+        { status: 403 }
+      );
+    }
     
     if (!userId || !courseId || !contentId) {
       return NextResponse.json(

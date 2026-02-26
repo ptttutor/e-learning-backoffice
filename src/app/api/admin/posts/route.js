@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export async function GET(req) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const { searchParams } = new URL(req.url);
     
     // Extract query parameters for filtering and pagination
@@ -170,6 +175,10 @@ export async function GET(req) {
 
 export async function POST(request) {
   try {
+    // ตรวจสอบสิทธิ์ ADMIN
+    const { session, error } = await requireAdmin();
+    if (error) return error;
+    
     const data = await request.json();
     
     // สร้าง slug อัตโนมัติถ้าไม่มี

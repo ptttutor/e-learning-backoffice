@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessage } from "./useAntdApp";
+import { apiFetch } from '@/lib/api-utils';
 
 export function useExamCategories() {
   const message = useMessage();
@@ -55,7 +56,7 @@ export function useExamCategories() {
         params.append("isActive", currentFilters.isActive);
       }
 
-      const response = await fetch(`/api/admin/exam-categories?${params}`);
+      const response = await apiFetch(`/api/admin/exam-categories?${params}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
         console.error("API Error:", errorData);
@@ -86,7 +87,7 @@ export function useExamCategories() {
   // Create new exam category
   const createExamCategory = useCallback(async (categoryData) => {
     try {
-      const response = await fetch("/api/admin/exam-categories", {
+      const response = await apiFetch("/api/admin/exam-categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,7 +116,7 @@ export function useExamCategories() {
   // Update exam category
   const updateExamCategory = useCallback(async (id, categoryData) => {
     try {
-      const response = await fetch(`/api/admin/exam-categories/${id}`, {
+      const response = await apiFetch(`/api/admin/exam-categories/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -144,7 +145,7 @@ export function useExamCategories() {
   // Delete exam category
   const deleteExamCategory = useCallback(async (id) => {
     try {
-      const response = await fetch(`/api/admin/exam-categories/${id}`, {
+      const response = await apiFetch(`/api/admin/exam-categories/${id}`, {
         method: "DELETE",
       });
 
@@ -169,7 +170,7 @@ export function useExamCategories() {
   // Toggle exam category status
   const toggleExamCategoryStatus = useCallback(async (id, isActive) => {
     try {
-      const response = await fetch(`/api/admin/exam-categories/${id}`, {
+      const response = await apiFetch(`/api/admin/exam-categories/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
